@@ -75,6 +75,17 @@
   }
   input[type="date"] { max-width: 165px; }
   input:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12); }
+  .set-main select.set-weight {
+    background: var(--surface-2); border: 1px solid transparent; color: var(--text);
+    border-radius: 12px; padding: 11px 8px; font-size: 16px; font-family: -apple-system, system-ui, sans-serif; font-weight: 600;
+    text-align: center; text-align-last: center; -webkit-appearance: none; appearance: none; flex: 1 1 0; width: auto; min-width: 0;
+  }
+  .rep-stepper { flex: 1 1 0; display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); border-radius: 12px; padding: 5px; min-width: 0; }
+  .rep-step-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: var(--surface); color: var(--accent); font-size: 19px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: var(--shadow-sm); }
+  .rep-step-btn:active { background: var(--accent); color: #fff; }
+  .rep-value { font-size: 16.5px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; min-width: 26px; text-align: center; }
+  .ex-name-label { flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  select.ex-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid transparent; color: var(--text); border-radius: 12px; padding: 11px 13px; font-size: 15.5px; font-weight: 600; font-family: -apple-system, system-ui, sans-serif; margin-bottom: 10px; }
   .exercise-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 14px; overflow: hidden; position: relative; box-shadow: var(--shadow-sm); }
   .exercise-card::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: var(--accent); border-radius: 3px; opacity: 0.85; }
   .exercise-head { display: flex; align-items: center; gap: 4px; padding: 14px 14px 8px 14px; }
@@ -392,7 +403,15 @@ function formatDateShortFR(iso) {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 function emptyExercise() {
-  return { id: uid(), name: "", exType: "muscu", sets: [{ id: uid(), weight: "", reps: "" }] };
+  const firstConfig = gymExerciseConfigs.find((c) => (c.category || "push") === "push") || gymExerciseConfigs[0] || null;
+  const possibleWeights = firstConfig ? computePossibleWeights(firstConfig) : [];
+  return {
+    id: uid(),
+    name: firstConfig ? firstConfig.name : "",
+    exType: "muscu",
+    category: firstConfig ? firstConfig.category || "push" : "push",
+    sets: [{ id: uid(), weight: possibleWeights.length ? possibleWeights[0] : "", reps: 10 }],
+  };
 }
 function emptyBlock() {
   return { id: uid(), label: "", mode: "duration", duration: "", distance: "", pace: "", reps: "", repDistance: "", repDuration: "", recovery: "" };
@@ -779,16 +798,20 @@ function serializeExercisesFromDOM() {
   cards.forEach((card) => {
     const id = card.dataset.id;
     const exType = card.dataset.extype || "muscu";
-    const name = card.querySelector(".ex-name-input").value;
+    const category = card.dataset.category || "push";
+    const nameEl = card.querySelector(".ex-name-input");
+    const name = nameEl ? nameEl.value : "";
     const sets = [];
     card.querySelectorAll(".set-row").forEach((row) => {
+      const weightEl = row.querySelector(".set-weight");
+      const repsEl = row.querySelector(".set-reps");
       sets.push({
         id: row.dataset.id,
-        weight: row.querySelector(".set-weight").value,
-        reps: row.querySelector(".set-reps").value,
+        weight: weightEl ? weightEl.value : "",
+        reps: repsEl ? repsEl.value : "",
       });
     });
-    result.push({ id, name, exType, sets });
+    result.push({ id, name, exType, category, sets });
   });
   return result;
 }
@@ -1011,6 +1034,21 @@ function findExerciseConfig(name) {
   const norm = (name || "").trim().toLowerCase();
   if (!norm) return null;
   return gymExerciseConfigs.find((c) => c.name.trim().toLowerCase() === norm) || null;
+}
+
+function computePossibleWeights(config) {
+  if (!config || !config.baseWeights || config.baseWeights.length === 0) return [];
+  const maxInc = config.maxIncrement || 0;
+  const set = new Set();
+  config.baseWeights.forEach((b) => {
+    for (let i = 0; i <= maxInc; i++) set.add(Math.round((b + i) * 100) / 100);
+  });
+  return Array.from(set).sort((a, b) => a - b);
+}
+
+function categoryLabel(key) {
+  const found = GYM_EXERCISE_CATEGORIES.find((c) => c.key === key);
+  return found ? found.label : key;
 }
 
 function weightChipAreaHTML(config) {
@@ -1345,7 +1383,7 @@ function gymSettingsFormHTML() {
     .map((n) => `<button type="button" class="weight-chip" data-suggest-name="${n.replace(/"/g, "&quot;")}">${n}</button>`)
     .join("");
   return `
-    <div class="exercise-card">
+    <div class="exercise-card" style="padding: 16px 14px 16px 19px;">
       <div class="field" style="margin-bottom:14px;">
         <label>Catégorie</label>
         <div class="ex-type-toggle" id="config-category-toggle">
@@ -1732,15 +1770,68 @@ function renderBikeContent() {
   attachBikeContentListeners();
 }
 
+function categoryToggleHTML(category) {
+  return `
+    <div class="ex-type-toggle" data-category-toggle style="margin-bottom:10px;">
+      ${GYM_EXERCISE_CATEGORIES.map(
+        (c) => `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""}" data-category-btn="${c.key}">${c.label}</button>`
+      ).join("")}
+    </div>`;
+}
+
+function nameSelectHTML(configsInCategory, effectiveConfig) {
+  const options = [...configsInCategory]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => `<option value="${c.name.replace(/"/g, "&quot;")}" ${effectiveConfig && c.id === effectiveConfig.id ? "selected" : ""}>${c.name}</option>`)
+    .join("");
+  return `<select class="ex-name-input">${options}</select>`;
+}
+
 function exerciseCardHTML(ex) {
   const exType = ex.exType || "muscu";
-  const last = getLastPerformance(ex.name);
   const isCardio = exType === "cardio";
+  const category = ex.category || "push";
+  const configsInCategory = isCardio ? [] : gymExerciseConfigs.filter((c) => (c.category || "push") === category);
+  // La config "effective" est celle qui correspond au nom enregistré, ou à défaut
+  // la première de la catégorie — le menu affiché et les poids calculés
+  // pointent toujours vers exactement le même exercice, jamais l'un sans l'autre.
+  const effectiveConfig = isCardio ? null : findExerciseConfig(ex.name) || configsInCategory[0] || null;
+  const last = getLastPerformance(isCardio ? ex.name : effectiveConfig ? effectiveConfig.name : ex.name);
+  const possibleWeights = isCardio ? [] : computePossibleWeights(effectiveConfig);
+  const categoryAndNameHTML = isCardio
+    ? ""
+    : categoryToggleHTML(category) +
+      (configsInCategory.length === 0
+        ? `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Va dans Paramètres → Salle de sport pour en ajouter.</div>`
+        : nameSelectHTML(configsInCategory, effectiveConfig));
+
   const setsHTML = ex.sets
     .map((s, i) => {
-      const weightInput = `<input class="set-weight" type="number" inputmode="decimal" placeholder="${isCardio ? "min" : "kg"}" value="${s.weight}">`;
-      const repsInput = `<input class="set-reps" type="number" inputmode="decimal" placeholder="${isCardio ? "km (optionnel)" : "reps"}" value="${s.reps}">`;
-      const cols = isCardio ? weightInput + repsInput : repsInput + weightInput;
+      let cols;
+      if (isCardio) {
+        const weightInput = `<input class="set-weight" type="number" inputmode="decimal" placeholder="min" value="${s.weight}">`;
+        const repsInput = `<input class="set-reps" type="number" inputmode="decimal" placeholder="km (optionnel)" value="${s.reps}">`;
+        cols = weightInput + repsInput;
+      } else {
+        const weightList = [...possibleWeights];
+        const currentWeight = s.weight === "" ? null : parseFloat(s.weight);
+        if (currentWeight !== null && !weightList.includes(currentWeight)) {
+          weightList.push(currentWeight);
+          weightList.sort((a, b) => a - b);
+        }
+        const weightOptions = weightList.length
+          ? weightList.map((w) => `<option value="${w}" ${currentWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
+          : `<option value="">—</option>`;
+        const weightField = `<select class="set-weight" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>`;
+        const repsField = `
+        <div class="rep-stepper">
+          <button type="button" class="rep-step-btn" data-rep-minus aria-label="Moins">−</button>
+          <span class="rep-value" data-rep-value>${s.reps || 0}</span>
+          <button type="button" class="rep-step-btn" data-rep-plus aria-label="Plus">+</button>
+          <input type="hidden" class="set-reps" value="${s.reps || 0}">
+        </div>`;
+        cols = repsField + weightField;
+      }
       const isFirst = i === 0;
       const isLast = i === ex.sets.length - 1;
       return `
@@ -1759,10 +1850,14 @@ function exerciseCardHTML(ex) {
     .join("");
 
   return `
-  <div class="exercise-card" data-id="${ex.id}" data-extype="${exType}">
+  <div class="exercise-card" data-id="${ex.id}" data-extype="${exType}" data-category="${ex.category || "push"}">
     <div class="exercise-head">
       <button type="button" class="drag-handle" data-drag-handle aria-label="Réordonner">${ICONS.grip}</button>
-      <input class="ex-name-input" type="text" placeholder="Nom de l'exercice (optionnel)" list="exercise-suggestions" value="${ex.name.replace(/"/g, "&quot;")}">
+      ${
+        isCardio
+          ? `<input class="ex-name-input" type="text" placeholder="Nom de l'exercice (optionnel)" list="exercise-suggestions" value="${ex.name.replace(/"/g, "&quot;")}">`
+          : `<div class="ex-name-label">${ex.name || "Choisis un exercice"}</div>`
+      }
       <button type="button" class="icon-btn" data-duplicate-ex="${ex.id}" aria-label="Dupliquer l'exercice">${ICONS.duplicate}</button>
       <button class="icon-btn" data-remove-ex="${ex.id}">${ICONS.x}</button>
     </div>
@@ -1770,8 +1865,8 @@ function exerciseCardHTML(ex) {
       <button type="button" class="ex-type-btn ${!isCardio ? "active" : ""}" data-set-type="muscu">Muscu</button>
       <button type="button" class="ex-type-btn ${isCardio ? "active" : ""}" data-set-type="cardio">Cardio</button>
     </div>
+    ${categoryAndNameHTML}
     ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
-    <div class="weight-chip-area" data-chip-area>${!isCardio ? weightChipAreaHTML(findExerciseConfig(ex.name)) : ""}</div>
     <div class="sets-header"><span class="spacer"></span>${isCardio ? "<span>Min</span><span>Km</span>" : "<span>Reps</span><span>Kg</span>"}</div>
     <div class="sets-list">${setsHTML}</div>
     <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>
@@ -2988,11 +3083,12 @@ function attachLogListeners() {
   }
 
   document.querySelectorAll("#exercises-container .exercise-card").forEach((card) => {
+    const isCardio = card.dataset.extype === "cardio";
     const nameInput = card.querySelector(".ex-name-input");
     const hint = card.querySelector("[data-hint]");
-    const chipArea = card.querySelector("[data-chip-area]");
-    nameInput.addEventListener("input", () => {
-      const last = getLastPerformance(nameInput.value);
+
+    function refreshHint(name) {
+      const last = getLastPerformance(name);
       if (last) {
         hint.style.display = "";
         hint.innerHTML = `Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b>`;
@@ -3000,50 +3096,76 @@ function attachLogListeners() {
         hint.style.display = "none";
         hint.innerHTML = "";
       }
-      if (card.dataset.extype !== "cardio") {
-        delete card.dataset.selectedBase;
-        delete card.dataset.selectedIncrement;
-        chipArea.innerHTML = weightChipAreaHTML(findExerciseConfig(nameInput.value));
-      }
-      scheduleDraftSave();
+    }
+
+    if (isCardio && nameInput) {
+      nameInput.addEventListener("input", () => {
+        refreshHint(nameInput.value);
+        scheduleDraftSave();
+      });
+    } else if (nameInput) {
+      // Muscu : le nom vient d'un menu déroulant, jamais d'une saisie clavier.
+      nameInput.addEventListener("change", () => {
+        refreshHint(nameInput.value);
+        const exs = serializeExercisesFromDOM();
+        const target = exs.find((e) => e.id === card.dataset.id);
+        target.name = nameInput.value;
+        // Le poids de chaque série doit rester valide pour ce nouvel exercice :
+        // on les repositionne sur le premier poids disponible.
+        const newConfig = findExerciseConfig(target.name);
+        const possible = computePossibleWeights(newConfig);
+        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "" }));
+        draft.exercises = exs;
+        saveJSON(KEYS.draft, draft);
+        renderContent();
+      });
+    }
+
+    card.querySelectorAll("[data-category-btn]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (card.dataset.category === btn.dataset.categoryBtn) return;
+        const exs = serializeExercisesFromDOM();
+        const target = exs.find((e) => e.id === card.dataset.id);
+        target.category = btn.dataset.categoryBtn;
+        // On change de catégorie : le nom choisi ne correspond plus, on repart
+        // sur le premier exercice configuré dans cette nouvelle catégorie.
+        const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "push") === target.category);
+        target.name = firstInCategory ? firstInCategory.name : "";
+        const possible = firstInCategory ? computePossibleWeights(firstInCategory) : [];
+        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "" }));
+        draft.exercises = exs;
+        saveJSON(KEYS.draft, draft);
+        renderContent();
+      });
     });
-    card.addEventListener("focusin", (e) => {
-      if (e.target.classList.contains("set-weight")) {
-        const row = e.target.closest(".set-row");
-        if (row) card.dataset.activeSetId = row.dataset.id;
-      }
+
+    card.querySelectorAll(".set-weight").forEach((select) => {
+      select.addEventListener("change", scheduleDraftSave);
     });
-    card.addEventListener("click", (e) => {
-      const baseBtn = e.target.closest("[data-base-chip]");
-      const incBtn = e.target.closest("[data-inc-chip]");
-      if (!baseBtn && !incBtn) return;
-      if (baseBtn) {
-        card.dataset.selectedBase = baseBtn.dataset.baseChip;
-        chipArea.querySelectorAll("[data-base-chip]").forEach((b) => b.classList.toggle("active", b === baseBtn));
-      }
-      if (incBtn) {
-        card.dataset.selectedIncrement = incBtn.dataset.incChip;
-        chipArea.querySelectorAll("[data-inc-chip]").forEach((b) => b.classList.toggle("active", b === incBtn));
-      }
-      const base = parseFloat(card.dataset.selectedBase || "0");
-      const inc = parseFloat(card.dataset.selectedIncrement || "0");
-      const total = Math.round((base + inc) * 100) / 100;
-      let targetInput = null;
-      if (card.dataset.activeSetId) {
-        targetInput = card.querySelector(`.set-row[data-id="${card.dataset.activeSetId}"] .set-weight`);
-      }
-      if (!targetInput) {
-        const rows = card.querySelectorAll(".set-row");
-        if (rows.length) targetInput = rows[rows.length - 1].querySelector(".set-weight");
-      }
-      if (targetInput) {
-        targetInput.value = total;
+
+    card.querySelectorAll(".set-row").forEach((row) => {
+      const minusBtn = row.querySelector("[data-rep-minus]");
+      const plusBtn = row.querySelector("[data-rep-plus]");
+      const valueEl = row.querySelector("[data-rep-value]");
+      const hiddenInput = row.querySelector(".set-reps");
+      if (!minusBtn || !plusBtn || !hiddenInput) return;
+      function bumpReps(delta) {
+        const current = parseInt(hiddenInput.value, 10) || 0;
+        const next = Math.max(0, current + delta);
+        hiddenInput.value = next;
+        valueEl.textContent = next;
         scheduleDraftSave();
       }
+      minusBtn.addEventListener("click", () => bumpReps(-1));
+      plusBtn.addEventListener("click", () => bumpReps(1));
+      // Double-clic/double-tap = +5 (ou -5) au total : chaque clic simple a déjà
+      // ajouté ±1 (donc ±2 pour les deux clics du double-clic), le gestionnaire
+      // dblclick n'ajoute donc que ±3 de plus pour arriver exactement à ±5,
+      // sans latence artificielle sur un simple tap.
+      minusBtn.addEventListener("dblclick", () => bumpReps(-3));
+      plusBtn.addEventListener("dblclick", () => bumpReps(3));
     });
-    card.querySelectorAll(".set-weight, .set-reps").forEach((input) => {
-      input.addEventListener("input", scheduleDraftSave);
-    });
+
     card.querySelectorAll("[data-move-set-up]").forEach((btn) => {
       btn.addEventListener("click", () => moveSet(card, btn.dataset.moveSetUp, -1));
     });
@@ -3056,6 +3178,13 @@ function attachLogListeners() {
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
         target.exType = btn.dataset.setType;
+        if (btn.dataset.setType === "muscu") {
+          const cat = target.category || "push";
+          const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "push") === cat);
+          target.name = firstInCategory ? firstInCategory.name : "";
+          const possible = firstInCategory ? computePossibleWeights(firstInCategory) : [];
+          target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", reps: s.reps || 10 }));
+        }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
@@ -3065,8 +3194,11 @@ function attachLogListeners() {
       const exs = serializeExercisesFromDOM();
       if (exs.length <= 1) {
         const target = exs.find((e) => e.id === card.dataset.id);
-        target.name = "";
-        target.sets = [{ id: uid(), weight: "", reps: "" }];
+        const fresh = emptyExercise();
+        target.name = fresh.name;
+        target.category = fresh.category;
+        target.exType = "muscu";
+        target.sets = fresh.sets;
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
