@@ -28,6 +28,7 @@
   #app.theme-run { --accent: #007AFF; --accent-rgb: 0, 122, 255; }
   #app.theme-weight { --accent: #5E5CE6; --accent-rgb: 94, 92, 230; }
   #app.theme-calendar { --accent: #8E8E93; --accent-rgb: 142, 142, 147; }
+  #app.theme-settings { --accent: #8E8E93; --accent-rgb: 142, 142, 147; }
   #app.theme-swim { --accent: #32ADE6; --accent-rgb: 50, 173, 230; }
   #app.theme-bike { --accent: #AF52DE; --accent-rgb: 175, 82, 222; }
   #app.theme-home { --accent: #1D1D1F; --accent-rgb: 29, 29, 31; }
@@ -93,6 +94,15 @@
   .ex-type-toggle { display: flex; gap: 6px; margin: 0 14px 10px 17px; }
   .ex-type-btn { background: var(--surface-2); border: none; color: var(--text-dim); font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px; cursor: pointer; }
   .ex-type-btn.active { background: var(--accent); color: #fff; }
+  .weight-chip-area:empty { display: none; }
+  .weight-chip-label { font-size: 11.5px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.2px; margin: 10px 0 6px; display: flex; align-items: center; gap: 5px; }
+  .weight-chip-label svg { width: 12px; height: 12px; }
+  .weight-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .weight-chip { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .weight-chip.increment { padding: 7px 11px; min-width: 38px; text-align: center; }
+  .weight-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .weight-chip.removable { display: inline-flex; align-items: center; gap: 5px; padding-right: 8px; }
+  .weight-chip.removable button { display: flex; background: none; border: none; color: inherit; opacity: 0.6; padding: 0; cursor: pointer; }
   .last-perf b { color: var(--accent); font-weight: 700; }
   .sets-list { padding: 0 0 10px; display: flex; flex-direction: column; gap: 2px; }
   .sets-header { display: flex; align-items: center; gap: 10px; padding: 0 14px 6px 17px; }
@@ -241,6 +251,7 @@ const KEYS = {
   bikeSessions: "gymlog:bike-sessions",
   bikeLibrary: "gymlog:bike-library",
   bikeDraft: "gymlog:bike-draft",
+  gymExerciseConfigs: "gymlog:gym-exercise-configs",
 };
 
 function formatRelativeTime(iso) {
@@ -502,6 +513,7 @@ const ICONS = {
   bike: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1" fill="currentColor"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
   chevronRight: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   stopwatch: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>',
 };
 
@@ -657,6 +669,32 @@ function formatBikeSessionTotalsLine(blocks) {
 /* ---------- state ---------- */
 let sessions = loadJSON(KEYS.sessions, []);
 let library = loadJSON(KEYS.library, []);
+let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
+let gymSettingsFormOpen = false;
+let gymSettingsEditingConfigId = null;
+let gymSettingsFormDraft = { name: "", category: "push", baseWeights: [], maxIncrement: 0 };
+let gymSettingsActiveCategory = "push";
+
+const GYM_EXERCISE_CATEGORIES = [
+  { key: "push", label: "Push" },
+  { key: "pull", label: "Pull" },
+  { key: "leg", label: "Leg" },
+];
+
+const EXERCISE_SUGGESTIONS = {
+  push: [
+    "Développé couché", "Développé incliné", "Développé militaire", "Développé haltères",
+    "Dips", "Pompes", "Écarté couché", "Extension triceps poulie", "Élévations latérales",
+  ],
+  pull: [
+    "Tirage horizontal", "Tirage vertical", "Rowing barre", "Rowing haltère",
+    "Tractions", "Curl biceps", "Curl marteau", "Face pull", "Shrugs",
+  ],
+  leg: [
+    "Squat", "Presse à cuisses", "Extension jambes", "Leg curl", "Fentes",
+    "Soulevé de terre", "Mollets", "Hip thrust", "Adducteurs", "Abducteurs",
+  ],
+};
 let weights = loadJSON(KEYS.weights, []);
 let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [emptyExercise()] };
 if (!Array.isArray(draft.exercises) || draft.exercises.length === 0) draft.exercises = [emptyExercise()];
@@ -965,6 +1003,28 @@ function getLastPerformance(name) {
   return null;
 }
 
+function findExerciseConfig(name) {
+  const norm = (name || "").trim().toLowerCase();
+  if (!norm) return null;
+  return gymExerciseConfigs.find((c) => c.name.trim().toLowerCase() === norm) || null;
+}
+
+function weightChipAreaHTML(config) {
+  if (!config || !config.baseWeights || config.baseWeights.length === 0) return "";
+  const bases = [...config.baseWeights].sort((a, b) => a - b);
+  const maxInc = config.maxIncrement || 0;
+  const baseChips = bases.map((w) => `<button type="button" class="weight-chip" data-base-chip="${w}">${w}kg</button>`).join("");
+  let incRow = "";
+  if (maxInc > 0) {
+    const incs = [];
+    for (let i = 0; i <= maxInc; i++) incs.push(i);
+    incRow = `<div class="weight-chip-row increments">${incs
+      .map((i) => `<button type="button" class="weight-chip increment" data-inc-chip="${i}">${i === 0 ? "+0" : "+" + i}</button>`)
+      .join("")}</div>`;
+  }
+  return `<div class="weight-chip-label">${ICONS.gear} Poids rapide (${config.name})</div><div class="weight-chip-row">${baseChips}</div>${incRow}`;
+}
+
 /* ---------- run app: draft helpers ---------- */
 function getPaceDecimalFromCard(card) {
   const minEl = card.querySelector(".block-pace-min");
@@ -1190,12 +1250,277 @@ function render() {
   if (currentApp === "calendar") { renderSharedCalendarApp(); return; }
   if (currentApp === "swim") { renderSwimApp(); return; }
   if (currentApp === "bike") { renderBikeApp(); return; }
+  if (currentApp === "settings") { renderSettingsApp(); return; }
+  if (currentApp === "settings-gym") { renderGymSettingsApp(); return; }
   renderGymApp();
 }
 
 function goHome() {
   currentApp = "home";
   render();
+}
+
+function renderSettingsApp() {
+  app.className = "theme-settings";
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="bar"></span>Paramètres</div>
+      <div class="header-sub">Personnalise chaque section</div>
+    </div>
+    <div class="content" id="content" style="padding-bottom: 24px;"></div>
+  `;
+  document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  renderSettingsContent();
+}
+
+function renderSettingsContent() {
+  document.getElementById("content").innerHTML = `
+    <div class="home-card" data-open-settings="gym">
+      <div class="home-card-icon" style="background: rgba(0,184,153,0.14); color: #00B899;">${ICONS.dumbbell}</div>
+      <div class="home-card-text">
+        <div class="home-card-title">Salle de sport</div>
+        <div class="home-card-sub">${gymExerciseConfigs.length} exercice${gymExerciseConfigs.length !== 1 ? "s" : ""} configuré${gymExerciseConfigs.length !== 1 ? "s" : ""}</div>
+      </div>
+      <div class="home-card-arrow">${ICONS.chevronRight}</div>
+    </div>
+  `;
+  document.querySelector("[data-open-settings]").addEventListener("click", () => {
+    currentApp = "settings-gym";
+    render();
+  });
+}
+
+function gymSettingsListHTML() {
+  const uncategorized = gymExerciseConfigs.some((c) => !GYM_EXERCISE_CATEGORIES.some((cat) => cat.key === c.category));
+  const tabs = [...GYM_EXERCISE_CATEGORIES, ...(uncategorized ? [{ key: "other", label: "Autres" }] : [])];
+  const tabsHTML = `
+    <div class="ex-type-toggle" style="margin-bottom:16px;">
+      ${tabs
+        .map(
+          (t) =>
+            `<button type="button" class="ex-type-btn ${gymSettingsActiveCategory === t.key ? "active" : ""}" data-settings-category="${t.key}">${t.label}</button>`
+        )
+        .join("")}
+    </div>`;
+
+  const filtered = gymExerciseConfigs.filter((c) => {
+    const cat = GYM_EXERCISE_CATEGORIES.some((k) => k.key === c.category) ? c.category : "other";
+    return cat === gymSettingsActiveCategory;
+  });
+
+  const emptyState = `<div class="empty-state">Aucun exercice dans cette catégorie pour l'instant.<br>Ajoute tes machines habituelles pour gagner du temps à la salle.</div>`;
+  const items = [...filtered]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => {
+      const bases = [...c.baseWeights].sort((a, b) => a - b).join(", ");
+      const incLabel = c.maxIncrement > 0 ? ` · +0 à +${c.maxIncrement}kg` : "";
+      return `
+      <div class="history-card">
+        <div class="history-head" data-edit-config="${c.id}" style="cursor:pointer;">
+          <div class="history-head-left">
+            <div class="history-date">${c.name}</div>
+            <div class="history-label">${bases ? bases + " kg" : "Aucun palier"}${incLabel}</div>
+          </div>
+          <button type="button" class="icon-btn" data-delete-config="${c.id}" aria-label="Supprimer">${ICONS.trash}</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+  return `${tabsHTML}${filtered.length === 0 ? emptyState : items}<button class="add-exercise-btn" id="add-config-btn">${ICONS.plus} Ajouter un exercice</button>`;
+}
+
+function gymSettingsFormHTML() {
+  const chips = gymSettingsFormDraft.baseWeights.length
+    ? [...gymSettingsFormDraft.baseWeights]
+        .sort((a, b) => a - b)
+        .map((w) => `<span class="weight-chip removable">${w}kg <button type="button" data-remove-base-weight="${w}">${ICONS.x}</button></span>`)
+        .join("")
+    : `<span style="color:var(--text-dim); font-size:13px;">Aucun palier ajouté</span>`;
+  const suggestions = EXERCISE_SUGGESTIONS[gymSettingsFormDraft.category] || [];
+  const suggestionsHTML = suggestions
+    .map((n) => `<button type="button" class="weight-chip" data-suggest-name="${n.replace(/"/g, "&quot;")}">${n}</button>`)
+    .join("");
+  return `
+    <div class="exercise-card">
+      <div class="field" style="margin-bottom:14px;">
+        <label>Catégorie</label>
+        <div class="ex-type-toggle" id="config-category-toggle">
+          ${GYM_EXERCISE_CATEGORIES.map(
+            (t) => `<button type="button" class="ex-type-btn ${gymSettingsFormDraft.category === t.key ? "active" : ""}" data-form-category="${t.key}">${t.label}</button>`
+          ).join("")}
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Suggestions (tape sur un nom pour le préremplir)</label>
+        <div class="weight-chip-row" id="config-suggestions-row">${suggestionsHTML}</div>
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Nom de l'exercice / machine</label>
+        <input type="text" id="config-name-input" placeholder="Ex. Leg press, Développé couché…" value="${(gymSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Poids possibles (paliers de la machine)</label>
+        <div class="weight-chip-row" id="config-base-weights-row">${chips}</div>
+        <div class="field-row" style="margin-top:8px;">
+          <input type="number" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
+          <button type="button" class="add-exercise-btn" id="config-add-base-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:6px;">
+        <label>Incrément maximum (kg)</label>
+        <input type="number" inputmode="decimal" min="0" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}">
+        <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Certaines machines permettent d'ajouter 1, 2 ou 3 kg en plus du palier choisi. Mets 0 si ce n'est pas le cas.</div>
+      </div>
+      <div id="config-form-error"></div>
+      <button class="save-btn" id="save-config-btn">${ICONS.check} Enregistrer</button>
+      <button class="backup-btn" id="cancel-config-btn" style="margin-top:10px;">Annuler</button>
+    </div>
+  `;
+}
+
+function renderGymSettingsApp() {
+  app.className = "theme-gym";
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-title"><button type="button" class="back-btn" data-back-settings>${ICONS.back}</button><span class="bar"></span>Salle de sport</div>
+      <div class="header-sub">Exercices et poids préconfigurés</div>
+    </div>
+    <div class="content" id="content" style="padding-bottom: 24px;"></div>
+  `;
+  document.querySelector("[data-back-settings]").addEventListener("click", () => {
+    gymSettingsFormOpen = false;
+    currentApp = "settings";
+    render();
+  });
+  renderGymSettingsContent();
+}
+
+function renderGymSettingsContent() {
+  document.getElementById("content").innerHTML = gymSettingsFormOpen ? gymSettingsFormHTML() : gymSettingsListHTML();
+  attachGymSettingsListeners();
+}
+
+function attachGymSettingsListeners() {
+  document.querySelectorAll("[data-settings-category]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      gymSettingsActiveCategory = btn.dataset.settingsCategory;
+      renderGymSettingsContent();
+    });
+  });
+  const addBtn = document.getElementById("add-config-btn");
+  if (addBtn) {
+    addBtn.addEventListener("click", () => {
+      gymSettingsFormOpen = true;
+      gymSettingsEditingConfigId = null;
+      const defaultCategory = gymSettingsActiveCategory === "other" ? "push" : gymSettingsActiveCategory;
+      gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0 };
+      renderGymSettingsContent();
+    });
+  }
+  document.querySelectorAll("[data-edit-config]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const config = gymExerciseConfigs.find((c) => c.id === el.dataset.editConfig);
+      if (!config) return;
+      gymSettingsFormOpen = true;
+      gymSettingsEditingConfigId = config.id;
+      gymSettingsFormDraft = {
+        name: config.name,
+        category: GYM_EXERCISE_CATEGORIES.some((c) => c.key === config.category) ? config.category : "push",
+        baseWeights: [...config.baseWeights],
+        maxIncrement: config.maxIncrement || 0,
+      };
+      renderGymSettingsContent();
+    });
+  });
+  document.querySelectorAll("[data-delete-config]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      showConfirm(
+        "Supprimer cet exercice configuré ? Les séances déjà enregistrées ne sont pas affectées.",
+        () => {
+          gymExerciseConfigs = gymExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteConfig);
+          saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
+          renderGymSettingsContent();
+        },
+        { confirmLabel: "Supprimer", danger: true }
+      );
+    });
+  });
+
+  if (!gymSettingsFormOpen) return;
+
+  const nameInput = document.getElementById("config-name-input");
+  const incInput = document.getElementById("config-max-increment");
+  const newWeightInput = document.getElementById("config-new-base-weight");
+
+  function syncFormFromInputs() {
+    gymSettingsFormDraft.name = nameInput.value;
+    gymSettingsFormDraft.maxIncrement = parseFloat(incInput.value) || 0;
+  }
+
+  document.querySelectorAll("[data-form-category]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      syncFormFromInputs();
+      gymSettingsFormDraft.category = btn.dataset.formCategory;
+      renderGymSettingsContent();
+    });
+  });
+  document.querySelectorAll("[data-suggest-name]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      nameInput.value = btn.dataset.suggestName;
+      nameInput.focus();
+    });
+  });
+  document.getElementById("config-add-base-weight-btn").addEventListener("click", () => {
+    syncFormFromInputs();
+    const val = parseFloat(newWeightInput.value);
+    if (!isNaN(val) && val >= 0 && !gymSettingsFormDraft.baseWeights.includes(val)) {
+      gymSettingsFormDraft.baseWeights.push(val);
+    }
+    renderGymSettingsContent();
+  });
+  document.querySelectorAll("[data-remove-base-weight]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      syncFormFromInputs();
+      const val = parseFloat(btn.dataset.removeBaseWeight);
+      gymSettingsFormDraft.baseWeights = gymSettingsFormDraft.baseWeights.filter((w) => w !== val);
+      renderGymSettingsContent();
+    });
+  });
+  document.getElementById("cancel-config-btn").addEventListener("click", () => {
+    gymSettingsFormOpen = false;
+    renderGymSettingsContent();
+  });
+  document.getElementById("save-config-btn").addEventListener("click", () => {
+    syncFormFromInputs();
+    const errorSlot = document.getElementById("config-form-error");
+    const name = gymSettingsFormDraft.name.trim();
+    if (!name) {
+      errorSlot.innerHTML = `<div class="error-msg">Donne un nom à cet exercice.</div>`;
+      return;
+    }
+    if (gymSettingsFormDraft.baseWeights.length === 0) {
+      errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un poids possible.</div>`;
+      return;
+    }
+    errorSlot.innerHTML = "";
+    const newConfig = {
+      id: gymSettingsEditingConfigId || uid(),
+      name,
+      category: gymSettingsFormDraft.category,
+      baseWeights: gymSettingsFormDraft.baseWeights,
+      maxIncrement: gymSettingsFormDraft.maxIncrement || 0,
+    };
+    if (gymSettingsEditingConfigId) {
+      gymExerciseConfigs = gymExerciseConfigs.map((c) => (c.id === gymSettingsEditingConfigId ? newConfig : c));
+    } else {
+      gymExerciseConfigs.push(newConfig);
+    }
+    saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
+    gymSettingsFormOpen = false;
+    renderGymSettingsContent();
+  });
+  nameInput.focus();
 }
 
 function renderHome() {
@@ -1251,6 +1576,14 @@ function renderHome() {
         <div class="home-card-text">
           <div class="home-card-title">Calendrier</div>
           <div class="home-card-sub">${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length} séance${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length !== 1 ? "s" : ""} au total</div>
+        </div>
+        <div class="home-card-arrow">${ICONS.chevronRight}</div>
+      </div>
+      <div class="home-card" data-open-app="settings">
+        <div class="home-card-icon" style="background: rgba(142,142,147,0.14); color: #8E8E93;">${ICONS.gear}</div>
+        <div class="home-card-text">
+          <div class="home-card-title">Paramètres</div>
+          <div class="home-card-sub">Exercices et poids préconfigurés</div>
         </div>
         <div class="home-card-arrow">${ICONS.chevronRight}</div>
       </div>
@@ -1453,6 +1786,7 @@ function exerciseCardHTML(ex) {
       <button type="button" class="ex-type-btn ${isCardio ? "active" : ""}" data-set-type="cardio">Cardio</button>
     </div>
     ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
+    <div class="weight-chip-area" data-chip-area>${!isCardio ? weightChipAreaHTML(findExerciseConfig(ex.name)) : ""}</div>
     <div class="sets-header"><span class="spacer"></span>${isCardio ? "<span>Min</span><span>Km</span>" : "<span>Reps</span><span>Kg</span>"}</div>
     <div class="sets-list">${setsHTML}</div>
     <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>
@@ -1461,7 +1795,8 @@ function exerciseCardHTML(ex) {
 
 function logTabHTML() {
   const exercisesHTML = draft.exercises.map(exerciseCardHTML).join("");
-  const libOptions = library.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
+  const allNames = Array.from(new Set([...gymExerciseConfigs.map((c) => c.name), ...library])).sort((a, b) => a.localeCompare(b));
+  const libOptions = allNames.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
   const editBanner = editingSessionId
     ? `<div class="edit-banner">Modification d'une séance existante<button type="button" id="cancel-edit-btn">Annuler</button></div>`
     : "";
@@ -2670,6 +3005,7 @@ function attachLogListeners() {
   document.querySelectorAll("#exercises-container .exercise-card").forEach((card) => {
     const nameInput = card.querySelector(".ex-name-input");
     const hint = card.querySelector("[data-hint]");
+    const chipArea = card.querySelector("[data-chip-area]");
     nameInput.addEventListener("input", () => {
       const last = getLastPerformance(nameInput.value);
       if (last) {
@@ -2679,7 +3015,46 @@ function attachLogListeners() {
         hint.style.display = "none";
         hint.innerHTML = "";
       }
+      if (card.dataset.extype !== "cardio") {
+        delete card.dataset.selectedBase;
+        delete card.dataset.selectedIncrement;
+        chipArea.innerHTML = weightChipAreaHTML(findExerciseConfig(nameInput.value));
+      }
       scheduleDraftSave();
+    });
+    card.addEventListener("focusin", (e) => {
+      if (e.target.classList.contains("set-weight")) {
+        const row = e.target.closest(".set-row");
+        if (row) card.dataset.activeSetId = row.dataset.id;
+      }
+    });
+    card.addEventListener("click", (e) => {
+      const baseBtn = e.target.closest("[data-base-chip]");
+      const incBtn = e.target.closest("[data-inc-chip]");
+      if (!baseBtn && !incBtn) return;
+      if (baseBtn) {
+        card.dataset.selectedBase = baseBtn.dataset.baseChip;
+        chipArea.querySelectorAll("[data-base-chip]").forEach((b) => b.classList.toggle("active", b === baseBtn));
+      }
+      if (incBtn) {
+        card.dataset.selectedIncrement = incBtn.dataset.incChip;
+        chipArea.querySelectorAll("[data-inc-chip]").forEach((b) => b.classList.toggle("active", b === incBtn));
+      }
+      const base = parseFloat(card.dataset.selectedBase || "0");
+      const inc = parseFloat(card.dataset.selectedIncrement || "0");
+      const total = Math.round((base + inc) * 100) / 100;
+      let targetInput = null;
+      if (card.dataset.activeSetId) {
+        targetInput = card.querySelector(`.set-row[data-id="${card.dataset.activeSetId}"] .set-weight`);
+      }
+      if (!targetInput) {
+        const rows = card.querySelectorAll(".set-row");
+        if (rows.length) targetInput = rows[rows.length - 1].querySelector(".set-weight");
+      }
+      if (targetInput) {
+        targetInput.value = total;
+        scheduleDraftSave();
+      }
     });
     card.querySelectorAll(".set-weight, .set-reps").forEach((input) => {
       input.addEventListener("input", scheduleDraftSave);
