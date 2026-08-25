@@ -65,8 +65,7 @@
   }
   .header-title .bar { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; }
   .header-sub { color: var(--text-dim); font-size: 14px; margin-top: 4px; padding-left: 20px; font-weight: 500; }
-  .content { flex: 1; padding: 6px 16px 120px; overflow-y: auto; }
-  #app.theme-home .content { overflow: hidden; }
+  .content { flex: 1; padding: 14px 16px 120px; overflow-y: auto; }
   .field-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
   .field { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   .field label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-dim); font-weight: 600; }
@@ -88,7 +87,7 @@
     font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 16px; letter-spacing: -0.1px;
     background: transparent; border: none; padding: 4px 2px;
   }
-  .icon-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 7px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .icon-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 7px; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; }
   .icon-btn:hover { background: var(--surface-2); color: var(--text); }
   .last-perf { margin: 0 14px 8px 17px; font-size: 12.5px; color: var(--text-dim); background: var(--surface-2); border-radius: 10px; padding: 7px 11px; font-weight: 500; }
   .ex-type-toggle { display: flex; gap: 6px; margin: 0 14px 10px 17px; }
@@ -134,10 +133,10 @@
   .empty-state { text-align: center; padding: 70px 20px; color: var(--text-dim); }
   .empty-state .bar-icon { margin-bottom: 16px; opacity: 0.35; }
   .history-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
-  .history-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 17px; cursor: pointer; }
-  .history-head-left { display: flex; flex-direction: column; gap: 3px; }
+  .history-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 17px; cursor: pointer; }
+  .history-head-left { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
   .history-date { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 15px; text-transform: capitalize; letter-spacing: -0.1px; }
-  .history-label { font-size: 12.5px; color: var(--accent); font-weight: 600; }
+  .history-label { font-size: 12.5px; color: var(--accent); font-weight: 600; line-height: 1.4; }
   .history-meta { font-size: 12.5px; color: var(--text-dim); }
   .history-body { padding: 0 17px 15px; display: flex; flex-direction: column; gap: 10px; }
   .history-ex-name { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
@@ -214,6 +213,11 @@
   .home-card-title { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 16.5px; letter-spacing: -0.1px; }
   .home-card-sub { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; font-weight: 500; }
   .home-card-arrow { color: var(--text-dim); flex-shrink: 0; }
+  .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .home-tile { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; box-shadow: var(--shadow-sm); }
+  .home-tile-icon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .home-tile-title { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -0.1px; }
+  .home-tile-sub { font-size: 11.5px; color: var(--text-dim); margin-top: 1px; font-weight: 500; line-height: 1.3; }
   .block-fields-row { display: flex; gap: 10px; margin: 0 14px 12px 17px; }
   input:disabled { opacity: 0.55; background: var(--surface-2); cursor: not-allowed; }
   .block-mode-hint { font-size: 11.5px; color: var(--text-dim); margin: -6px 14px 12px 17px; font-style: normal; }
@@ -1531,61 +1535,42 @@ function renderHome() {
       <div class="header-sub">Choisis ton activité</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;">
-      <div class="home-card" data-open-app="gym">
-        <div class="home-card-icon" style="background: rgba(95,191,160,0.14); color: #5FBFA0;">${ICONS.dumbbell}</div>
-        <div class="home-card-text">
-          <div class="home-card-title">Salle de sport</div>
-          <div class="home-card-sub">${sessions.length} séance${sessions.length !== 1 ? "s" : ""} enregistrée${sessions.length !== 1 ? "s" : ""}</div>
+      <div class="home-grid">
+        <div class="home-tile" data-open-app="gym">
+          <div class="home-tile-icon" style="background: rgba(95,191,160,0.14); color: #5FBFA0;">${ICONS.dumbbell}</div>
+          <div class="home-tile-title">Salle de sport</div>
+          <div class="home-tile-sub">${sessions.length} séance${sessions.length !== 1 ? "s" : ""}</div>
         </div>
-        <div class="home-card-arrow">${ICONS.chevronRight}</div>
-      </div>
-      <div class="home-card" data-open-app="run">
-        <div class="home-card-icon" style="background: rgba(108,123,255,0.14); color: #6C7BFF;">${ICONS.stopwatch}</div>
-        <div class="home-card-text">
-          <div class="home-card-title">Course à pied</div>
-          <div class="home-card-sub">${runSessions.length} séance${runSessions.length !== 1 ? "s" : ""} enregistrée${runSessions.length !== 1 ? "s" : ""}</div>
+        <div class="home-tile" data-open-app="run">
+          <div class="home-tile-icon" style="background: rgba(108,123,255,0.14); color: #6C7BFF;">${ICONS.stopwatch}</div>
+          <div class="home-tile-title">Course à pied</div>
+          <div class="home-tile-sub">${runSessions.length} séance${runSessions.length !== 1 ? "s" : ""}</div>
         </div>
-        <div class="home-card-arrow">${ICONS.chevronRight}</div>
-      </div>
-      <div class="home-card" data-open-app="swim">
-        <div class="home-card-icon" style="background: rgba(79,195,217,0.14); color: #4FC3D9;">${ICONS.swim}</div>
-        <div class="home-card-text">
-          <div class="home-card-title">Natation</div>
-          <div class="home-card-sub">${swimSessions.length} séance${swimSessions.length !== 1 ? "s" : ""} enregistrée${swimSessions.length !== 1 ? "s" : ""}</div>
+        <div class="home-tile" data-open-app="swim">
+          <div class="home-tile-icon" style="background: rgba(79,195,217,0.14); color: #4FC3D9;">${ICONS.swim}</div>
+          <div class="home-tile-title">Natation</div>
+          <div class="home-tile-sub">${swimSessions.length} séance${swimSessions.length !== 1 ? "s" : ""}</div>
         </div>
-        <div class="home-card-arrow">${ICONS.chevronRight}</div>
-      </div>
-      <div class="home-card" data-open-app="bike">
-        <div class="home-card-icon" style="background: rgba(196,143,224,0.14); color: #C48FE0;">${ICONS.bike}</div>
-        <div class="home-card-text">
-          <div class="home-card-title">Vélo</div>
-          <div class="home-card-sub">${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""} enregistrée${bikeSessions.length !== 1 ? "s" : ""}</div>
+        <div class="home-tile" data-open-app="bike">
+          <div class="home-tile-icon" style="background: rgba(196,143,224,0.14); color: #C48FE0;">${ICONS.bike}</div>
+          <div class="home-tile-title">Vélo</div>
+          <div class="home-tile-sub">${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""}</div>
         </div>
-        <div class="home-card-arrow">${ICONS.chevronRight}</div>
-      </div>
-      <div class="home-card" data-open-app="weight">
-        <div class="home-card-icon" style="background: rgba(167,139,250,0.14); color: #A78BFA;">${ICONS.scale}</div>
-        <div class="home-card-text">
-          <div class="home-card-title">Poids</div>
-          <div class="home-card-sub">${weights.length} pesée${weights.length !== 1 ? "s" : ""} enregistrée${weights.length !== 1 ? "s" : ""}</div>
+        <div class="home-tile" data-open-app="weight">
+          <div class="home-tile-icon" style="background: rgba(167,139,250,0.14); color: #A78BFA;">${ICONS.scale}</div>
+          <div class="home-tile-title">Poids</div>
+          <div class="home-tile-sub">${weights.length} pesée${weights.length !== 1 ? "s" : ""}</div>
         </div>
-        <div class="home-card-arrow">${ICONS.chevronRight}</div>
-      </div>
-      <div class="home-card" data-open-app="calendar">
-        <div class="home-card-icon" style="background: rgba(184,196,217,0.14); color: #B8C4D9;">${ICONS.calendarBig}</div>
-        <div class="home-card-text">
-          <div class="home-card-title">Calendrier</div>
-          <div class="home-card-sub">${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length} séance${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length !== 1 ? "s" : ""} au total</div>
+        <div class="home-tile" data-open-app="calendar">
+          <div class="home-tile-icon" style="background: rgba(184,196,217,0.14); color: #B8C4D9;">${ICONS.calendarBig}</div>
+          <div class="home-tile-title">Calendrier</div>
+          <div class="home-tile-sub">${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length} séance${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length !== 1 ? "s" : ""} au total</div>
         </div>
-        <div class="home-card-arrow">${ICONS.chevronRight}</div>
-      </div>
-      <div class="home-card" data-open-app="settings">
-        <div class="home-card-icon" style="background: rgba(142,142,147,0.14); color: #8E8E93;">${ICONS.gear}</div>
-        <div class="home-card-text">
-          <div class="home-card-title">Paramètres</div>
-          <div class="home-card-sub">Exercices et poids préconfigurés</div>
+        <div class="home-tile" data-open-app="settings">
+          <div class="home-tile-icon" style="background: rgba(142,142,147,0.14); color: #8E8E93;">${ICONS.gear}</div>
+          <div class="home-tile-title">Paramètres</div>
+          <div class="home-tile-sub">Exercices préconfigurés</div>
         </div>
-        <div class="home-card-arrow">${ICONS.chevronRight}</div>
       </div>
     </div>
   `;
