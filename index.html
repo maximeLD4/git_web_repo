@@ -50,7 +50,7 @@
     overflow-x: hidden;
     background: var(--bg);
   }
-  .header { padding: 100px 20px 16px; background: var(--bg); }
+  .header { padding: 20px 20px 16px; background: var(--bg); }
   .header-title {
     font-family: -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 28px;
     letter-spacing: -0.4px; color: var(--text);
@@ -4010,7 +4010,68 @@ window.__scriptableImport = function (jsonString) {
   }
 };
 
-render();
+// ---------- Protection par mot de passe (empreinte SHA-256, jamais en clair) ----------
+// Remplace REPLACE_WITH_YOUR_HASH par l'empreinte générée avec generate-hash.html.
+// Rappel : c'est un frein côté navigateur, pas une vraie sécurité serveur — le code
+// reste visible par quiconque consulte le dépôt, mais le mot de passe lui-même
+// n'apparaît jamais en clair, seule son empreinte.
+const PASSWORD_HASH = "80c65492faf92d5ee7206b6a591669be511d23d5dd4993f5fca5e1bb72ec5458";
+
+async function sha256Hex(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function renderPasswordGate() {
+  app.className = "";
+  app.innerHTML = `
+    <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:18px; background:var(--bg);">
+      <div style="font-family:'Oswald',sans-serif; font-weight:700; font-size:24px; letter-spacing:1px; color:var(--text);">GYMLOG</div>
+      <form id="password-form" style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px;">
+        <input type="password" id="password-input" placeholder="Mot de passe" autocomplete="current-password"
+          style="padding:13px 14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:16px; width:100%; box-sizing:border-box;">
+        <button type="submit" class="save-btn">Entrer</button>
+        <div id="password-error" style="color:#C1443C; font-size:13px; text-align:center; min-height:16px;"></div>
+      </form>
+    </div>
+  `;
+  const form = document.getElementById("password-form");
+  const input = document.getElementById("password-input");
+  const errorEl = document.getElementById("password-error");
+  input.focus();
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const hash = await sha256Hex(input.value);
+    if (hash === PASSWORD_HASH) {
+      setUnlocked();
+      render();
+    } else {
+      errorEl.textContent = "Mot de passe incorrect.";
+      input.value = "";
+      input.focus();
+    }
+  });
+}
+
+function isUnlocked() {
+  try {
+    return sessionStorage.getItem("gymlog:unlocked") === "1";
+  } catch (e) {
+    return false;
+  }
+}
+function setUnlocked() {
+  try {
+    sessionStorage.setItem("gymlog:unlocked", "1");
+  } catch (e) {}
+}
+
+if (isUnlocked()) {
+  render();
+} else {
+  renderPasswordGate();
+}
 </script>
 </body>
 </html>
