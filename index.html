@@ -106,6 +106,15 @@
   .ex-type-btn.active { background: var(--accent); color: #fff; }
   .ex-type-toggle.wrap-toggle { flex-wrap: wrap; margin: 0 14px 10px 17px; }
   .ex-type-toggle.wrap-toggle .ex-type-btn { flex: 0 0 auto; }
+  select.ex-name-pill {
+    background-color: var(--accent); color: #fff; border: none; border-radius: 999px;
+    padding: 6px 30px 6px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    -webkit-appearance: none; appearance: none; margin: 0 14px 10px 17px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 11px;
+    max-width: calc(100% - 31px);
+  }
+  select.ex-name-pill:focus { outline: none; }
   .weight-chip-area:empty { display: none; }
   .weight-chip-label { font-size: 11.5px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.2px; margin: 10px 0 6px; display: flex; align-items: center; gap: 5px; }
   .weight-chip-label svg { width: 12px; height: 12px; }
@@ -1782,17 +1791,14 @@ function categoryToggleHTML(category) {
 }
 
 function nameSelectHTML(configsInCategory, effectiveConfig) {
-  const buttons = [...configsInCategory]
+  const options = [...configsInCategory]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(
       (c) =>
-        `<button type="button" class="ex-type-btn ${effectiveConfig && c.id === effectiveConfig.id ? "active" : ""}" data-name-btn="${c.name.replace(/"/g, "&quot;")}">${c.name}</button>`
+        `<option value="${c.name.replace(/"/g, "&quot;")}" ${effectiveConfig && c.id === effectiveConfig.id ? "selected" : ""}>${c.name}</option>`
     )
     .join("");
-  const hiddenValue = effectiveConfig ? effectiveConfig.name.replace(/"/g, "&quot;") : "";
-  return `
-    <div class="ex-type-toggle wrap-toggle" data-name-toggle>${buttons}</div>
-    <input type="hidden" class="ex-name-input" value="${hiddenValue}">`;
+  return `<select class="ex-name-input ex-name-pill">${options}</select>`;
 }
 
 function exerciseCardHTML(ex) {
@@ -3111,12 +3117,9 @@ function attachLogListeners() {
         refreshHint(nameInput.value);
         scheduleDraftSave();
       });
-    }
-
-    card.querySelectorAll("[data-name-btn]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const chosenName = btn.dataset.nameBtn;
-        if (nameInput && nameInput.value === chosenName) return;
+    } else if (nameInput) {
+      nameInput.addEventListener("change", () => {
+        const chosenName = nameInput.value;
         refreshHint(chosenName);
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
@@ -3130,7 +3133,7 @@ function attachLogListeners() {
         saveJSON(KEYS.draft, draft);
         renderContent();
       });
-    });
+    }
 
     card.querySelectorAll("[data-category-btn]").forEach((btn) => {
       btn.addEventListener("click", () => {
