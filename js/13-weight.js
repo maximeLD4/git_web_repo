@@ -3,7 +3,7 @@ function renderWeightApp() {
   app.className = "theme-weight";
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="bar"></span>Poids</div>
+      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="header-icon">${ICONS.scale}</span>Poids</div>
       <div class="header-sub">${weights.length} pesée${weights.length !== 1 ? "s" : ""} enregistrée${weights.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>

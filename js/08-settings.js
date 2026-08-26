@@ -24,7 +24,7 @@ function renderSettingsApp() {
   app.className = "theme-settings";
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="bar"></span>Paramètres</div>
+      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="header-icon">${ICONS.gear}</span>Paramètres</div>
       <div class="header-sub">Personnalise chaque section</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
@@ -142,7 +142,7 @@ function renderGymSettingsApp() {
   app.className = "theme-gym";
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-back-settings>${ICONS.back}</button><span class="bar"></span>Salle de sport</div>
+      <div class="header-title"><button type="button" class="back-btn" data-back-settings>${ICONS.back}</button><span class="header-icon">${ICONS.dumbbell}</span>Salle de sport</div>
       <div class="header-sub">Exercices et poids préconfigurés</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>

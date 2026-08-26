@@ -114,7 +114,7 @@ function renderBikeApp() {
   app.className = "theme-bike";
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="bar"></span>Vélo</div>
+      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="header-icon">${ICONS.bike}</span>Vélo</div>
       <div class="header-sub">${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""} enregistrée${bikeSessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>

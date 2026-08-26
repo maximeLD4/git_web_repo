@@ -110,7 +110,7 @@ function renderGymApp() {
   app.className = "theme-gym";
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="bar"></span>Salle de sport</div>
+      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="header-icon">${ICONS.dumbbell}</span>Salle de sport</div>
       <div class="header-sub">${sessions.length} séance${sessions.length !== 1 ? "s" : ""} enregistrée${sessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>

@@ -53,7 +53,8 @@
     letter-spacing: -0.4px; color: var(--text);
     display: flex; align-items: center; gap: 10px;
   }
-  .header-title .bar { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; }
+  .header-title .header-icon { display: flex; align-items: center; color: var(--accent); }
+  .header-title .header-icon svg { width: 22px; height: 22px; }
   .home-wordmark { font-family: -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: 3px; color: var(--text); }
   .header-sub { color: var(--text-dim); font-size: 14px; margin-top: 4px; padding-left: 20px; font-weight: 500; }
   .content { flex: 1; padding: 14px 16px 120px; overflow-y: auto; }

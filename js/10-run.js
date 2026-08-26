@@ -171,7 +171,7 @@ function renderRunApp() {
   app.className = "theme-run";
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="bar"></span>Course à pied</div>
+      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="header-icon">${ICONS.stopwatch}</span>Course à pied</div>
       <div class="header-sub">${runSessions.length} séance${runSessions.length !== 1 ? "s" : ""} enregistrée${runSessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>

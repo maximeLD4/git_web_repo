@@ -146,7 +146,7 @@ function renderSwimApp() {
   app.className = "theme-swim";
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="bar"></span>Natation</div>
+      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="header-icon">${ICONS.swim}</span>Natation</div>
       <div class="header-sub">${swimSessions.length} séance${swimSessions.length !== 1 ? "s" : ""} enregistrée${swimSessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>
