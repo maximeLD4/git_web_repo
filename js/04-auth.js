@@ -46,7 +46,7 @@ function pullFromFirebase() {
 function renderAuthLoadingScreen(message) {
   app.className = "";
   app.innerHTML = `
-    <div style="height:100%; display:flex; align-items:center; justify-content:center; background:#F7F1E3; color:#8A7F6C; font-family:-apple-system,system-ui,sans-serif; font-size:14px; text-align:center; padding:24px;">
+    <div style="position:fixed; inset:0; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#F7F1E3; color:#8A7F6C; font-family:-apple-system,system-ui,sans-serif; font-size:14px; text-align:center; padding:24px;">
       ${message || "Chargement..."}
     </div>
   `;
@@ -55,7 +55,7 @@ function renderAuthLoadingScreen(message) {
 function renderLoginScreen() {
   app.className = "";
   app.innerHTML = `
-    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:22px; background:#F7F1E3;">
+    <div style="position:fixed; inset:0; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:22px; background:#F7F1E3;">
       <div style="width:64px; height:64px; border-radius:20px; background:#00B899; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(0,184,153,0.25);">${ICONS.dumbbell}</div>
       <div style="text-align:center;">
         <div style="font-family:-apple-system,system-ui,sans-serif; font-weight:800; font-size:24px; letter-spacing:-0.3px; color:#3A3229;">GymLog</div>

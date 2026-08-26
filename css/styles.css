@@ -50,6 +50,7 @@
   }
   .header { position: relative; padding: calc(20px + env(safe-area-inset-top)) 20px 16px; background: var(--bg); text-align: center; }
   .header .back-btn { position: absolute; left: 20px; top: calc(20px + env(safe-area-inset-top)); }
+  .header .logout-btn { position: absolute; right: 20px; top: calc(20px + env(safe-area-inset-top)); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 2px 0 2px 6px; display: flex; align-items: center; }
   .header-icon-only { display: inline-flex; align-items: center; justify-content: center; color: var(--accent); }
   .header-icon-only svg { width: 30px; height: 30px; }
   .home-wordmark { font-family: -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: 3px; color: var(--text); }

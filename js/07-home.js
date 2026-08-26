@@ -3,6 +3,7 @@ function renderHome() {
   app.className = "theme-home";
   app.innerHTML = `
     <div class="header" style="text-align:center;">
+      <button type="button" class="logout-btn" data-logout aria-label="Se déconnecter">${ICONS.logout}</button>
       <div class="home-wordmark">GYMLOG</div>
       <div class="header-sub" style="padding-left:0;">Choisis ton activité</div>
     </div>
@@ -56,5 +57,8 @@ function renderHome() {
       currentApp = el.dataset.openApp;
       render();
     });
+  });
+  document.querySelector("[data-logout]").addEventListener("click", () => {
+    showConfirm("Te déconnecter ? Tu devras ressaisir tes identifiants pour retrouver ce profil.", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
   });
 }
