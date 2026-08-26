@@ -39,8 +39,7 @@ function goHome() {
   render();
 }
 
-if (isUnlocked()) {
-  render();
-} else {
-  renderPasswordGate();
-}
+// Le premier écran affiché (connexion ou app) est décidé par
+// firebase.auth().onAuthStateChanged(...), enregistré dans 04-auth.js.
+// On affiche un état de chargement le temps que Firebase réponde.
+renderAuthLoadingScreen("Chargement...");

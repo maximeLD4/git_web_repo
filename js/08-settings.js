@@ -26,7 +26,7 @@ function renderSettingsApp() {
     <div class="header">
       <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
       <div class="header-icon-only">${ICONS.gear}</div>
-      <div class="header-sub">Personnalise chaque section</div>
+      <div class="header-sub">${currentUser && currentUser.email ? currentUser.email : "Personnalise chaque section"}</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
   `;
@@ -44,10 +44,14 @@ function renderSettingsContent() {
       </div>
       <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
+    <button type="button" class="backup-btn" id="logout-btn" style="margin-top:16px;">${ICONS.back} Se déconnecter</button>
   `;
   document.querySelector("[data-open-settings]").addEventListener("click", () => {
     currentApp = "settings-gym";
     render();
+  });
+  document.getElementById("logout-btn").addEventListener("click", () => {
+    showConfirm("Te déconnecter ? Tu devras ressaisir tes identifiants pour retrouver ce profil.", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
   });
 }
 

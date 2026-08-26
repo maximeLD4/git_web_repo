@@ -7,7 +7,7 @@ window.__scriptableDirty = false;
 
 window.__scriptableExport = function () {
   return JSON.stringify({
-    sessions, library, weights,
+    sessions, library, weights, gymExerciseConfigs,
     runSessions, runLibrary,
     swimSessions, swimLibrary,
     bikeSessions, bikeLibrary,

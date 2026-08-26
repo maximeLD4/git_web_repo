@@ -92,10 +92,3 @@ const ACTIVITY_META = [
   { key: "swim", color: "#4FC3D9", rgb: "79,195,217", label: "Natation" },
   { key: "bike", color: "#C48FE0", rgb: "196,143,224", label: "Vélo" },
 ];
-
-// ---------- Protection par mot de passe (empreinte SHA-256, jamais en clair) ----------
-// Remplace REPLACE_WITH_YOUR_HASH par l'empreinte générée avec generate-hash.html.
-// Rappel : c'est un frein côté navigateur, pas une vraie sécurité serveur — le code
-// reste visible par quiconque consulte le dépôt, mais le mot de passe lui-même
-// n'apparaît jamais en clair, seule son empreinte.
-const PASSWORD_HASH = "80c65492faf92d5ee7206b6a591669be511d23d5dd4993f5fca5e1bb72ec5458";

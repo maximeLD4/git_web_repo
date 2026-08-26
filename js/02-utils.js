@@ -37,6 +37,10 @@ function saveJSON(key, value) {
   // Simple drapeau consulté périodiquement par Scriptable (voir GymLog-Scriptable.js).
   // Ne fait rien de risqué et n'a aucun effet quand l'app tourne dans Safari classique.
   window.__scriptableDirty = true;
+  // Synchro cloud (Firebase) débounced — définie dans 04-auth.js, chargé avant
+  // ce fichier n'est donc pas nécessaire : au moment où saveJSON est réellement
+  // appelée (après le chargement complet de la page), la fonction existe déjà.
+  if (typeof scheduleFirebaseSync === "function") scheduleFirebaseSync();
 }
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
