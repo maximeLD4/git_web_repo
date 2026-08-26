@@ -29,6 +29,7 @@ function renderSettingsApp() {
       <div class="header-sub">${currentUser && currentUser.email ? currentUser.email : "Personnalise chaque section"}</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
+    <div style="position:fixed; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.6; font-family:-apple-system,system-ui,sans-serif;">v${APP_VERSION}</div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", goHome);
   renderSettingsContent();

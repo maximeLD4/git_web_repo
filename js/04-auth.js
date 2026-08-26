@@ -69,6 +69,7 @@ function renderLoginScreen() {
         <button type="submit" style="width:100%; background:#00B899; color:#fff; border:none; border-radius:999px; padding:15px; font-size:15.5px; font-weight:700; font-family:-apple-system,system-ui,sans-serif; cursor:pointer; box-shadow:0 4px 14px rgba(0,184,153,0.3);">Se connecter</button>
         <div id="login-error" style="color:#C1443C; font-size:13px; text-align:center; min-height:16px; font-family:-apple-system,system-ui,sans-serif;"></div>
       </form>
+      <div style="position:absolute; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:#B5AA97; font-family:-apple-system,system-ui,sans-serif;">v${APP_VERSION}</div>
     </div>
   `;
   const form = document.getElementById("login-form");
