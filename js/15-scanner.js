@@ -17,6 +17,8 @@ function renderScannerApp() {
 }
 
 function renderScannerContent() {
+  scannerExtractedWeights = [];
+  scannerLastRawText = "";
   document.getElementById("content").innerHTML = `
     <div class="scanner-wrap">
       <div id="scanner-status" class="empty-state">
@@ -123,44 +125,97 @@ async function analyzeScannerPhoto() {
   const canvas = document.getElementById("scanner-canvas");
   const actions = document.getElementById("scanner-actions");
 
-  actions.innerHTML = `<div class="empty-state">Chargement de l'outil de lecture...</div>`;
+  actions.innerHTML = `<div class="empty-state" id="scanner-progress">Chargement de l'outil de lecture...</div>`;
   try {
     await loadTesseractScript();
   } catch (e) {
-    scannerShowAnalyzeError("Impossible de charger l'outil de lecture. Vérifie ta connexion internet et réessaie.");
+    scannerShowAnalyzeError("Impossible de charger l'outil de lecture. Vérifie ta connexion internet et réessaie.", e);
     return;
   }
 
-  actions.innerHTML = `<div class="empty-state">Lecture de l'image en cours...<br>Ça peut prendre 10 à 30 secondes.</div>`;
+  if (!window.Tesseract) {
+    scannerShowAnalyzeError("L'outil de lecture ne s'est pas initialisé correctement (Tesseract introuvable après chargement du script).", null);
+    return;
+  }
+
+  const progressEl = document.getElementById("scanner-progress");
+  // Les photos de téléphone en pleine résolution (souvent 3000-4000px de
+  // large) sont inutilement lourdes pour de l'OCR et peuvent ralentir ou
+  // faire échouer la lecture : on réduit avant analyse.
+  const resizedCanvas = scannerResizeCanvas(canvas, 1600);
+
+  let settled = false;
+  const timeoutId = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    scannerShowAnalyzeError("La lecture prend trop de temps (plus de 45 secondes) et a été interrompue. Réessaie avec une photo plus nette, prise de plus près de l'étiquette.", null);
+  }, 45000);
+
   try {
-    const result = await Tesseract.recognize(canvas, "eng");
+    const result = await Tesseract.recognize(resizedCanvas, "eng", {
+      logger: (m) => {
+        if (!progressEl || settled) return;
+        const pct = typeof m.progress === "number" ? ` (${Math.round(m.progress * 100)}%)` : "";
+        progressEl.textContent = "Lecture de l'image en cours : " + (m.status || "...") + pct;
+      },
+    });
+    if (settled) return;
+    settled = true;
+    clearTimeout(timeoutId);
+
     const text = (result && result.data && result.data.text) || "";
-    // On cherche chaque nombre immédiatement suivi de "kg" (insensible à la
-    // casse et aux espaces) : c'est ce motif qui distingue la colonne kg de
-    // la colonne lbs sur l'étiquette, sans avoir besoin de recadrer la photo.
     scannerExtractedWeights = [...text.matchAll(/(\d{1,3})\s*k\s*g/gi)].map((m) => parseInt(m[1], 10));
-    renderScannerExtractedList();
+    renderScannerExtractedList(text);
   } catch (e) {
-    scannerShowAnalyzeError("La lecture a échoué. Réessaie avec une photo plus nette et bien cadrée sur l'étiquette.");
+    if (settled) return;
+    settled = true;
+    clearTimeout(timeoutId);
+    scannerShowAnalyzeError("La lecture a échoué.", e);
   }
 }
 
-function scannerShowAnalyzeError(message) {
+function scannerResizeCanvas(sourceCanvas, maxSide) {
+  const { width, height } = sourceCanvas;
+  const scale = Math.min(1, maxSide / Math.max(width, height));
+  if (scale >= 1) return sourceCanvas;
+  const out = document.createElement("canvas");
+  out.width = Math.round(width * scale);
+  out.height = Math.round(height * scale);
+  out.getContext("2d").drawImage(sourceCanvas, 0, 0, out.width, out.height);
+  return out;
+}
+
+function scannerShowAnalyzeError(message, err) {
   const actions = document.getElementById("scanner-actions");
+  let detail = "";
+  if (err) {
+    const raw = (err && err.message) || String(err);
+    detail = `<div style="font-size:11px; color:var(--text-dim); margin-top:8px; word-break:break-word; text-align:left;">Détail technique (utile si tu me le communiques) :<br>${raw.replace(/</g, "&lt;")}</div>`;
+  }
   actions.innerHTML = `
-    <div class="empty-state">${message}</div>
+    <div class="empty-state">${message}${detail}</div>
     <button class="backup-btn" id="scanner-retake-btn" style="margin-top:10px;">${ICONS.reset} Reprendre une photo</button>
   `;
   document.getElementById("scanner-retake-btn").addEventListener("click", renderScannerContent);
 }
 
-function renderScannerExtractedList() {
+let scannerLastRawText = "";
+
+function renderScannerExtractedList(rawText) {
+  if (typeof rawText === "string") scannerLastRawText = rawText;
   const actions = document.getElementById("scanner-actions");
   const chips = scannerExtractedWeights.length
     ? scannerExtractedWeights
         .map((w, i) => `<span class="weight-chip removable">${w}kg <button type="button" data-remove-extracted="${i}">${ICONS.x}</button></span>`)
         .join("")
     : `<span style="color:var(--text-dim); font-size:13px;">Aucune valeur détectée — ajoute-les à la main ci-dessous, ou reprends une photo plus nette.</span>`;
+
+  const rawTextBlock = scannerLastRawText.trim()
+    ? `<details style="margin-top:12px;">
+         <summary style="font-size:12px; color:var(--text-dim); cursor:pointer;">Voir le texte brut lu par l'OCR (diagnostic)</summary>
+         <div style="font-size:11px; color:var(--text-dim); background:var(--surface-2); border-radius:10px; padding:10px; margin-top:6px; white-space:pre-wrap; word-break:break-word; max-height:160px; overflow-y:auto;">${scannerLastRawText.replace(/</g, "&lt;")}</div>
+       </details>`
+    : `<div style="font-size:12px; color:var(--text-dim); margin-top:12px;">L'OCR n'a lu <b>aucun texte</b> dans cette photo — c'est probablement le signe d'un problème de chargement de l'outil plutôt que d'une photo peu nette.</div>`;
 
   actions.innerHTML = `
     <div class="weight-chip-label">Poids détectés (relis et corrige si besoin)</div>
@@ -171,6 +226,7 @@ function renderScannerExtractedList() {
     </div>
     <button class="save-btn" id="scanner-copy-btn" style="margin-top:14px;">${ICONS.check} Copier la liste</button>
     <button class="backup-btn" id="scanner-retake-btn" style="margin-top:10px;">${ICONS.reset} Reprendre une photo</button>
+    ${rawTextBlock}
   `;
 
   document.getElementById("scanner-retake-btn").addEventListener("click", renderScannerContent);

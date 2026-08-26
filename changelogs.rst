@@ -7,6 +7,18 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.4.1 - 2026-08-26
+===================
+
+- Module Scanner : diagnostic complet ajouté suite à un signalement
+  d'extraction ne fonctionnant pas en conditions réelles (non reproductible
+  depuis l'environnement de développement, sans accès aux CDN concernés).
+  Affiche désormais le détail technique de toute erreur, réduit la photo
+  avant analyse (les photos de téléphone en pleine résolution ralentissaient
+  potentiellement ou faisaient échouer la lecture), ajoute un délai de
+  sécurité de 45 secondes, et affiche le texte brut lu par l'OCR (utile pour
+  distinguer un problème de chargement d'un simple souci de netteté de photo).
+
 1.4.0 - 2026-08-26
 ===================
 
