@@ -28,10 +28,16 @@ function renderSettingsApp() {
       <div class="header-icon-only">${ICONS.gear}</div>
       <div class="header-sub">${currentUser && currentUser.email ? currentUser.email : "Personnalise chaque section"}</div>
     </div>
-    <div class="content" id="content" style="padding-bottom: 24px;"></div>
-    <div style="position:fixed; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.6; font-family:-apple-system,system-ui,sans-serif;">v${APP_VERSION}</div>
+    <div class="content" id="content" style="padding-bottom: 90px;"></div>
+    <div style="position:fixed; left:0; right:0; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; justify-content:center;">
+      <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
+    </div>
+    <div style="position:fixed; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">v${APP_VERSION}</div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  document.getElementById("logout-btn").addEventListener("click", () => {
+    showConfirm("Te déconnecter ? Tu devras ressaisir tes identifiants pour retrouver ce profil.", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
+  });
   renderSettingsContent();
 }
 
@@ -45,20 +51,16 @@ function renderSettingsContent() {
       </div>
       <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
-    <button type="button" class="backup-btn" id="logout-btn" style="margin-top:16px;">${ICONS.back} Se déconnecter</button>
   `;
   document.querySelector("[data-open-settings]").addEventListener("click", () => {
     currentApp = "settings-gym";
     render();
   });
-  document.getElementById("logout-btn").addEventListener("click", () => {
-    showConfirm("Te déconnecter ? Tu devras ressaisir tes identifiants pour retrouver ce profil.", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
-  });
 }
 
 function gymSettingsListHTML() {
   const uncategorized = gymExerciseConfigs.some((c) => !GYM_EXERCISE_CATEGORIES.some((cat) => cat.key === c.category));
-  const tabs = [...GYM_EXERCISE_CATEGORIES, ...(uncategorized ? [{ key: "other", label: "Autres" }] : [])];
+  const tabs = [{ key: "all", label: "Tous" }, ...GYM_EXERCISE_CATEGORIES, ...(uncategorized ? [{ key: "other", label: "Autres" }] : [])];
   const tabsHTML = `
     <div class="ex-type-toggle wrap-toggle" style="margin-bottom:16px;">
       ${tabs
@@ -69,12 +71,15 @@ function gymSettingsListHTML() {
         .join("")}
     </div>`;
 
-  const filtered = gymExerciseConfigs.filter((c) => {
-    const cat = GYM_EXERCISE_CATEGORIES.some((k) => k.key === c.category) ? c.category : "other";
-    return cat === gymSettingsActiveCategory;
-  });
+  const filtered =
+    gymSettingsActiveCategory === "all"
+      ? gymExerciseConfigs
+      : gymExerciseConfigs.filter((c) => {
+          const cat = GYM_EXERCISE_CATEGORIES.some((k) => k.key === c.category) ? c.category : "other";
+          return cat === gymSettingsActiveCategory;
+        });
 
-  const emptyState = `<div class="empty-state">Aucun exercice dans cette catégorie pour l'instant.<br>Ajoute tes machines habituelles pour gagner du temps à la salle.</div>`;
+  const emptyState = `<div class="empty-state">Aucun exercice ${gymSettingsActiveCategory === "all" ? "configuré" : "dans cette catégorie"} pour l'instant.<br>Ajoute tes machines habituelles pour gagner du temps à la salle.</div>`;
   const items = [...filtered]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((c) => {
@@ -179,7 +184,7 @@ function attachGymSettingsListeners() {
     addBtn.addEventListener("click", () => {
       gymSettingsFormOpen = true;
       gymSettingsEditingConfigId = null;
-      const defaultCategory = gymSettingsActiveCategory === "other" ? "pecs" : gymSettingsActiveCategory;
+      const defaultCategory = gymSettingsActiveCategory === "other" || gymSettingsActiveCategory === "all" ? "pecs" : gymSettingsActiveCategory;
       gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0 };
       renderGymSettingsContent();
     });

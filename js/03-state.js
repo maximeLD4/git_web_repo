@@ -6,7 +6,7 @@ let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
 let gymSettingsFormOpen = false;
 let gymSettingsEditingConfigId = null;
 let gymSettingsFormDraft = { name: "", category: "pecs", baseWeights: [], maxIncrement: 0 };
-let gymSettingsActiveCategory = "pecs";
+let gymSettingsActiveCategory = "all";
 let weights = loadJSON(KEYS.weights, []);
 let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [emptyExercise()] };
 if (!Array.isArray(draft.exercises) || draft.exercises.length === 0) draft.exercises = [emptyExercise()];

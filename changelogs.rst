@@ -7,6 +7,16 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.3.0 - 2026-08-26
+===================
+
+- Paramètres → Salle de sport : ajout d'un onglet « Tous » pour afficher les
+  exercices de toutes les catégories en même temps (devient l'onglet ouvert
+  par défaut).
+- Bouton « Se déconnecter » de Paramètres déplacé en bas de l'écran, centré,
+  séparé de la carte « Salle de sport » (il n'y avait pas de lien entre les
+  deux, les avoir côte à côte prêtait à confusion).
+
 1.2.0 - 2026-08-26
 ===================
 
