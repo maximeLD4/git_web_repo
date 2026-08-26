@@ -2,9 +2,9 @@
 function renderHome() {
   app.className = "theme-home";
   app.innerHTML = `
-    <div class="header">
-      <div class="header-title"><span class="bar"></span>GymLog</div>
-      <div class="header-sub">Choisis ton activité</div>
+    <div class="header" style="text-align:center;">
+      <div class="home-wordmark">GYMLOG</div>
+      <div class="header-sub" style="padding-left:0;">Choisis ton activité</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;">
       <div class="home-grid">

@@ -1,7 +1,7 @@
   :root {
-    --bg: #F5F5F7;
+    --bg: #F8F5EE;
     --surface: #FFFFFF;
-    --surface-2: #F0F0F3;
+    --surface-2: #F1EDE4;
     --border: rgba(60, 60, 67, 0.12);
     --text: #1D1D1F;
     --text-dim: #8A8A8E;
@@ -54,6 +54,7 @@
     display: flex; align-items: center; gap: 10px;
   }
   .header-title .bar { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; }
+  .home-wordmark { font-family: -apple-system, system-ui, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: 3px; color: var(--text); }
   .header-sub { color: var(--text-dim); font-size: 14px; margin-top: 4px; padding-left: 20px; font-weight: 500; }
   .content { flex: 1; padding: 14px 16px 120px; overflow-y: auto; }
   .field-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
@@ -139,7 +140,7 @@
   .edit-banner { display: flex; align-items: center; justify-content: space-between; background: rgba(var(--accent-rgb),0.1); color: var(--accent); border: none; border-radius: 12px; padding: 11px 15px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
   .edit-banner button { background: none; border: none; color: var(--accent); text-decoration: underline; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; }
   .flash { text-align: center; color: var(--accent); font-size: 13px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; }
-  .tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; display: flex; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); }
+  .tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; display: flex; background: rgba(248, 245, 238, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); }
   .tab-btn { flex: 1; background: none; border: none; color: var(--text-dim); display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; padding: 6px; cursor: pointer; }
   .tab-btn.active { color: var(--accent); }
   .empty-state { text-align: center; padding: 70px 20px; color: var(--text-dim); }
