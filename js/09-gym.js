@@ -16,7 +16,7 @@ function serializeExercisesFromDOM() {
   cards.forEach((card) => {
     const id = card.dataset.id;
     const exType = card.dataset.extype || "muscu";
-    const category = card.dataset.category || "push";
+    const category = card.dataset.category || "pecs";
     const nameEl = card.querySelector(".ex-name-input");
     const name = nameEl ? nameEl.value : "";
     const sets = [];
@@ -139,7 +139,7 @@ function renderContent() {
 
 function categoryToggleHTML(category) {
   return `
-    <div class="ex-type-toggle" data-category-toggle style="margin-bottom:10px;">
+    <div class="ex-type-toggle wrap-toggle" data-category-toggle style="margin-bottom:10px;">
       ${GYM_EXERCISE_CATEGORIES.map(
         (c) => `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""}" data-category-btn="${c.key}">${c.label}</button>`
       ).join("")}
@@ -160,8 +160,8 @@ function nameSelectHTML(configsInCategory, effectiveConfig) {
 function exerciseCardHTML(ex) {
   const exType = ex.exType || "muscu";
   const isCardio = exType === "cardio";
-  const category = ex.category || "push";
-  const configsInCategory = isCardio ? [] : gymExerciseConfigs.filter((c) => (c.category || "push") === category);
+  const category = ex.category || "pecs";
+  const configsInCategory = isCardio ? [] : gymExerciseConfigs.filter((c) => (c.category || "pecs") === category);
   // La config "effective" est celle qui correspond au nom enregistré, ou à défaut
   // la première de la catégorie — le menu affiché et les poids calculés
   // pointent toujours vers exactement le même exercice, jamais l'un sans l'autre.
@@ -220,7 +220,7 @@ function exerciseCardHTML(ex) {
     .join("");
 
   return `
-  <div class="exercise-card" data-id="${ex.id}" data-extype="${exType}" data-category="${ex.category || "push"}">
+  <div class="exercise-card" data-id="${ex.id}" data-extype="${exType}" data-category="${ex.category || "pecs"}">
     <div class="exercise-head">
       <button type="button" class="drag-handle" data-drag-handle aria-label="Réordonner">${ICONS.grip}</button>
       ${
@@ -546,7 +546,7 @@ function attachLogListeners() {
         target.category = btn.dataset.categoryBtn;
         // On change de catégorie : le nom choisi ne correspond plus, on repart
         // sur le premier exercice configuré dans cette nouvelle catégorie.
-        const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "push") === target.category);
+        const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === target.category);
         target.name = firstInCategory ? firstInCategory.name : "";
         const possible = firstInCategory ? computePossibleWeights(firstInCategory) : [];
         target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "" }));
@@ -596,8 +596,8 @@ function attachLogListeners() {
         const target = exs.find((e) => e.id === card.dataset.id);
         target.exType = btn.dataset.setType;
         if (btn.dataset.setType === "muscu") {
-          const cat = target.category || "push";
-          const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "push") === cat);
+          const cat = target.category || "pecs";
+          const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === cat);
           target.name = firstInCategory ? firstInCategory.name : "";
           const possible = firstInCategory ? computePossibleWeights(firstInCategory) : [];
           target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", reps: s.reps || 10 }));

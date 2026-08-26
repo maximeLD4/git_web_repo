@@ -30,6 +30,7 @@ function render() {
   if (currentApp === "bike") { renderBikeApp(); return; }
   if (currentApp === "settings") { renderSettingsApp(); return; }
   if (currentApp === "settings-gym") { renderGymSettingsApp(); return; }
+  if (currentApp === "scanner") { renderScannerApp(); return; }
   renderGymApp();
 }
 

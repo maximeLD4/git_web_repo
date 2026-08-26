@@ -55,7 +55,7 @@ function gymSettingsListHTML() {
   const uncategorized = gymExerciseConfigs.some((c) => !GYM_EXERCISE_CATEGORIES.some((cat) => cat.key === c.category));
   const tabs = [...GYM_EXERCISE_CATEGORIES, ...(uncategorized ? [{ key: "other", label: "Autres" }] : [])];
   const tabsHTML = `
-    <div class="ex-type-toggle" style="margin-bottom:16px;">
+    <div class="ex-type-toggle wrap-toggle" style="margin-bottom:16px;">
       ${tabs
         .map(
           (t) =>
@@ -105,7 +105,7 @@ function gymSettingsFormHTML() {
     <div class="exercise-card" style="padding: 16px 14px 16px 19px;">
       <div class="field" style="margin-bottom:14px;">
         <label>Catégorie</label>
-        <div class="ex-type-toggle" id="config-category-toggle">
+        <div class="ex-type-toggle wrap-toggle" id="config-category-toggle">
           ${GYM_EXERCISE_CATEGORIES.map(
             (t) => `<button type="button" class="ex-type-btn ${gymSettingsFormDraft.category === t.key ? "active" : ""}" data-form-category="${t.key}">${t.label}</button>`
           ).join("")}
@@ -174,7 +174,7 @@ function attachGymSettingsListeners() {
     addBtn.addEventListener("click", () => {
       gymSettingsFormOpen = true;
       gymSettingsEditingConfigId = null;
-      const defaultCategory = gymSettingsActiveCategory === "other" ? "push" : gymSettingsActiveCategory;
+      const defaultCategory = gymSettingsActiveCategory === "other" ? "pecs" : gymSettingsActiveCategory;
       gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0 };
       renderGymSettingsContent();
     });
@@ -187,7 +187,7 @@ function attachGymSettingsListeners() {
       gymSettingsEditingConfigId = config.id;
       gymSettingsFormDraft = {
         name: config.name,
-        category: GYM_EXERCISE_CATEGORIES.some((c) => c.key === config.category) ? config.category : "push",
+        category: GYM_EXERCISE_CATEGORIES.some((c) => c.key === config.category) ? config.category : "pecs",
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
       };

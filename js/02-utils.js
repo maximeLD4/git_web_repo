@@ -112,13 +112,13 @@ function formatDateShortFR(iso) {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 function emptyExercise() {
-  const firstConfig = gymExerciseConfigs.find((c) => (c.category || "push") === "push") || gymExerciseConfigs[0] || null;
+  const firstConfig = gymExerciseConfigs.find((c) => (c.category || "pecs") === "pecs") || gymExerciseConfigs[0] || null;
   const possibleWeights = firstConfig ? computePossibleWeights(firstConfig) : [];
   return {
     id: uid(),
     name: firstConfig ? firstConfig.name : "",
     exType: "muscu",
-    category: firstConfig ? firstConfig.category || "push" : "push",
+    category: firstConfig ? firstConfig.category || "pecs" : "pecs",
     sets: [{ id: uid(), weight: possibleWeights.length ? possibleWeights[0] : "", reps: 10 }],
   };
 }

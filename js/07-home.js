@@ -43,6 +43,11 @@ function renderHome() {
           <div class="home-tile-title">Paramètres</div>
           <div class="home-tile-sub">Exercices préconfigurés</div>
         </div>
+        <div class="home-tile" data-open-app="scanner">
+          <div class="home-tile-icon" style="background: rgba(255,149,0,0.14); color: #FF9500;">${ICONS.camera}</div>
+          <div class="home-tile-title">Scanner</div>
+          <div class="home-tile-sub">Prototype — photo de machine</div>
+        </div>
       </div>
     </div>
   `;

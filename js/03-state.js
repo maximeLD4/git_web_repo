@@ -5,8 +5,8 @@ let library = loadJSON(KEYS.library, []);
 let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
 let gymSettingsFormOpen = false;
 let gymSettingsEditingConfigId = null;
-let gymSettingsFormDraft = { name: "", category: "push", baseWeights: [], maxIncrement: 0 };
-let gymSettingsActiveCategory = "push";
+let gymSettingsFormDraft = { name: "", category: "pecs", baseWeights: [], maxIncrement: 0 };
+let gymSettingsActiveCategory = "pecs";
 let weights = loadJSON(KEYS.weights, []);
 let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [emptyExercise()] };
 if (!Array.isArray(draft.exercises) || draft.exercises.length === 0) draft.exercises = [emptyExercise()];
@@ -65,6 +65,7 @@ let bikeSelectedCalendarDate = null;
 let bikeCalendarTimeFilter = "past";
 
 const app = document.getElementById("app");
+let scannerStream = null;
 
 // Garde globale : aucune valeur physique ne peut être négative (poids, reps, distance,
 // durée, vitesse, allure...). S'applique à tous les champs numériques, présents et futurs,

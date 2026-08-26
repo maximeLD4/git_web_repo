@@ -43,27 +43,46 @@ const ICONS = {
   back: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
   chevronRight: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
   gear: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>',
   stopwatch: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>',
 };
 
 const GYM_EXERCISE_CATEGORIES = [
-  { key: "push", label: "Push" },
-  { key: "pull", label: "Pull" },
-  { key: "leg", label: "Leg" },
+  { key: "pecs", label: "Pecs" },
+  { key: "dos", label: "Dos" },
+  { key: "epaules", label: "Épaules" },
+  { key: "bras", label: "Bras" },
+  { key: "jambes", label: "Jambes" },
+  { key: "fessiers", label: "Fessiers" },
+  { key: "abdos", label: "Abdos" },
 ];
 
 const EXERCISE_SUGGESTIONS = {
-  push: [
-    "Développé couché", "Développé incliné", "Développé militaire", "Développé haltères",
-    "Dips", "Pompes", "Écarté couché", "Extension triceps poulie", "Élévations latérales",
+  pecs: [
+    "Développé couché", "Développé incliné", "Développé décliné", "Développé haltères",
+    "Écarté couché", "Dips", "Pompes",
   ],
-  pull: [
+  dos: [
     "Tirage horizontal", "Tirage vertical", "Rowing barre", "Rowing haltère",
-    "Tractions", "Curl biceps", "Curl marteau", "Face pull", "Shrugs",
+    "Tractions", "Soulevé de terre", "Shrugs",
   ],
-  leg: [
+  epaules: [
+    "Développé militaire", "Élévations latérales", "Élévations frontales",
+    "Oiseau", "Face pull", "Rowing menton",
+  ],
+  bras: [
+    "Curl biceps", "Curl marteau", "Curl pupitre",
+    "Extension triceps poulie", "Dips triceps", "Barre au front",
+  ],
+  jambes: [
     "Squat", "Presse à cuisses", "Extension jambes", "Leg curl", "Fentes",
-    "Soulevé de terre", "Mollets", "Hip thrust", "Adducteurs", "Abducteurs",
+    "Mollets", "Adducteurs", "Abducteurs",
+  ],
+  fessiers: [
+    "Hip thrust", "Soulevé de terre roumain", "Glute bridge", "Kickback", "Squat sumo",
+  ],
+  abdos: [
+    "Crunch", "Gainage", "Relevé de jambes", "Russian twist", "Crunch poulie",
   ],
 };
 

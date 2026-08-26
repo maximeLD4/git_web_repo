@@ -22,6 +22,7 @@
   #app.theme-swim { --accent: #32ADE6; --accent-rgb: 50, 173, 230; }
   #app.theme-bike { --accent: #AF52DE; --accent-rgb: 175, 82, 222; }
   #app.theme-home { --accent: #1D1D1F; --accent-rgb: 29, 29, 31; }
+  #app.theme-scanner { --accent: #FF9500; --accent-rgb: 255, 149, 0; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; padding: 0;
@@ -224,6 +225,7 @@
   .home-card-sub { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; font-weight: 500; }
   .home-card-arrow { color: var(--text-dim); flex-shrink: 0; }
   .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .scanner-wrap { display: flex; flex-direction: column; }
   .home-tile { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; box-shadow: var(--shadow-sm); }
   .home-tile-icon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .home-tile-title { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -0.1px; }
