@@ -98,4 +98,4 @@ const ACTIVITY_META = [
 // Pas de build ni de fetch : l'app est en scripts classiques statiques, donc
 // cette constante est mise à jour manuellement à chaque changement, en même
 // temps que VERSION et changelogs.rst.
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.4.0";

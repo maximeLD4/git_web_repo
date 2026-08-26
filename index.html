@@ -45,6 +45,9 @@
 <script src="./js/13-weight.js"></script>
 <script src="./js/14-shared-calendar.js"></script>
 <script src="./js/15-scanner.js"></script>
+<!-- Tesseract.js (OCR) n'est PAS chargé ici : le module Scanner l'injecte
+     dynamiquement à la demande (voir loadTesseractScript() dans
+     15-scanner.js), pour ne pas alourdir le chargement initial de l'app. -->
 <script src="./js/16-main.js"></script>
 </body>
 </html>

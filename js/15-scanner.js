@@ -86,14 +86,12 @@ function captureScannerPhoto() {
   video.style.display = "none";
   stopScannerCamera();
 
-  actions.innerHTML = `<button class="backup-btn" id="scanner-retake-btn">${ICONS.reset} Reprendre une photo</button>`;
+  actions.innerHTML = `
+    <button class="save-btn" id="scanner-analyze-btn">${ICONS.check} Extraire les poids (kg)</button>
+    <button class="backup-btn" id="scanner-retake-btn" style="margin-top:10px;">${ICONS.reset} Reprendre une photo</button>
+  `;
   document.getElementById("scanner-retake-btn").addEventListener("click", renderScannerContent);
-
-  const note = document.createElement("div");
-  note.className = "empty-state";
-  note.style.marginTop = "10px";
-  note.textContent = "Photo capturée, non enregistrée. La reconnaissance automatique de la machine arrivera dans une prochaine étape.";
-  document.querySelector(".scanner-wrap").appendChild(note);
+  document.getElementById("scanner-analyze-btn").addEventListener("click", analyzeScannerPhoto);
 }
 
 function stopScannerCamera() {
@@ -101,4 +99,103 @@ function stopScannerCamera() {
     scannerStream.getTracks().forEach((t) => t.stop());
     scannerStream = null;
   }
+}
+
+/* ---------- Lecture des poids (OCR embarqué, via Tesseract.js) ---------- */
+// Chargé à la demande (pas dans index.html) : c'est une bibliothèque assez
+// lourde, pas la peine d'alourdir le chargement initial de toute l'app pour
+// une fonctionnalité utilisée occasionnellement.
+let tesseractLoadPromise = null;
+function loadTesseractScript() {
+  if (window.Tesseract) return Promise.resolve();
+  if (tesseractLoadPromise) return tesseractLoadPromise;
+  tesseractLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Impossible de charger la bibliothèque de lecture de texte."));
+    document.head.appendChild(script);
+  });
+  return tesseractLoadPromise;
+}
+
+async function analyzeScannerPhoto() {
+  const canvas = document.getElementById("scanner-canvas");
+  const actions = document.getElementById("scanner-actions");
+
+  actions.innerHTML = `<div class="empty-state">Chargement de l'outil de lecture...</div>`;
+  try {
+    await loadTesseractScript();
+  } catch (e) {
+    scannerShowAnalyzeError("Impossible de charger l'outil de lecture. Vérifie ta connexion internet et réessaie.");
+    return;
+  }
+
+  actions.innerHTML = `<div class="empty-state">Lecture de l'image en cours...<br>Ça peut prendre 10 à 30 secondes.</div>`;
+  try {
+    const result = await Tesseract.recognize(canvas, "eng");
+    const text = (result && result.data && result.data.text) || "";
+    // On cherche chaque nombre immédiatement suivi de "kg" (insensible à la
+    // casse et aux espaces) : c'est ce motif qui distingue la colonne kg de
+    // la colonne lbs sur l'étiquette, sans avoir besoin de recadrer la photo.
+    scannerExtractedWeights = [...text.matchAll(/(\d{1,3})\s*k\s*g/gi)].map((m) => parseInt(m[1], 10));
+    renderScannerExtractedList();
+  } catch (e) {
+    scannerShowAnalyzeError("La lecture a échoué. Réessaie avec une photo plus nette et bien cadrée sur l'étiquette.");
+  }
+}
+
+function scannerShowAnalyzeError(message) {
+  const actions = document.getElementById("scanner-actions");
+  actions.innerHTML = `
+    <div class="empty-state">${message}</div>
+    <button class="backup-btn" id="scanner-retake-btn" style="margin-top:10px;">${ICONS.reset} Reprendre une photo</button>
+  `;
+  document.getElementById("scanner-retake-btn").addEventListener("click", renderScannerContent);
+}
+
+function renderScannerExtractedList() {
+  const actions = document.getElementById("scanner-actions");
+  const chips = scannerExtractedWeights.length
+    ? scannerExtractedWeights
+        .map((w, i) => `<span class="weight-chip removable">${w}kg <button type="button" data-remove-extracted="${i}">${ICONS.x}</button></span>`)
+        .join("")
+    : `<span style="color:var(--text-dim); font-size:13px;">Aucune valeur détectée — ajoute-les à la main ci-dessous, ou reprends une photo plus nette.</span>`;
+
+  actions.innerHTML = `
+    <div class="weight-chip-label">Poids détectés (relis et corrige si besoin)</div>
+    <div class="weight-chip-row" id="scanner-extracted-row">${chips}</div>
+    <div class="field-row" style="margin-top:8px;">
+      <input type="number" inputmode="decimal" id="scanner-add-weight" placeholder="Ajouter une valeur">
+      <button type="button" class="add-exercise-btn" id="scanner-add-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
+    </div>
+    <button class="save-btn" id="scanner-copy-btn" style="margin-top:14px;">${ICONS.check} Copier la liste</button>
+    <button class="backup-btn" id="scanner-retake-btn" style="margin-top:10px;">${ICONS.reset} Reprendre une photo</button>
+  `;
+
+  document.getElementById("scanner-retake-btn").addEventListener("click", renderScannerContent);
+  document.querySelectorAll("[data-remove-extracted]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      scannerExtractedWeights.splice(parseInt(btn.dataset.removeExtracted, 10), 1);
+      renderScannerExtractedList();
+    });
+  });
+  document.getElementById("scanner-add-weight-btn").addEventListener("click", () => {
+    const input = document.getElementById("scanner-add-weight");
+    const val = parseFloat(input.value);
+    if (!isNaN(val)) {
+      scannerExtractedWeights.push(val);
+      scannerExtractedWeights.sort((a, b) => a - b);
+      renderScannerExtractedList();
+    }
+  });
+  document.getElementById("scanner-copy-btn").addEventListener("click", async () => {
+    const text = scannerExtractedWeights.join(", ");
+    try {
+      await navigator.clipboard.writeText(text);
+      showAlert("Copié dans le presse-papier :<br>" + text);
+    } catch (e) {
+      showAlert("Impossible de copier automatiquement. Valeurs :<br>" + text);
+    }
+  });
 }

@@ -7,6 +7,16 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.4.0 - 2026-08-26
+===================
+
+- Module Scanner : après la capture d'une photo, possibilité d'extraire
+  automatiquement une liste de poids (kg) imprimés sur une étiquette (ex.
+  sélecteur de poids d'une machine), via un OCR embarqué dans le navigateur
+  (Tesseract.js, chargé à la demande, aucune donnée envoyée à un serveur).
+- Liste extraite entièrement modifiable avant utilisation : ajout, suppression
+  et correction manuelle des valeurs, puis copie dans le presse-papier.
+
 1.3.0 - 2026-08-26
 ===================
 
