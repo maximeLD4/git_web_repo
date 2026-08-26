@@ -7,7 +7,8 @@ function renderSharedCalendarApp() {
   const total = sessions.length + runSessions.length + swimSessions.length + bikeSessions.length;
   app.innerHTML = `
     <div class="header">
-      <div class="header-title"><button type="button" class="back-btn" data-go-home>${ICONS.back}</button><span class="header-icon">${ICONS.calendarBig}</span>Calendrier</div>
+      <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
+      <div class="header-icon-only">${ICONS.calendarBig}</div>
       <div class="header-sub">${total} séance${total !== 1 ? "s" : ""} au total · vue d'ensemble</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
