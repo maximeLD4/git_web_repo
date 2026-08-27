@@ -28,8 +28,10 @@ function renderScannerContent() {
       <video id="scanner-video" playsinline autoplay muted style="display:none; width:100%; border-radius:16px; background:#000;"></video>
       <canvas id="scanner-canvas" style="display:none;"></canvas>
       <img id="scanner-preview" style="display:none; width:100%; border-radius:16px;" />
-      <div id="scanner-actions" style="margin-top:14px;">
+      <div id="scanner-actions" style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
         <button class="save-btn" id="scanner-start-btn">${ICONS.camera} Activer la caméra</button>
+        <button class="backup-btn" id="scanner-gallery-btn">${ICONS.down} Choisir une photo depuis la galerie</button>
+        <input type="file" accept="image/*" id="scanner-file-input" style="display:none;">
       </div>
     </div>
   `;
@@ -39,6 +41,45 @@ function renderScannerContent() {
 function attachScannerListeners() {
   const startBtn = document.getElementById("scanner-start-btn");
   if (startBtn) startBtn.addEventListener("click", startScannerCamera);
+  const galleryBtn = document.getElementById("scanner-gallery-btn");
+  const fileInput = document.getElementById("scanner-file-input");
+  if (galleryBtn && fileInput) {
+    galleryBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", (e) => handleScannerGalleryFile(e.target.files[0]));
+  }
+}
+
+function handleScannerGalleryFile(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.getElementById("scanner-canvas");
+    const preview = document.getElementById("scanner-preview");
+    const video = document.getElementById("scanner-video");
+    const actions = document.getElementById("scanner-actions");
+
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext("2d").drawImage(img, 0, 0);
+    preview.src = canvas.toDataURL("image/jpeg", 0.85);
+    preview.style.display = "block";
+    video.style.display = "none";
+    stopScannerCamera();
+    URL.revokeObjectURL(url);
+
+    actions.innerHTML = `
+      <button class="save-btn" id="scanner-analyze-btn">${ICONS.check} Extraire les poids (kg)</button>
+      <button class="backup-btn" id="scanner-retake-btn" style="margin-top:10px;">${ICONS.reset} Choisir une autre photo</button>
+    `;
+    document.getElementById("scanner-retake-btn").addEventListener("click", renderScannerContent);
+    document.getElementById("scanner-analyze-btn").addEventListener("click", analyzeScannerPhoto);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    showAlert("Impossible d'ouvrir cette image. Si c'est une photo HEIC exportée telle quelle depuis l'iPhone, essaie une capture d'écran ou une photo enregistrée en JPEG à la place.");
+  };
+  img.src = url;
 }
 
 async function startScannerCamera() {
@@ -79,6 +120,14 @@ function captureScannerPhoto() {
   const canvas = document.getElementById("scanner-canvas");
   const preview = document.getElementById("scanner-preview");
   const actions = document.getElementById("scanner-actions");
+
+  // Si le flux vidéo n'a pas encore de dimensions, la capture donnerait un
+  // canvas vide (donc rien à lire) : mieux vaut le signaler clairement que
+  // de laisser échouer silencieusement l'analyse plus tard.
+  if (!video.videoWidth || !video.videoHeight) {
+    showAlert("La caméra n'est pas encore tout à fait prête. Patiente une seconde puis retente.");
+    return;
+  }
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;

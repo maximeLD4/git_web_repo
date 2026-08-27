@@ -7,6 +7,18 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.5.1 - 2026-08-26
+===================
+
+- Module Scanner : suite à un signalement « aucune détection, même après le
+  correctif 1.4.1 », correction d'un bug potentiel : la capture pouvait se
+  déclencher avant que le flux vidéo n'ait vraiment démarré, produisant un
+  canvas vide (donc rien à lire par l'OCR) — désormais détecté et signalé
+  clairement plutôt que d'échouer silencieusement.
+- Ajout d'une option « Choisir une photo depuis la galerie » en alternative à
+  la caméra en direct, pour isoler si le souci vient de la capture caméra
+  elle-même ou de l'analyse OCR en général.
+
 1.5.0 - 2026-08-26
 ===================
 
