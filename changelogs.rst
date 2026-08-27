@@ -7,6 +7,15 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.8.3 - 2026-08-26
+===================
+
+- Paramètres → Salle de sport, formulaire d'exercice : réorganisation de
+  l'ordre des éléments du champ « Poids possibles ». Le bouton « Scanner les
+  poids depuis une photo » se trouve désormais entre la liste des poids déjà
+  ajoutés et le champ de saisie manuelle, avec le bouton « Ajouter » juste en
+  dessous de ce champ — plus logique que l'ordre précédent.
+
 1.8.2 - 2026-08-26
 ===================
 

@@ -132,11 +132,11 @@ function gymSettingsFormHTML() {
       <div class="field" style="margin-bottom:14px;">
         <label>Poids possibles (paliers de la machine)</label>
         <div class="weight-chip-row" id="config-base-weights-row">${chips}</div>
+        <button type="button" class="backup-btn" id="config-scan-weights-btn" style="margin-top:8px;">${ICONS.camera} Scanner les poids depuis une photo</button>
         <div class="field-row" style="margin-top:8px;">
           <input type="number" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
           <button type="button" class="add-exercise-btn" id="config-add-base-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
         </div>
-        <button type="button" class="backup-btn" id="config-scan-weights-btn" style="margin-top:8px;">${ICONS.camera} Scanner les poids depuis une photo</button>
       </div>
       <div class="field" style="margin-bottom:6px;">
         <label>Incrément possible (kg)</label>
