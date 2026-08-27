@@ -84,7 +84,7 @@ function gymSettingsListHTML() {
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((c) => {
       const bases = [...c.baseWeights].sort((a, b) => a - b).join(", ");
-      const incLabel = c.maxIncrement > 0 ? ` · +0 à +${c.maxIncrement}kg` : "";
+      const incLabel = c.maxIncrement > 0 ? ` · +0 ou +${c.maxIncrement}kg` : "";
       return `
       <div class="history-card">
         <div class="history-head" data-edit-config="${c.id}" style="cursor:pointer;">
@@ -139,9 +139,9 @@ function gymSettingsFormHTML() {
         <button type="button" class="backup-btn" id="config-scan-weights-btn" style="margin-top:8px;">${ICONS.camera} Scanner les poids depuis une photo</button>
       </div>
       <div class="field" style="margin-bottom:6px;">
-        <label>Incrément maximum (kg)</label>
+        <label>Incrément possible (kg)</label>
         <input type="number" inputmode="decimal" min="0" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}">
-        <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Certaines machines permettent d'ajouter 1, 2 ou 3 kg en plus du palier choisi. Mets 0 si ce n'est pas le cas.</div>
+        <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Poids fixe qu'on peut ajouter manuellement sur cette machine (ex. 5). Sur chaque palier, le choix sera alors +0 ou +5kg — jamais une valeur intermédiaire. Mets 0 si la machine n'a pas cette option.</div>
       </div>
       <div id="config-form-error"></div>
       <button class="save-btn" id="save-config-btn">${ICONS.check} Enregistrer</button>
@@ -298,7 +298,7 @@ function attachGymSettingsListeners() {
       id: gymSettingsEditingConfigId || uid(),
       name,
       category: gymSettingsFormDraft.category,
-      baseWeights: gymSettingsFormDraft.baseWeights,
+      baseWeights: Array.from(new Set(gymSettingsFormDraft.baseWeights)).sort((a, b) => a - b),
       maxIncrement: gymSettingsFormDraft.maxIncrement || 0,
     };
     if (gymSettingsEditingConfigId) {

@@ -7,6 +7,23 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.7.1 - 2026-08-26
+===================
+
+- Impossible désormais d'ajouter deux fois le même poids pour un exercice,
+  que ce soit dans le formulaire de Paramètres ou dans la liste du scanner
+  (la vérification n'existait que côté formulaire, pas côté scanner — corrigé
+  des deux côtés, plus un filet de sécurité à l'enregistrement final).
+- Correction du sens de « Incrément maximum » (renommé « Incrément
+  possible ») : il représentait par erreur une plage continue (+0, +1, +2...
+  jusqu'à la valeur indiquée), alors qu'il doit représenter un poids fixe
+  ajoutable manuellement sur la machine — le choix est maintenant bien
+  binaire (+0 ou +Xkg exactement, jamais une valeur intermédiaire).
+  **Attention** : ce changement de comportement s'applique aussi aux
+  exercices déjà configurés avec un incrément supérieur à 1 — leurs poids
+  disponibles seront recalculés différemment (moins nombreux) après cette
+  mise à jour ; à revérifier si besoin dans Paramètres → Salle de sport.
+
 1.7.0 - 2026-08-26
 ===================
 

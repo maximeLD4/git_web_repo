@@ -167,10 +167,15 @@ function findExerciseConfig(name) {
 
 function computePossibleWeights(config) {
   if (!config || !config.baseWeights || config.baseWeights.length === 0) return [];
-  const maxInc = config.maxIncrement || 0;
+  // L'incrément représente un poids fixe qu'on peut ajouter manuellement sur
+  // la machine (ex. +5kg) — pas une plage continue. Sur chaque palier, on a
+  // donc exactement deux choix : le palier seul, ou le palier + cet
+  // incrément fixe (jamais +1, +2, +3... entre les deux).
+  const inc = config.maxIncrement || 0;
   const set = new Set();
   config.baseWeights.forEach((b) => {
-    for (let i = 0; i <= maxInc; i++) set.add(Math.round((b + i) * 100) / 100);
+    set.add(Math.round(b * 100) / 100);
+    if (inc > 0) set.add(Math.round((b + inc) * 100) / 100);
   });
   return Array.from(set).sort((a, b) => a - b);
 }

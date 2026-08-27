@@ -429,7 +429,7 @@ function renderScannerExtractedList(rawText) {
   document.getElementById("scanner-add-weight-btn").addEventListener("click", () => {
     const input = document.getElementById("scanner-add-weight");
     const val = parseFloat(input.value);
-    if (!isNaN(val)) {
+    if (!isNaN(val) && !scannerExtractedWeights.includes(val)) {
       scannerExtractedWeights.push(val);
       scannerExtractedWeights.sort((a, b) => a - b);
       renderScannerExtractedList();
