@@ -136,6 +136,7 @@ function gymSettingsFormHTML() {
           <input type="number" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
           <button type="button" class="add-exercise-btn" id="config-add-base-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
         </div>
+        <button type="button" class="backup-btn" id="config-scan-weights-btn" style="margin-top:8px;">${ICONS.camera} Scanner les poids depuis une photo</button>
       </div>
       <div class="field" style="margin-bottom:6px;">
         <label>Incrément maximum (kg)</label>
@@ -259,6 +260,14 @@ function attachGymSettingsListeners() {
       gymSettingsFormDraft.baseWeights.push(val);
     }
     renderGymSettingsContent();
+  });
+  document.getElementById("config-scan-weights-btn").addEventListener("click", () => {
+    // On synchronise le formulaire (nom, incrément) avant de le quitter
+    // temporairement, pour ne rien perdre au retour depuis le scanner.
+    syncFormFromInputs();
+    scannerReturnTarget = "gym-settings-weights";
+    currentApp = "scanner";
+    render();
   });
   document.querySelectorAll("[data-remove-base-weight]").forEach((btn) => {
     btn.addEventListener("click", () => {

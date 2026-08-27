@@ -67,6 +67,7 @@ let bikeCalendarTimeFilter = "past";
 const app = document.getElementById("app");
 let scannerStream = null;
 let scannerExtractedWeights = [];
+let scannerReturnTarget = null;
 let currentUser = null;
 
 // Garde globale : aucune valeur physique ne peut être négative (poids, reps, distance,

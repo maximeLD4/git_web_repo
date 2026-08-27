@@ -7,6 +7,20 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.7.0 - 2026-08-26
+===================
+
+- Le module Scanner est désormais accessible directement depuis le formulaire
+  d'ajout/modification d'exercice (Paramètres → Salle de sport), via un
+  nouveau bouton « Scanner les poids depuis une photo » dans le champ
+  « Poids possibles ». Après analyse, un bouton « Utiliser ces poids pour
+  l'exercice » ramène automatiquement au formulaire avec les valeurs
+  détectées fusionnées à celles déjà présentes (sans écraser ce qui a été
+  ajouté à la main). Le bouton retour du scanner ramène aussi directement au
+  formulaire (plutôt qu'à l'accueil) quand on y accède depuis ce contexte, et
+  le nom/incrément déjà saisis sont préservés pendant tout l'aller-retour.
+  La saisie manuelle reste bien sûr toujours disponible en parallèle.
+
 1.6.1 - 2026-08-26
 ===================
 

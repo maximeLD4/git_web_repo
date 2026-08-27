@@ -11,7 +11,13 @@ function renderScannerApp() {
   `;
   document.querySelector("[data-go-home]").addEventListener("click", () => {
     stopScannerCamera();
-    goHome();
+    if (scannerReturnTarget === "gym-settings-weights") {
+      scannerReturnTarget = null;
+      currentApp = "settings-gym";
+      render();
+    } else {
+      goHome();
+    }
   });
   renderScannerContent();
 }
@@ -381,6 +387,11 @@ function renderScannerExtractedList(rawText) {
        </details>`
     : `<div style="font-size:12px; color:var(--text-dim); margin-top:12px;">L'OCR n'a lu <b>aucun texte</b> dans cette photo — c'est probablement le signe d'un problème de chargement de l'outil plutôt que d'une photo peu nette.</div>`;
 
+  const useButtonHTML =
+    scannerReturnTarget === "gym-settings-weights"
+      ? `<button class="save-btn" id="scanner-use-btn" style="margin-top:14px;" ${scannerExtractedWeights.length === 0 ? "disabled" : ""}>${ICONS.check} Utiliser ces poids pour l'exercice</button>`
+      : "";
+
   actions.innerHTML = `
     <div class="weight-chip-label">Poids détectés (relis et corrige si besoin)</div>
     <div class="weight-chip-row" id="scanner-extracted-row">${chips}</div>
@@ -388,10 +399,25 @@ function renderScannerExtractedList(rawText) {
       <input type="number" inputmode="decimal" id="scanner-add-weight" placeholder="Ajouter une valeur">
       <button type="button" class="add-exercise-btn" id="scanner-add-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
     </div>
-    <button class="save-btn" id="scanner-copy-btn" style="margin-top:14px;">${ICONS.check} Copier la liste</button>
+    ${useButtonHTML}
+    <button class="${useButtonHTML ? "backup-btn" : "save-btn"}" id="scanner-copy-btn" style="margin-top:10px;">${ICONS.check} Copier la liste</button>
     <button class="backup-btn" id="scanner-retake-btn" style="margin-top:10px;">${ICONS.reset} Reprendre une photo</button>
     ${rawTextBlock}
   `;
+
+  if (useButtonHTML) {
+    document.getElementById("scanner-use-btn").addEventListener("click", () => {
+      // On fusionne avec les poids déjà présents dans le formulaire plutôt
+      // que de les écraser, au cas où certains auraient déjà été ajoutés à
+      // la main avant de lancer le scanner.
+      const merged = new Set([...gymSettingsFormDraft.baseWeights, ...scannerExtractedWeights]);
+      gymSettingsFormDraft.baseWeights = Array.from(merged).sort((a, b) => a - b);
+      scannerReturnTarget = null;
+      stopScannerCamera();
+      currentApp = "settings-gym";
+      render();
+    });
+  }
 
   document.getElementById("scanner-retake-btn").addEventListener("click", renderScannerContent);
   document.querySelectorAll("[data-remove-extracted]").forEach((btn) => {
