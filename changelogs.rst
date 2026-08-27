@@ -7,6 +7,18 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.8.0 - 2026-08-26
+===================
+
+- Salle de sport → Créer : pour un exercice ayant un incrément configuré,
+  chaque série affiche désormais un switch « Standard / +Xkg » à côté du
+  champ poids. En "Standard", seuls les paliers de base sont proposés ; en
+  incrémenté, seuls les paliers + incrément. Les deux listes ne sont plus
+  mélangées comme avant. Changer de mode essaie de conserver le même palier
+  de machine (ex. 30kg standard → 35kg incrémenté avec un incrément de 5,
+  plutôt que de sauter à une valeur arbitraire). Le switch n'apparaît que
+  pour les exercices ayant réellement un incrément configuré.
+
 1.7.1 - 2026-08-26
 ===================
 

@@ -168,6 +168,9 @@ function exerciseCardHTML(ex) {
   const effectiveConfig = isCardio ? null : findExerciseConfig(ex.name) || configsInCategory[0] || null;
   const last = getLastPerformance(isCardio ? ex.name : effectiveConfig ? effectiveConfig.name : ex.name);
   const possibleWeights = isCardio ? [] : computePossibleWeights(effectiveConfig);
+  const baseOnlyWeights = isCardio ? [] : computeBaseWeightsOnly(effectiveConfig);
+  const incrementedOnlyWeights = isCardio ? [] : computeIncrementedWeightsOnly(effectiveConfig);
+  const hasIncrement = !isCardio && effectiveConfig && effectiveConfig.maxIncrement > 0;
   const categoryAndNameHTML = isCardio
     ? ""
     : categoryToggleHTML(category) +
@@ -183,8 +186,14 @@ function exerciseCardHTML(ex) {
         const repsInput = `<input class="set-reps" type="number" inputmode="decimal" placeholder="km (optionnel)" value="${s.reps}">`;
         cols = weightInput + repsInput;
       } else {
-        const weightList = [...possibleWeights];
         const currentWeight = s.weight === "" ? null : parseFloat(s.weight);
+        // Si l'exercice a un incrément configuré, on détermine dans quel
+        // mode se trouve cette série au départ : si sa valeur actuelle
+        // correspond à un poids incrémenté, on ouvre directement en mode
+        // "incrémenté" plutôt que de forcer un retour en mode standard.
+        const startsIncremented = hasIncrement && incrementedOnlyWeights.includes(currentWeight);
+        const activeList = hasIncrement && startsIncremented ? incrementedOnlyWeights : baseOnlyWeights;
+        const weightList = [...activeList];
         if (currentWeight !== null && !weightList.includes(currentWeight)) {
           weightList.push(currentWeight);
           weightList.sort((a, b) => a - b);
@@ -192,7 +201,18 @@ function exerciseCardHTML(ex) {
         const weightOptions = weightList.length
           ? weightList.map((w) => `<option value="${w}" ${currentWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
           : `<option value="">—</option>`;
-        const weightField = `<select class="set-weight" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>`;
+        const incrementToggle = hasIncrement
+          ? `
+          <div class="ex-type-toggle increment-toggle" data-increment-toggle>
+            <button type="button" class="ex-type-btn ${!startsIncremented ? "active" : ""}" data-increment-mode="off">Standard</button>
+            <button type="button" class="ex-type-btn ${startsIncremented ? "active" : ""}" data-increment-mode="on">+${effectiveConfig.maxIncrement}kg</button>
+          </div>`
+          : "";
+        const weightField = `
+        <div class="set-weight-col">
+          <select class="set-weight" data-mode="${startsIncremented ? "on" : "off"}" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
+          ${incrementToggle}
+        </div>`;
         const repsField = `
         <div class="rep-stepper">
           <button type="button" class="rep-step-btn" data-rep-minus aria-label="Moins">−</button>
@@ -530,7 +550,7 @@ function attachLogListeners() {
         // Le poids de chaque série doit rester valide pour ce nouvel exercice :
         // on les repositionne sur le premier poids disponible.
         const newConfig = findExerciseConfig(target.name);
-        const possible = computePossibleWeights(newConfig);
+        const possible = computeBaseWeightsOnly(newConfig);
         target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "" }));
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
@@ -548,7 +568,7 @@ function attachLogListeners() {
         // sur le premier exercice configuré dans cette nouvelle catégorie.
         const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === target.category);
         target.name = firstInCategory ? firstInCategory.name : "";
-        const possible = firstInCategory ? computePossibleWeights(firstInCategory) : [];
+        const possible = firstInCategory ? computeBaseWeightsOnly(firstInCategory) : [];
         target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "" }));
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
@@ -581,6 +601,36 @@ function attachLogListeners() {
       // sans latence artificielle sur un simple tap.
       minusBtn.addEventListener("dblclick", () => bumpReps(-3));
       plusBtn.addEventListener("dblclick", () => bumpReps(3));
+
+      const toggleButtons = row.querySelectorAll("[data-increment-mode]");
+      const weightSelect = row.querySelector(".set-weight");
+      if (toggleButtons.length && weightSelect) {
+        toggleButtons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const mode = btn.dataset.incrementMode; // "on" ou "off"
+            if (weightSelect.dataset.mode === mode) return;
+            toggleButtons.forEach((b) => b.classList.toggle("active", b === btn));
+
+            const cfg = findExerciseConfig(nameInput ? nameInput.value : "");
+            const inc = (cfg && cfg.maxIncrement) || 0;
+            const currentVal = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
+            // On essaie de rester sur le même palier de machine en changeant
+            // de mode (ex. 70kg standard -> 75kg incrémenté), plutôt que de
+            // sauter arbitrairement à la première valeur de la nouvelle liste.
+            const currentBase = currentVal === null ? null : weightSelect.dataset.mode === "on" ? currentVal - inc : currentVal;
+            const newList = mode === "on" ? computeIncrementedWeightsOnly(cfg) : computeBaseWeightsOnly(cfg);
+            const target = currentBase === null ? null : mode === "on" ? currentBase + inc : currentBase;
+            const selectedValue = target !== null && newList.includes(target) ? target : newList[0];
+
+            weightSelect.dataset.mode = mode;
+            weightSelect.innerHTML = newList.length
+              ? newList.map((w) => `<option value="${w}" ${w === selectedValue ? "selected" : ""}>${w}kg</option>`).join("")
+              : `<option value="">—</option>`;
+            weightSelect.disabled = newList.length === 0;
+            scheduleDraftSave();
+          });
+        });
+      }
     });
 
     card.querySelectorAll("[data-move-set-up]").forEach((btn) => {
@@ -599,7 +649,7 @@ function attachLogListeners() {
           const cat = target.category || "pecs";
           const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === cat);
           target.name = firstInCategory ? firstInCategory.name : "";
-          const possible = firstInCategory ? computePossibleWeights(firstInCategory) : [];
+          const possible = firstInCategory ? computeBaseWeightsOnly(firstInCategory) : [];
           target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", reps: s.reps || 10 }));
         }
         draft.exercises = exs;

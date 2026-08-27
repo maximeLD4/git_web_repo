@@ -117,13 +117,13 @@ function formatDateShortFR(iso) {
 }
 function emptyExercise() {
   const firstConfig = gymExerciseConfigs.find((c) => (c.category || "pecs") === "pecs") || gymExerciseConfigs[0] || null;
-  const possibleWeights = firstConfig ? computePossibleWeights(firstConfig) : [];
+  const baseWeights = firstConfig ? computeBaseWeightsOnly(firstConfig) : [];
   return {
     id: uid(),
     name: firstConfig ? firstConfig.name : "",
     exType: "muscu",
     category: firstConfig ? firstConfig.category || "pecs" : "pecs",
-    sets: [{ id: uid(), weight: possibleWeights.length ? possibleWeights[0] : "", reps: 10 }],
+    sets: [{ id: uid(), weight: baseWeights.length ? baseWeights[0] : "", reps: 10 }],
   };
 }
 function emptyBlock() {
@@ -178,6 +178,17 @@ function computePossibleWeights(config) {
     if (inc > 0) set.add(Math.round((b + inc) * 100) / 100);
   });
   return Array.from(set).sort((a, b) => a - b);
+}
+
+function computeBaseWeightsOnly(config) {
+  if (!config || !config.baseWeights) return [];
+  return [...new Set(config.baseWeights.map((b) => Math.round(b * 100) / 100))].sort((a, b) => a - b);
+}
+
+function computeIncrementedWeightsOnly(config) {
+  if (!config || !config.baseWeights || !config.maxIncrement) return [];
+  const inc = config.maxIncrement;
+  return [...new Set(config.baseWeights.map((b) => Math.round((b + inc) * 100) / 100))].sort((a, b) => a - b);
 }
 
 /* ---------- run app: rendering ---------- */
