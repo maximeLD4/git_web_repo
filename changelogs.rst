@@ -7,6 +7,34 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.0.0 - 2026-08-26
+===================
+
+- **Changement de structure de la synchronisation cloud (Firebase uniquement,
+  le pont Scriptable n'est pas concerné)** : au lieu d'un seul bloc contenant
+  tout, chaque domaine vit désormais sous son propre chemin et se
+  synchronise indépendamment des autres :
+
+  - ``sessions/gym``, ``sessions/run``, ``sessions/swim``, ``sessions/bike``
+  - ``library/gym``, ``library/run``, ``library/swim``, ``library/bike``
+  - ``gymExerciseConfigs``
+  - ``weights``
+
+  Concrètement : modifier une pesée sur un appareil ne pousse plus que le
+  tiroir « poids » vers Firebase, sans toucher aux séances ou aux exercices
+  configurés — et donc sans risque d'écraser un changement pas encore
+  synchronisé d'un autre appareil sur un domaine totalement différent.
+
+- **Migration automatique et transparente** : au premier login après cette
+  mise à jour, si un profil n'a encore rien dans la nouvelle structure mais
+  possède des données dans l'ancien format en bloc unique, elles sont
+  reprises automatiquement puis réparties dans les nouveaux tiroirs — aucune
+  action requise, aucune perte de données.
+
+- L'export/import manuel de sauvegarde et le pont Scriptable continuent de
+  fonctionner exactement comme avant, en un seul bloc — ce changement ne
+  concerne que la synchronisation cloud Firebase.
+
 1.9.0 - 2026-08-26
 ===================
 

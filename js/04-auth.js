@@ -3,40 +3,97 @@
    Se connecter revient à choisir son profil. La session reste active sur cet
    appareil tant qu'on ne se déconnecte pas explicitement (voir 00-firebase-init.js). */
 
-let firebaseSyncTimer = null;
+/* ---------- Synchro Firebase : un "tiroir" par domaine, pas un seul bloc ----------
+   Chaque domaine (séances par sport, library par sport, exercices configurés,
+   poids) vit sous son propre chemin Firebase et se synchronise indépendamment
+   des autres — modifier une pesée sur un appareil n'écrase plus les séances
+   pas encore synchronisées d'un autre appareil, et inversement. */
 
-function scheduleFirebaseSync() {
+const FIREBASE_SYNC_MAP = {
+  [KEYS.sessions]: { path: "sessions/gym", getValue: () => sessions },
+  [KEYS.runSessions]: { path: "sessions/run", getValue: () => runSessions },
+  [KEYS.swimSessions]: { path: "sessions/swim", getValue: () => swimSessions },
+  [KEYS.bikeSessions]: { path: "sessions/bike", getValue: () => bikeSessions },
+  [KEYS.library]: { path: "library/gym", getValue: () => library },
+  [KEYS.runLibrary]: { path: "library/run", getValue: () => runLibrary },
+  [KEYS.swimLibrary]: { path: "library/swim", getValue: () => swimLibrary },
+  [KEYS.bikeLibrary]: { path: "library/bike", getValue: () => bikeLibrary },
+  [KEYS.gymExerciseConfigs]: { path: "gymExerciseConfigs", getValue: () => gymExerciseConfigs },
+  [KEYS.weights]: { path: "weights", getValue: () => weights },
+};
+
+let firebaseSyncTimer = null;
+let firebaseDirtyKeys = new Set();
+
+function scheduleFirebaseSync(key) {
   if (!currentUser) return;
+  if (key && FIREBASE_SYNC_MAP[key]) firebaseDirtyKeys.add(key);
   clearTimeout(firebaseSyncTimer);
   firebaseSyncTimer = setTimeout(pushToFirebase, 1500);
 }
 
 function pushToFirebase() {
   if (!currentUser) return;
-  let data;
-  try {
-    data = JSON.parse(window.__scriptableExport());
-  } catch (e) {
-    return;
-  }
-  firebase
-    .database()
-    .ref("users/" + currentUser.uid + "/backup")
-    .set(data)
-    .catch((err) => {
-      console.error("Synchronisation cloud impossible pour le moment (les données restent sauvegardées localement) :", err);
-    });
+  // On ne pousse que les domaines réellement modifiés depuis la dernière
+  // synchro — c'est précisément ce qui évite d'écraser à tort un domaine
+  // non concerné par la modification en cours.
+  const keysToSync = Array.from(firebaseDirtyKeys);
+  firebaseDirtyKeys.clear();
+  keysToSync.forEach((key) => {
+    const mapping = FIREBASE_SYNC_MAP[key];
+    if (!mapping) return;
+    firebase
+      .database()
+      .ref("users/" + currentUser.uid + "/" + mapping.path)
+      .set(mapping.getValue())
+      .catch((err) => {
+        console.error("Synchronisation cloud impossible pour " + mapping.path + " (les données restent sauvegardées localement) :", err);
+      });
+  });
 }
 
 function pullFromFirebase() {
   if (!currentUser) return Promise.resolve();
-  return firebase
-    .database()
-    .ref("users/" + currentUser.uid + "/backup")
-    .once("value")
-    .then((snapshot) => {
-      const data = snapshot.val();
-      if (data) restoreFromBackupData(data);
+  const base = firebase.database().ref("users/" + currentUser.uid);
+  return Promise.all([
+    base.child("sessions/gym").once("value"),
+    base.child("sessions/run").once("value"),
+    base.child("sessions/swim").once("value"),
+    base.child("sessions/bike").once("value"),
+    base.child("library/gym").once("value"),
+    base.child("library/run").once("value"),
+    base.child("library/swim").once("value"),
+    base.child("library/bike").once("value"),
+    base.child("gymExerciseConfigs").once("value"),
+    base.child("weights").once("value"),
+    base.child("backup").once("value"), // ancien format "tout en un bloc", pour migration ponctuelle
+  ])
+    .then(([gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, weightsSnap, oldBackupSnap]) => {
+      const newSnaps = [gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, weightsSnap];
+      const hasAnyNewData = newSnaps.some((s) => s.val() !== null);
+      const oldBackup = oldBackupSnap.val();
+
+      if (!hasAnyNewData && oldBackup) {
+        // Ce profil a des données dans l'ancien format (avant ce découpage)
+        // mais rien encore dans la nouvelle structure : on migre une bonne
+        // fois pour toutes. restoreFromBackupData() appelle saveJSON() pour
+        // chaque domaine, ce qui les marque automatiquement "à synchroniser"
+        // — la synchro normale (debounced) les réécrira ensuite dans la
+        // nouvelle structure séparée, sans action supplémentaire ici.
+        restoreFromBackupData(oldBackup);
+        return;
+      }
+
+      sessions = gymSnap.val() || [];
+      runSessions = runSnap.val() || [];
+      swimSessions = swimSnap.val() || [];
+      bikeSessions = bikeSnap.val() || [];
+      library = gymLibSnap.val() || [];
+      runLibrary = runLibSnap.val() || [];
+      swimLibrary = swimLibSnap.val() || [];
+      bikeLibrary = bikeLibSnap.val() || [];
+      gymExerciseConfigs = configsSnap.val() || [];
+      weights = weightsSnap.val() || [];
     })
     .catch((err) => {
       console.error("Impossible de récupérer les données du profil, on continue avec les données locales de cet appareil :", err);
