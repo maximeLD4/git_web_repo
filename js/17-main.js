@@ -31,6 +31,8 @@ function render() {
   if (currentApp === "settings") { renderSettingsApp(); return; }
   if (currentApp === "settings-gym") { renderGymSettingsApp(); return; }
   if (currentApp === "scanner") { renderScannerApp(); return; }
+  if (currentApp === "performance") { renderPerformanceApp(); return; }
+  if (currentApp === "performance-detail") { renderPerformanceDetailApp(); return; }
   renderGymApp();
 }
 

@@ -68,6 +68,7 @@ const app = document.getElementById("app");
 let scannerStream = null;
 let scannerExtractedWeights = [];
 let scannerReturnTarget = null;
+let performanceSelectedExerciseId = null;
 let currentUser = null;
 
 // Garde globale : aucune valeur physique ne peut être négative (poids, reps, distance,

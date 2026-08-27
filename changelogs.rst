@@ -7,6 +7,39 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.9.0 - 2026-08-26
+===================
+
+- Nouveau module **Performance** (accueil), suivi de progression pour la
+  Salle de sport dans un premier temps :
+
+  - **Indice de performance** par exercice : volume total (poids × reps
+    sommé sur toutes les séries) avec un bonus de +5% par série au-delà de
+    la première. Calculé automatiquement à partir de l'historique existant,
+    aucune nouvelle saisie requise.
+  - **Vue d'ensemble** : liste des exercices configurés regroupés par groupe
+    musculaire, avec l'indice le plus récent et une flèche de tendance par
+    rapport à la séance précédente.
+  - **Détail par exercice** (au clic) : records personnels (poids max,
+    meilleure série au sens du plus gros volume sur une seule série),
+    graphique de l'indice dans le temps (SVG fait maison, cohérent avec le
+    reste de l'app), et liste des séances passées avec leur indice.
+  - Les séances « prévues » (non encore effectuées) ne comptent pas dans le
+    suivi, seules les séances réellement effectuées sont prises en compte.
+
+- Retrait du module Scanner de l'accueil (voir 1.8.4) : la carte a laissé sa
+  place à Performance, cohérent avec son usage désormais réservé au
+  formulaire d'exercice.
+
+1.8.4 - 2026-08-26
+===================
+
+- Retrait de la carte « Scanner » de l'écran d'accueil : le module reste
+  entièrement fonctionnel et accessible depuis le formulaire d'ajout
+  d'exercice (Paramètres → Salle de sport → « Scanner les poids depuis une
+  photo »), mais n'a plus d'utilité en tant qu'entrée autonome du menu
+  principal.
+
 1.8.3 - 2026-08-26
 ===================
 
