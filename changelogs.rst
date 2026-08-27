@@ -7,6 +7,18 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.6.0 - 2026-08-26
+===================
+
+- Module Scanner : l'extraction des poids se fait désormais en deux étapes,
+  comme demandé. Étape 1 : une passe grossière sur l'image entière détecte où
+  se trouvent les zones de texte (lignes), sans se fier à leur contenu exact.
+  Étape 2 : chaque ligne repérée est recadrée, agrandie (×2,5) et relue
+  isolément, avec bien moins de bruit visuel autour et une résolution
+  effective plus élevée — ce qui donne des lectures nettement plus fiables
+  que l'ancienne passe unique sur la photo entière. Les lignes sans aucun
+  chiffre en première passe sont ignorées pour ne pas perdre de temps dessus.
+
 1.5.2 - 2026-08-26
 ===================
 

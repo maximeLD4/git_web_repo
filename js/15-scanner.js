@@ -188,30 +188,34 @@ async function analyzeScannerPhoto() {
   }
 
   const progressEl = document.getElementById("scanner-progress");
+  const updateProgress = (msg) => {
+    if (progressEl) progressEl.textContent = msg;
+  };
   // Les photos de téléphone en pleine résolution (souvent 3000-4000px de
   // large) sont inutilement lourdes pour de l'OCR et peuvent ralentir ou
   // faire échouer la lecture : on réduit avant analyse.
   const resizedCanvas = scannerResizeCanvas(canvas, 1600);
 
   let settled = false;
+  // Deux passes = plus lent qu'une seule lecture : on laisse un peu plus de
+  // marge qu'avant (90s au lieu de 45s) avant de considérer que ça bloque.
   const timeoutId = setTimeout(() => {
     if (settled) return;
     settled = true;
-    scannerShowAnalyzeError("La lecture prend trop de temps (plus de 45 secondes) et a été interrompue. Réessaie avec une photo plus nette, prise de plus près de l'étiquette.", null);
-  }, 45000);
+    scannerShowAnalyzeError("La lecture prend trop de temps (plus de 90 secondes) et a été interrompue. Réessaie avec une photo plus nette, prise de plus près de l'étiquette.", null);
+  }, 90000);
 
   let worker = null;
   try {
     // On passe par un worker explicite (plutôt que le raccourci
     // Tesseract.recognize()) pour être sûr que la restriction de caractères
-    // ci-dessous est bien prise en compte : c'est la façon documentée par
-    // Tesseract.js de régler les paramètres du moteur, contrairement au
-    // raccourci qui peut l'ignorer silencieusement selon la version.
+    // ci-dessous est bien prise en compte, et pour pouvoir le réutiliser sur
+    // plusieurs lectures successives sans le recréer à chaque fois.
     worker = await Tesseract.createWorker("eng", 1, {
       logger: (m) => {
         if (!progressEl || settled) return;
         const pct = typeof m.progress === "number" ? ` (${Math.round(m.progress * 100)}%)` : "";
-        progressEl.textContent = "Lecture de l'image en cours : " + (m.status || "...") + pct;
+        updateProgress("Étape 1/2 — détection des zones de texte : " + (m.status || "...") + pct);
       },
     });
     // Restreint les caractères possibles à ceux qui peuvent réellement
@@ -222,7 +226,35 @@ async function analyzeScannerPhoto() {
     await worker.setParameters({
       tessedit_char_whitelist: "0123456789kgKGlbsLBS ",
     });
-    const result = await worker.recognize(resizedCanvas);
+
+    // ---- Étape 1 : passe grossière sur l'image entière, pour repérer OÙ se
+    // trouvent les zones de texte (lignes), sans se fier à leur contenu exact
+    // à ce stade — juste leur position.
+    const detectResult = await worker.recognize(resizedCanvas);
+    const allLines = (detectResult.data && detectResult.data.lines) || [];
+    // On ne garde que les lignes qui contenaient déjà au moins un chiffre
+    // lors de cette passe grossière : pas la peine de recadrer et relire en
+    // détail une zone qui n'a manifestement rien à voir avec un poids.
+    const candidateLines = allLines.filter((l) => l.text && /\d/.test(l.text) && l.bbox);
+
+    // ---- Étape 2 : pour chaque ligne candidate, recadrage + agrandissement
+    // + nouvelle lecture, isolée du reste de l'image (donc bien moins de
+    // bruit visuel autour, et une résolution effective plus élevée).
+    let combinedText = "";
+    const maxLines = Math.min(candidateLines.length, 40);
+    for (let i = 0; i < maxLines; i++) {
+      if (settled) return;
+      updateProgress(`Étape 2/2 — lecture précise (${i + 1}/${maxLines})...`);
+      const cropCanvas = scannerCropAndUpscale(resizedCanvas, candidateLines[i].bbox, 2.5);
+      try {
+        const lineResult = await worker.recognize(cropCanvas);
+        combinedText += ((lineResult.data && lineResult.data.text) || "") + "\n";
+      } catch (e) {
+        // Une ligne isolée qui échoue ne doit pas faire échouer tout le
+        // reste : on l'ignore simplement et on continue avec les suivantes.
+      }
+    }
+
     await worker.terminate();
     worker = null;
 
@@ -230,9 +262,12 @@ async function analyzeScannerPhoto() {
     settled = true;
     clearTimeout(timeoutId);
 
-    const text = (result && result.data && result.data.text) || "";
-    scannerExtractedWeights = [...text.matchAll(/(\d{1,3})\s*k\s*g/gi)].map((m) => parseInt(m[1], 10));
-    renderScannerExtractedList(text);
+    // Si aucune ligne candidate n'a été trouvée en étape 1 (photo très
+    // bruitée, ou aucun chiffre lu du tout), on retombe sur le texte brut de
+    // la passe grossière plutôt que de n'avoir absolument rien à montrer.
+    const finalText = combinedText.trim() ? combinedText : (detectResult.data && detectResult.data.text) || "";
+    scannerExtractedWeights = [...finalText.matchAll(/(\d{1,3})\s*k\s*g/gi)].map((m) => parseInt(m[1], 10));
+    renderScannerExtractedList(finalText);
   } catch (e) {
     if (worker) worker.terminate().catch(() => {});
     if (settled) return;
@@ -240,6 +275,21 @@ async function analyzeScannerPhoto() {
     clearTimeout(timeoutId);
     scannerShowAnalyzeError("La lecture a échoué.", e);
   }
+}
+
+function scannerCropAndUpscale(sourceCanvas, bbox, scale) {
+  const pad = 4;
+  const x = Math.max(0, Math.floor(bbox.x0 - pad));
+  const y = Math.max(0, Math.floor(bbox.y0 - pad));
+  const w = Math.min(sourceCanvas.width - x, Math.ceil(bbox.x1 - bbox.x0) + pad * 2);
+  const h = Math.min(sourceCanvas.height - y, Math.ceil(bbox.y1 - bbox.y0) + pad * 2);
+  const out = document.createElement("canvas");
+  out.width = Math.max(1, Math.round(w * scale));
+  out.height = Math.max(1, Math.round(h * scale));
+  const ctx = out.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(sourceCanvas, x, y, Math.max(1, w), Math.max(1, h), 0, 0, out.width, out.height);
+  return out;
 }
 
 function scannerResizeCanvas(sourceCanvas, maxSide) {
