@@ -7,6 +7,24 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.5.0 - 2026-08-26
+===================
+
+- Le numéro de version affiché en bas de l'écran de connexion et de
+  Paramètres est désormais lu directement depuis ce fichier ``VERSION`` au
+  démarrage de l'app (``fetch("./VERSION")``), au lieu d'une constante
+  dupliquée dans le code JavaScript. Une seule source de vérité à mettre à
+  jour à chaque nouvelle version.
+
+1.4.2 - 2026-08-26
+===================
+
+- Paramètres → Salle de sport : le bouton retour en haut de l'écran ferme
+  désormais le formulaire d'ajout/modification d'exercice en cours (sans
+  enregistrer) au lieu de sortir directement vers Paramètres — il se comporte
+  comme le bouton « Annuler » du formulaire. Un second appui sur retour sort
+  ensuite bien vers Paramètres, comme avant.
+
 1.4.1 - 2026-08-26
 ===================
 

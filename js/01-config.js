@@ -93,9 +93,3 @@ const ACTIVITY_META = [
   { key: "swim", color: "#4FC3D9", rgb: "79,195,217", label: "Natation" },
   { key: "bike", color: "#C48FE0", rgb: "196,143,224", label: "Vélo" },
 ];
-
-// Doit rester identique au contenu du fichier VERSION à la racine du projet.
-// Pas de build ni de fetch : l'app est en scripts classiques statiques, donc
-// cette constante est mise à jour manuellement à chaque changement, en même
-// temps que VERSION et changelogs.rst.
-const APP_VERSION = "1.4.1";

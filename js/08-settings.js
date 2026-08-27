@@ -32,7 +32,7 @@ function renderSettingsApp() {
     <div style="position:fixed; left:0; right:0; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; justify-content:center;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
     </div>
-    <div style="position:fixed; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">v${APP_VERSION}</div>
+    <div id="app-version-label" style="position:fixed; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">${appVersion ? "v" + appVersion : ""}</div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", goHome);
   document.getElementById("logout-btn").addEventListener("click", () => {
@@ -160,9 +160,18 @@ function renderGymSettingsApp() {
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
-    gymSettingsFormOpen = false;
-    currentApp = "settings";
-    render();
+    if (gymSettingsFormOpen) {
+      // On était en train d'éditer/ajouter un exercice : le bouton retour se
+      // comporte comme "Annuler", il ferme juste le formulaire et reste sur
+      // la liste — il ne sort de la section Salle de sport que si on y est
+      // déjà (sinon, avant ce correctif, on ressortait directement vers
+      // Paramètres même sans avoir voulu quitter la liste).
+      gymSettingsFormOpen = false;
+      renderGymSettingsContent();
+    } else {
+      currentApp = "settings";
+      render();
+    }
   });
   renderGymSettingsContent();
 }
