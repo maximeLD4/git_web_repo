@@ -7,6 +7,18 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.5.2 - 2026-08-26
+===================
+
+- Module Scanner : suite au signalement « du texte est bien lu mais
+  n'importe quoi », restriction des caractères que l'OCR peut reconnaître aux
+  seuls plausibles sur une étiquette de poids (chiffres, kg, lbs) — sans ça,
+  Tesseract essayait de faire correspondre l'image à n'importe quel mot
+  anglais, produisant du texte incohérent. Passage par un worker explicite
+  (``Tesseract.createWorker`` + ``setParameters``) plutôt que le raccourci
+  ``Tesseract.recognize()``, qui peut ignorer silencieusement ce réglage
+  selon la version.
+
 1.5.1 - 2026-08-26
 ===================
 

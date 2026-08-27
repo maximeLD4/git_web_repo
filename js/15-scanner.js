@@ -200,14 +200,32 @@ async function analyzeScannerPhoto() {
     scannerShowAnalyzeError("La lecture prend trop de temps (plus de 45 secondes) et a été interrompue. Réessaie avec une photo plus nette, prise de plus près de l'étiquette.", null);
   }, 45000);
 
+  let worker = null;
   try {
-    const result = await Tesseract.recognize(resizedCanvas, "eng", {
+    // On passe par un worker explicite (plutôt que le raccourci
+    // Tesseract.recognize()) pour être sûr que la restriction de caractères
+    // ci-dessous est bien prise en compte : c'est la façon documentée par
+    // Tesseract.js de régler les paramètres du moteur, contrairement au
+    // raccourci qui peut l'ignorer silencieusement selon la version.
+    worker = await Tesseract.createWorker("eng", 1, {
       logger: (m) => {
         if (!progressEl || settled) return;
         const pct = typeof m.progress === "number" ? ` (${Math.round(m.progress * 100)}%)` : "";
         progressEl.textContent = "Lecture de l'image en cours : " + (m.status || "...") + pct;
       },
     });
+    // Restreint les caractères possibles à ceux qui peuvent réellement
+    // apparaître sur une étiquette de poids (chiffres + kg/lbs). Sans ça,
+    // Tesseract essaie de faire correspondre ce qu'il voit à n'importe quel
+    // mot anglais plausible, ce qui produit du texte incohérent sur une
+    // image qui n'a justement rien à voir avec du texte normal.
+    await worker.setParameters({
+      tessedit_char_whitelist: "0123456789kgKGlbsLBS ",
+    });
+    const result = await worker.recognize(resizedCanvas);
+    await worker.terminate();
+    worker = null;
+
     if (settled) return;
     settled = true;
     clearTimeout(timeoutId);
@@ -216,6 +234,7 @@ async function analyzeScannerPhoto() {
     scannerExtractedWeights = [...text.matchAll(/(\d{1,3})\s*k\s*g/gi)].map((m) => parseInt(m[1], 10));
     renderScannerExtractedList(text);
   } catch (e) {
+    if (worker) worker.terminate().catch(() => {});
     if (settled) return;
     settled = true;
     clearTimeout(timeoutId);
