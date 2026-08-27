@@ -7,6 +7,19 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.8.2 - 2026-08-26
+===================
+
+- Contraste nettement renforcé entre un champ modifiable et un champ
+  désactivé (ex. Distance grisée en mode Durée dans un bloc de course à
+  pied) : la différence ne se voyait quasiment pas, les deux utilisaient la
+  même couleur de fond crème que la page elle-même. Les champs modifiables
+  ont maintenant un fond blanc avec bordure nette, les champs désactivés un
+  fond transparent avec bordure en pointillés — la distinction saute
+  désormais aux yeux. Ce changement s'applique à tous les champs calculés
+  automatiquement de l'app (course, natation, vélo), pas seulement au cas
+  signalé.
+
 1.8.1 - 2026-08-26
 ===================
 
