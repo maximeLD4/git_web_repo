@@ -7,6 +7,17 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.8.1 - 2026-08-26
+===================
+
+- Ajustements visuels du switch standard/incrémenté ajouté en 1.8.0 :
+  remplacement des deux boutons côte à côte par un **bouton unique** qui
+  bascule d'état à chaque clic (affiche « Standard » ou « +Xkg » selon
+  l'état actuel, coloré différemment quand actif). Correction de
+  l'alignement : « reps » et « kg » restent maintenant bien au même niveau
+  malgré la présence du switch sous le champ poids (alignement en haut de
+  ligne plutôt que centré verticalement).
+
 1.8.0 - 2026-08-26
 ===================
 

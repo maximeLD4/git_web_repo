@@ -202,11 +202,7 @@ function exerciseCardHTML(ex) {
           ? weightList.map((w) => `<option value="${w}" ${currentWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
           : `<option value="">—</option>`;
         const incrementToggle = hasIncrement
-          ? `
-          <div class="ex-type-toggle increment-toggle" data-increment-toggle>
-            <button type="button" class="ex-type-btn ${!startsIncremented ? "active" : ""}" data-increment-mode="off">Standard</button>
-            <button type="button" class="ex-type-btn ${startsIncremented ? "active" : ""}" data-increment-mode="on">+${effectiveConfig.maxIncrement}kg</button>
-          </div>`
+          ? `<button type="button" class="increment-switch-btn ${startsIncremented ? "active" : ""}" data-increment-switch data-mode="${startsIncremented ? "on" : "off"}" data-increment-value="${effectiveConfig.maxIncrement}">${startsIncremented ? "+" + effectiveConfig.maxIncrement + "kg" : "Standard"}</button>`
           : "";
         const weightField = `
         <div class="set-weight-col">
@@ -602,33 +598,34 @@ function attachLogListeners() {
       minusBtn.addEventListener("dblclick", () => bumpReps(-3));
       plusBtn.addEventListener("dblclick", () => bumpReps(3));
 
-      const toggleButtons = row.querySelectorAll("[data-increment-mode]");
+      const switchBtn = row.querySelector("[data-increment-switch]");
       const weightSelect = row.querySelector(".set-weight");
-      if (toggleButtons.length && weightSelect) {
-        toggleButtons.forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const mode = btn.dataset.incrementMode; // "on" ou "off"
-            if (weightSelect.dataset.mode === mode) return;
-            toggleButtons.forEach((b) => b.classList.toggle("active", b === btn));
+      if (switchBtn && weightSelect) {
+        switchBtn.addEventListener("click", () => {
+          const currentMode = switchBtn.dataset.mode;
+          const mode = currentMode === "on" ? "off" : "on";
+          const incValue = parseFloat(switchBtn.dataset.incrementValue) || 0;
 
-            const cfg = findExerciseConfig(nameInput ? nameInput.value : "");
-            const inc = (cfg && cfg.maxIncrement) || 0;
-            const currentVal = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
-            // On essaie de rester sur le même palier de machine en changeant
-            // de mode (ex. 70kg standard -> 75kg incrémenté), plutôt que de
-            // sauter arbitrairement à la première valeur de la nouvelle liste.
-            const currentBase = currentVal === null ? null : weightSelect.dataset.mode === "on" ? currentVal - inc : currentVal;
-            const newList = mode === "on" ? computeIncrementedWeightsOnly(cfg) : computeBaseWeightsOnly(cfg);
-            const target = currentBase === null ? null : mode === "on" ? currentBase + inc : currentBase;
-            const selectedValue = target !== null && newList.includes(target) ? target : newList[0];
+          const cfg = findExerciseConfig(nameInput ? nameInput.value : "");
+          const currentVal = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
+          // On essaie de rester sur le même palier de machine en changeant
+          // de mode (ex. 70kg standard -> 75kg incrémenté), plutôt que de
+          // sauter arbitrairement à la première valeur de la nouvelle liste.
+          const currentBase = currentVal === null ? null : currentMode === "on" ? currentVal - incValue : currentVal;
+          const newList = mode === "on" ? computeIncrementedWeightsOnly(cfg) : computeBaseWeightsOnly(cfg);
+          const target = currentBase === null ? null : mode === "on" ? currentBase + incValue : currentBase;
+          const selectedValue = target !== null && newList.includes(target) ? target : newList[0];
 
-            weightSelect.dataset.mode = mode;
-            weightSelect.innerHTML = newList.length
-              ? newList.map((w) => `<option value="${w}" ${w === selectedValue ? "selected" : ""}>${w}kg</option>`).join("")
-              : `<option value="">—</option>`;
-            weightSelect.disabled = newList.length === 0;
-            scheduleDraftSave();
-          });
+          switchBtn.dataset.mode = mode;
+          switchBtn.classList.toggle("active", mode === "on");
+          switchBtn.textContent = mode === "on" ? `+${incValue}kg` : "Standard";
+
+          weightSelect.dataset.mode = mode;
+          weightSelect.innerHTML = newList.length
+            ? newList.map((w) => `<option value="${w}" ${w === selectedValue ? "selected" : ""}>${w}kg</option>`).join("")
+            : `<option value="">—</option>`;
+          weightSelect.disabled = newList.length === 0;
+          scheduleDraftSave();
         });
       }
     });
