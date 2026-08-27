@@ -266,7 +266,7 @@ async function analyzeScannerPhoto() {
     // bruitée, ou aucun chiffre lu du tout), on retombe sur le texte brut de
     // la passe grossière plutôt que de n'avoir absolument rien à montrer.
     const finalText = combinedText.trim() ? combinedText : (detectResult.data && detectResult.data.text) || "";
-    scannerExtractedWeights = [...finalText.matchAll(/(\d{1,3})\s*k\s*g/gi)].map((m) => parseInt(m[1], 10));
+    scannerExtractedWeights = scannerExtractWeightsFromText(finalText);
     renderScannerExtractedList(finalText);
   } catch (e) {
     if (worker) worker.terminate().catch(() => {});
@@ -275,6 +275,52 @@ async function analyzeScannerPhoto() {
     clearTimeout(timeoutId);
     scannerShowAnalyzeError("La lecture a échoué.", e);
   }
+}
+
+function scannerLbsToKg(lbs) {
+  // 1 lb = 0.45359237 kg. Arrondi standard (pas de troncature) : c'est ce qui
+  // correspond réellement aux étiquettes de machines de musculation (ex.
+  // 30 lbs -> 14 kg réel, alors qu'une troncature donnerait 13, faux).
+  return Math.round(lbs * 0.45359237);
+}
+
+function scannerInferKgFromPair(a, b) {
+  // Retourne la valeur en kg si (a, b) forment une paire lbs/kg plausible
+  // (l'une des deux convertie correspond à l'autre, à 1kg près), sinon null.
+  // La tolérance de ±1kg n'est pas arbitraire : sur une vraie étiquette de
+  // machine, la conversion imprimée par le fabricant ne suit pas toujours
+  // exactement 1 lb = 0.453592 kg au kg près (ex. 140 lbs est étiqueté
+  // 63 kg alors que la conversion précise arrondirait à 64) — sans cette
+  // tolérance, on rejetterait à tort de vraies paires légitimes.
+  // On exige que la valeur "lbs" soit strictement supérieure à la valeur
+  // "kg", pour éviter les faux positifs entre deux petits nombres proches.
+  if (a > b && Math.abs(scannerLbsToKg(a) - b) <= 1) return b;
+  if (b > a && Math.abs(scannerLbsToKg(b) - a) <= 1) return a;
+  return null;
+}
+
+function scannerExtractWeightsFromText(text) {
+  const weights = new Set();
+  const lines = text.split("\n");
+  for (const line of lines) {
+    // Niveau 1 : motif explicite "<nombre>kg" — le plus fiable, on lui fait
+    // confiance directement quand l'OCR a bien lu l'unité.
+    const explicitMatches = [...line.matchAll(/(\d{1,3})\s*k\s*g/gi)];
+    if (explicitMatches.length > 0) {
+      explicitMatches.forEach((m) => weights.add(parseInt(m[1], 10)));
+      continue;
+    }
+    // Niveau 2 (repli) : l'OCR a lu deux nombres sur la ligne mais pas
+    // l'unité ("kg"/"lbs") — si l'un converti en kg correspond exactement à
+    // l'autre, c'est très probablement une paire lbs/kg dont on peut déduire
+    // le poids en kg sans avoir eu besoin de lire le mot "kg" lui-même.
+    const numbers = [...line.matchAll(/\d+/g)].map((m) => parseInt(m[0], 10));
+    if (numbers.length === 2) {
+      const inferred = scannerInferKgFromPair(numbers[0], numbers[1]);
+      if (inferred !== null) weights.add(inferred);
+    }
+  }
+  return Array.from(weights).sort((a, b) => a - b);
 }
 
 function scannerCropAndUpscale(sourceCanvas, bbox, scale) {

@@ -7,6 +7,17 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+1.6.1 - 2026-08-26
+===================
+
+- Module Scanner : quand l'OCR lit deux nombres sur une même ligne mais rate
+  l'unité ("kg"/"lbs"), le poids en kg est désormais déduit automatiquement
+  si les deux nombres correspondent à une conversion lbs → kg plausible
+  (arrondi standard, à ±1kg près). La tolérance de ±1kg s'appuie sur les
+  vraies valeurs de l'étiquette testée : la conversion imprimée par le
+  fabricant n'est pas toujours parfaitement précise au kg près (ex. 140 lbs
+  étiqueté 63 kg alors que la conversion exacte arrondirait à 64).
+
 1.6.0 - 2026-08-26
 ===================
 
