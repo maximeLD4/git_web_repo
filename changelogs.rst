@@ -7,6 +7,44 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.1.0 - 2026-08-26
+===================
+
+- Paramètres → Salle de sport : possibilité de **dupliquer** un exercice
+  configuré (nouveau bouton à côté de « Supprimer » dans la liste). La
+  duplication ouvre le formulaire pré-rempli (catégorie, poids, incrément)
+  avec le nom suivi de « (copie) », prêt à être ajusté avant d'enregistrer en
+  tant que nouvel exercice — l'original n'est jamais modifié.
+- **Unicité du nom garantie** : impossible d'enregistrer un exercice si son
+  nom (insensible à la casse) est déjà utilisé par un autre exercice
+  configuré — message d'erreur clair à la place.
+- Les **suggestions de noms** dans le formulaire ne proposent plus les noms
+  déjà utilisés par un autre exercice configuré (évite de suggérer un nom
+  qui provoquerait immédiatement une erreur de doublon) ; l'exercice en
+  cours de modification garde cependant son propre nom parmi ses
+  suggestions.
+
+2.0.2 - 2026-08-26
+===================
+
+- Correction du correctif précédent (2.0.1) : le champ et le bouton
+  « Ajouter » étaient bien sur une seule ligne, mais le bouton ne prenait
+  que la largeur de son texte au lieu de partager la ligne à parts égales
+  avec le champ, et son rayon de bordure (18px) ne correspondait pas à
+  celui du champ (12px). Les deux éléments partagent maintenant strictement
+  la même largeur (50/50) et le même rayon de bordure.
+
+2.0.1 - 2026-08-26
+===================
+
+- Champ d'ajout manuel de poids + bouton « Ajouter » désormais sur une seule
+  ligne (au lieu de deux blocs empilés), dans le scanner et dans le
+  formulaire d'exercice de Paramètres → Salle de sport. Le bouton reste
+  visible sans avoir à faire disparaître le clavier. La classe générique
+  ``field-row`` (utilisée ailleurs pour d'autres regroupements de champs qui
+  doivent rester empilés) n'a pas été modifiée — une nouvelle classe dédiée
+  (``inline-add-row``) a été créée spécifiquement pour ce cas.
+
 2.0.0 - 2026-08-26
 ===================
 

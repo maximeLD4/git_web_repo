@@ -92,6 +92,7 @@ function gymSettingsListHTML() {
             <div class="history-date">${c.name}</div>
             <div class="history-label">${bases ? bases + " kg" : "Aucun palier"}${incLabel}</div>
           </div>
+          <button type="button" class="icon-btn" data-duplicate-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
           <button type="button" class="icon-btn" data-delete-config="${c.id}" aria-label="Supprimer">${ICONS.trash}</button>
         </div>
       </div>`;
@@ -107,7 +108,16 @@ function gymSettingsFormHTML() {
         .map((w) => `<span class="weight-chip removable">${w}kg <button type="button" data-remove-base-weight="${w}">${ICONS.x}</button></span>`)
         .join("")
     : `<span style="color:var(--text-dim); font-size:13px;">Aucun palier ajouté</span>`;
-  const suggestions = EXERCISE_SUGGESTIONS[gymSettingsFormDraft.category] || [];
+  // On ne propose pas les suggestions déjà utilisées par un AUTRE exercice
+  // configuré — inutile de suggérer un nom qui provoquerait immédiatement une
+  // erreur de doublon à l'enregistrement. L'exercice en cours d'édition
+  // garde le droit de voir son propre nom parmi les suggestions.
+  const usedNamesLower = new Set(
+    gymExerciseConfigs.filter((c) => c.id !== gymSettingsEditingConfigId).map((c) => c.name.trim().toLowerCase())
+  );
+  const suggestions = (EXERCISE_SUGGESTIONS[gymSettingsFormDraft.category] || []).filter(
+    (n) => !usedNamesLower.has(n.trim().toLowerCase())
+  );
   const suggestionsHTML = suggestions
     .map((n) => `<button type="button" class="weight-chip" data-suggest-name="${n.replace(/"/g, "&quot;")}">${n}</button>`)
     .join("");
@@ -133,7 +143,7 @@ function gymSettingsFormHTML() {
         <label>Poids possibles (paliers de la machine)</label>
         <div class="weight-chip-row" id="config-base-weights-row">${chips}</div>
         <button type="button" class="backup-btn" id="config-scan-weights-btn" style="margin-top:8px;">${ICONS.camera} Scanner les poids depuis une photo</button>
-        <div class="field-row" style="margin-top:8px;">
+        <div class="inline-add-row" style="margin-top:8px;">
           <input type="number" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
           <button type="button" class="add-exercise-btn" id="config-add-base-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
         </div>
@@ -208,6 +218,22 @@ function attachGymSettingsListeners() {
       gymSettingsFormDraft = {
         name: config.name,
         category: GYM_EXERCISE_CATEGORIES.some((c) => c.key === config.category) ? config.category : "pecs",
+        baseWeights: [...config.baseWeights],
+        maxIncrement: config.maxIncrement || 0,
+      };
+      renderGymSettingsContent();
+    });
+  });
+  document.querySelectorAll("[data-duplicate-config]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const config = gymExerciseConfigs.find((c) => c.id === btn.dataset.duplicateConfig);
+      if (!config) return;
+      gymSettingsFormOpen = true;
+      gymSettingsEditingConfigId = null; // duplication = nouvelle entrée, pas modification de l'original
+      gymSettingsFormDraft = {
+        name: config.name + " (copie)",
+        category: config.category || "pecs",
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
       };
@@ -291,6 +317,12 @@ function attachGymSettingsListeners() {
     }
     if (gymSettingsFormDraft.baseWeights.length === 0) {
       errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un poids possible.</div>`;
+      return;
+    }
+    const nameLower = name.toLowerCase();
+    const isDuplicate = gymExerciseConfigs.some((c) => c.id !== gymSettingsEditingConfigId && c.name.trim().toLowerCase() === nameLower);
+    if (isDuplicate) {
+      errorSlot.innerHTML = `<div class="error-msg">Un exercice nommé « ${name} » existe déjà — choisis un nom différent.</div>`;
       return;
     }
     errorSlot.innerHTML = "";
