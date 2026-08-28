@@ -59,6 +59,15 @@ const GYM_EXERCISE_CATEGORIES = [
   { key: "abdos", label: "Abdos" },
 ];
 
+// Catégories du type Cardio (Salle de sport). Toutes ont le même comportement
+// pour l'instant — elles servent uniquement à préremplir le titre par défaut
+// de l'exercice — mais permettront de différencier plus tard si besoin.
+const CARDIO_CATEGORIES = [
+  { key: "rameur", label: "Rameur" },
+  { key: "velo", label: "Vélo" },
+  { key: "course", label: "Course à pied" },
+];
+
 const EXERCISE_SUGGESTIONS = {
   pecs: [
     "Développé couché", "Développé incliné", "Développé décliné", "Développé haltères",

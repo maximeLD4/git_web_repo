@@ -83,6 +83,7 @@
   .rep-step-btn:active { background: var(--accent); color: #fff; }
   .rep-value { font-size: 16.5px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; min-width: 26px; text-align: center; }
   .ex-name-label { flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .exercise-collapsed-summary { margin: 0 14px 14px 17px; font-size: 12.5px; color: var(--text-dim); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   select.ex-name-input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid transparent; color: var(--text); border-radius: 12px; padding: 11px 13px; font-size: 15.5px; font-weight: 600; font-family: -apple-system, system-ui, sans-serif; margin-bottom: 10px; }
   .exercise-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 14px; overflow: hidden; position: relative; box-shadow: var(--shadow-sm); }
   .exercise-card::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; background: var(--accent); border-radius: 3px; opacity: 0.85; }

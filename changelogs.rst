@@ -7,6 +7,63 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.4.0 - 2026-08-26
+===================
+
+- Salle de sport → Créer, exercices **Cardio** : ajout de catégories
+  (Rameur, Vélo, Course à pied), affichées comme un sélecteur juste sous le
+  bascule Muscu/Cardio, aucune présélectionnée par défaut. Choisir une
+  catégorie préremplit le titre de l'exercice avec son libellé (ex.
+  « Rameur »), tout en restant librement modifiable ensuite — une
+  personnalisation du titre est bien conservée même après avoir changé de
+  catégorie ou sauvegardé. Les trois catégories se comportent identiquement
+  pour l'instant (elles ne font que préremplir le titre), en prévision d'une
+  éventuelle différenciation future.
+
+2.3.0 - 2026-08-26
+===================
+
+- **Plus aucune présélection automatique** en Salle de sport → Créer :
+
+  - Une nouvelle séance démarre désormais avec **zéro exercice** (au lieu
+    d'un exercice pré-rempli par défaut).
+  - « Ajouter un exercice » crée un exercice **entièrement vierge** : ni
+    Muscu ni Cardio choisi, aucune catégorie musculaire présélectionnée,
+    aucun exercice précis présélectionné.
+  - Le parcours se fait maintenant étape par étape : choisir Muscu ou
+    Cardio → (si Muscu) choisir une catégorie → choisir un exercice
+    précis → les séries apparaissent alors, avec une invite claire à
+    chaque étape en attente d'un choix.
+  - Il est désormais possible de supprimer le tout dernier exercice d'une
+    séance (la liste peut redevenir vide), au lieu de le réinitialiser de
+    force vers un exercice Muscu par défaut.
+
+- Deux bugs trouvés et corrigés en cours de route :
+
+  - Une ligne de sécurité oubliée réinjectait un exercice vide dès que la
+    liste passait à zéro, contredisant l'objectif de cette version — retirée.
+  - La lecture de l'état affiché à l'écran forçait silencieusement « Muscu »
+    et « Pecs » dès qu'aucun type/catégorie n'était choisi, effaçant l'état
+    "vierge" d'un exercice réduit dès qu'une action ailleurs dans la séance
+    déclenchait une sauvegarde — corrigé.
+
+2.2.0 - 2026-08-26
+===================
+
+- Salle de sport → Créer/Modifier une séance : chaque exercice peut
+  désormais être **réduit** (icône chevron dans l'en-tête, ou tap sur le
+  résumé compact) pour n'afficher qu'une ligne de résumé (nom, nombre de
+  séries, dernière performance), au lieu de tout le détail — utile pour ne
+  plus avoir à scroller parmi plusieurs exercices développés en même temps.
+  Un nouvel exercice s'ouvre toujours développé par défaut, prêt à remplir.
+
+  Point technique important : réduire un exercice ne touche en rien à ses
+  données. Modifier un AUTRE exercice pendant qu'un exercice est réduit
+  (ajouter une série, changer de catégorie, sauvegarder...) préserve
+  intégralement ses séries et son nom, même si son détail n'est plus
+  affiché à l'écran — testé explicitement pour éviter toute perte de
+  données silencieuse.
+
 2.1.2 - 2026-08-26
 ===================
 

@@ -9,11 +9,12 @@ let gymSettingsEditingConfigId = null;
 let gymSettingsFormDraft = { name: "", category: "pecs", baseWeights: [], maxIncrement: 0 };
 let gymSettingsActiveCategory = "all";
 let weights = loadJSON(KEYS.weights, []);
-let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [emptyExercise()] };
-if (!Array.isArray(draft.exercises) || draft.exercises.length === 0) draft.exercises = [emptyExercise()];
+let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [] };
+if (!Array.isArray(draft.exercises)) draft.exercises = [];
 
 let tab = "log";
 let openHistoryIds = {};
+let openExerciseIds = {}; // réduit/développé des exercices dans l'onglet Créer (par défaut : développé, sauf réduction explicite)
 let draftSaveTimer = null;
 let editingSessionId = draft.editingSessionId || null;
 let historyViewMode = "calendar"; // "list" | "calendar"

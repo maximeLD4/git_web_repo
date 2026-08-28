@@ -15,26 +15,39 @@ function serializeExercisesFromDOM() {
   const result = [];
   cards.forEach((card) => {
     const id = card.dataset.id;
-    const exType = card.dataset.extype || "muscu";
-    const category = card.dataset.category || "pecs";
+    const existing = draft.exercises.find((e) => e.id === id);
+    const exType = card.dataset.extype || "";
+    const category = card.dataset.category || "";
     const nameEl = card.querySelector(".ex-name-input");
-    const name = nameEl ? nameEl.value : "";
-    const sets = [];
-    card.querySelectorAll(".set-row").forEach((row) => {
-      const weightEl = row.querySelector(".set-weight");
-      const repsEl = row.querySelector(".set-reps");
-      sets.push({
-        id: row.dataset.id,
-        weight: weightEl ? weightEl.value : "",
-        reps: repsEl ? repsEl.value : "",
-        // Mode explicite (Standard/"off" ou +Xkg/"on") lu directement depuis
-        // le sélecteur — on ne le redéduit JAMAIS depuis la seule valeur
-        // numérique du poids, car celle-ci peut être ambiguë (ex. un
-        // incrément de 10kg avec des paliers espacés de 10kg : "30kg" peut
-        // être le palier 30 en standard, OU le palier 20 + 10 incrémenté).
-        weightMode: weightEl ? weightEl.dataset.mode || "off" : "off",
+    // Pour un exercice Muscu réduit, le sélecteur de nom n'existe plus dans le
+    // DOM (il est dans la partie repliée) : on conserve alors le nom déjà
+    // connu plutôt que d'écraser par une valeur vide.
+    const name = nameEl ? nameEl.value : existing ? existing.name : "";
+    const rows = card.querySelectorAll(".set-row");
+    let sets;
+    if (rows.length === 0 && existing) {
+      // Carte réduite : la liste des séries n'existe pas dans le DOM — on
+      // conserve les séries déjà connues plutôt que de les remplacer par un
+      // tableau vide, ce qui les aurait silencieusement effacées.
+      sets = existing.sets;
+    } else {
+      sets = [];
+      rows.forEach((row) => {
+        const weightEl = row.querySelector(".set-weight");
+        const repsEl = row.querySelector(".set-reps");
+        sets.push({
+          id: row.dataset.id,
+          weight: weightEl ? weightEl.value : "",
+          reps: repsEl ? repsEl.value : "",
+          // Mode explicite (Standard/"off" ou +Xkg/"on") lu directement depuis
+          // le sélecteur — on ne le redéduit JAMAIS depuis la seule valeur
+          // numérique du poids, car celle-ci peut être ambiguë (ex. un
+          // incrément de 10kg avec des paliers espacés de 10kg : "30kg" peut
+          // être le palier 30 en standard, OU le palier 20 + 10 incrémenté).
+          weightMode: weightEl ? weightEl.dataset.mode || "off" : "off",
+        });
       });
-    });
+    }
     result.push({ id, name, exType, category, sets });
   });
   return result;
@@ -70,8 +83,9 @@ function scheduleDraftSave() {
 }
 
 function clearDraft() {
-  draft = { date: todayISO(), label: "", exercises: [emptyExercise()] };
+  draft = { date: todayISO(), label: "", exercises: [] };
   editingSessionId = null;
+  openExerciseIds = {};
   saveJSON(KEYS.draft, draft);
 }
 
@@ -83,6 +97,7 @@ function startEditSession(session) {
     exercises: JSON.parse(JSON.stringify(session.exercises)),
     editingSessionId,
   };
+  openExerciseIds = {};
   saveJSON(KEYS.draft, draft);
   tab = "log";
   render();
@@ -95,6 +110,7 @@ function duplicateSession(session) {
     sets: ex.sets.map((s) => ({ ...s, id: uid() })),
   }));
   editingSessionId = null;
+  openExerciseIds = {};
   draft = { date: todayISO(), label: session.label || "", exercises: clonedExercises, editingSessionId: null };
   saveJSON(KEYS.draft, draft);
   tab = "log";
@@ -152,7 +168,17 @@ function categoryToggleHTML(category) {
     </div>`;
 }
 
+function cardioCategoryToggleHTML(category) {
+  return `
+    <div class="ex-type-toggle wrap-toggle" data-cardio-category-toggle style="margin-bottom:10px;">
+      ${CARDIO_CATEGORIES.map(
+        (c) => `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""}" data-cardio-category-btn="${c.key}">${c.label}</button>`
+      ).join("")}
+    </div>`;
+}
+
 function nameSelectHTML(configsInCategory, effectiveConfig) {
+  const placeholder = `<option value="" ${!effectiveConfig ? "selected" : ""}>— Choisis un exercice —</option>`;
   const options = [...configsInCategory]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(
@@ -160,77 +186,93 @@ function nameSelectHTML(configsInCategory, effectiveConfig) {
         `<option value="${c.name.replace(/"/g, "&quot;")}" ${effectiveConfig && c.id === effectiveConfig.id ? "selected" : ""}>${c.name}</option>`
     )
     .join("");
-  return `<select class="ex-name-input ex-name-pill">${options}</select>`;
+  return `<select class="ex-name-input ex-name-pill">${placeholder}${options}</select>`;
 }
 
 function exerciseCardHTML(ex) {
-  const exType = ex.exType || "muscu";
+  const exType = ex.exType || ""; // "" tant qu'aucun type n'a été choisi
   const isCardio = exType === "cardio";
-  const category = ex.category || "pecs";
-  const configsInCategory = isCardio ? [] : gymExerciseConfigs.filter((c) => (c.category || "pecs") === category);
-  // La config "effective" est celle qui correspond au nom enregistré, ou à défaut
-  // la première de la catégorie — le menu affiché et les poids calculés
-  // pointent toujours vers exactement le même exercice, jamais l'un sans l'autre.
-  const effectiveConfig = isCardio ? null : findExerciseConfig(ex.name) || configsInCategory[0] || null;
-  const last = getLastPerformance(isCardio ? ex.name : effectiveConfig ? effectiveConfig.name : ex.name);
-  const possibleWeights = isCardio ? [] : computePossibleWeights(effectiveConfig);
-  const baseOnlyWeights = isCardio ? [] : computeBaseWeightsOnly(effectiveConfig);
-  const incrementedOnlyWeights = isCardio ? [] : computeIncrementedWeightsOnly(effectiveConfig);
-  const hasIncrement = !isCardio && effectiveConfig && effectiveConfig.maxIncrement > 0;
-  const categoryAndNameHTML = isCardio
-    ? ""
-    : categoryToggleHTML(category) +
-      (configsInCategory.length === 0
-        ? `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Va dans Paramètres → Salle de sport pour en ajouter.</div>`
-        : nameSelectHTML(configsInCategory, effectiveConfig));
+  const isMuscu = exType === "muscu";
+  const category = ex.category || ""; // "" tant qu'aucune catégorie n'a été choisie
 
-  const setsHTML = ex.sets
-    .map((s, i) => {
-      let cols;
-      if (isCardio) {
-        const weightInput = `<input class="set-weight" type="number" inputmode="decimal" placeholder="min" value="${s.weight}">`;
-        const repsInput = `<input class="set-reps" type="number" inputmode="decimal" placeholder="km (optionnel)" value="${s.reps}">`;
-        cols = weightInput + repsInput;
-      } else {
-        const currentWeight = s.weight === "" ? null : parseFloat(s.weight);
-        // On fait confiance en priorité au mode explicitement sauvegardé sur
-        // la série (voir serializeExercisesFromDOM) — la déduction à partir
-        // de la seule valeur numérique est ambiguë dès que l'incrément
-        // correspond à l'écart entre deux paliers, et servait auparavant à
-        // tort de seule source de vérité, provoquant des bascules
-        // involontaires du switch sur d'anciennes séries lors d'un nouveau
-        // rendu. On ne s'y replie que si aucun mode n'a jamais été
-        // enregistré (séries créées avant ce correctif).
-        const startsIncremented = hasIncrement && (s.weightMode ? s.weightMode === "on" : incrementedOnlyWeights.includes(currentWeight));
-        const activeList = hasIncrement && startsIncremented ? incrementedOnlyWeights : baseOnlyWeights;
-        const weightList = [...activeList];
-        if (currentWeight !== null && !weightList.includes(currentWeight)) {
-          weightList.push(currentWeight);
-          weightList.sort((a, b) => a - b);
-        }
-        const weightOptions = weightList.length
-          ? weightList.map((w) => `<option value="${w}" ${currentWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
-          : `<option value="">—</option>`;
-        const incrementToggle = hasIncrement
-          ? `<button type="button" class="increment-switch-btn ${startsIncremented ? "active" : ""}" data-increment-switch data-mode="${startsIncremented ? "on" : "off"}" data-increment-value="${effectiveConfig.maxIncrement}">${startsIncremented ? "+" + effectiveConfig.maxIncrement + "kg" : "Standard"}</button>`
-          : "";
-        const weightField = `
+  const configsInCategory = category ? gymExerciseConfigs.filter((c) => (c.category || "pecs") === category) : [];
+  // La config "effective" est UNIQUEMENT celle qui correspond exactement au nom
+  // déjà choisi — contrairement à avant, on ne se replie plus sur le premier
+  // exercice de la catégorie : tant que rien n'est explicitement sélectionné,
+  // rien n'est effectif.
+  const effectiveConfig = isMuscu ? findExerciseConfig(ex.name) : null;
+  const last = getLastPerformance(isCardio ? ex.name : effectiveConfig ? effectiveConfig.name : "");
+  const baseOnlyWeights = effectiveConfig ? computeBaseWeightsOnly(effectiveConfig) : [];
+  const incrementedOnlyWeights = effectiveConfig ? computeIncrementedWeightsOnly(effectiveConfig) : [];
+  const hasIncrement = !!effectiveConfig && effectiveConfig.maxIncrement > 0;
+
+  // Le corps de la carte dépend d'où on en est dans le parcours :
+  // aucun type choisi -> juste une invite ; Muscu sans catégorie -> choisir la
+  // catégorie ; Muscu avec catégorie mais sans exercice -> choisir l'exercice ;
+  // sinon (Cardio, ou Muscu avec un exercice choisi) -> les séries.
+  let bodyHTML;
+  if (!exType) {
+    bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis Muscu ou Cardio pour continuer.</div>`;
+  } else if (isMuscu && !category) {
+    bodyHTML = categoryToggleHTML(category) + `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis une catégorie pour continuer.</div>`;
+  } else if (isMuscu && configsInCategory.length === 0) {
+    bodyHTML =
+      categoryToggleHTML(category) +
+      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Va dans Paramètres → Salle de sport pour en ajouter.</div>`;
+  } else if (isMuscu && !effectiveConfig) {
+    bodyHTML =
+      categoryToggleHTML(category) +
+      nameSelectHTML(configsInCategory, null) +
+      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis un exercice pour continuer.</div>`;
+  } else {
+    const categoryAndNameHTML = isCardio ? cardioCategoryToggleHTML(category) : categoryToggleHTML(category) + nameSelectHTML(configsInCategory, effectiveConfig);
+    const setsHTML = ex.sets
+      .map((s, i) => {
+        let cols;
+        if (isCardio) {
+          const weightInput = `<input class="set-weight" type="number" inputmode="decimal" placeholder="min" value="${s.weight}">`;
+          const repsInput = `<input class="set-reps" type="number" inputmode="decimal" placeholder="km (optionnel)" value="${s.reps}">`;
+          cols = weightInput + repsInput;
+        } else {
+          const currentWeight = s.weight === "" ? null : parseFloat(s.weight);
+          // On fait confiance en priorité au mode explicitement sauvegardé sur
+          // la série (voir serializeExercisesFromDOM) — la déduction à partir
+          // de la seule valeur numérique est ambiguë dès que l'incrément
+          // correspond à l'écart entre deux paliers, et servait auparavant à
+          // tort de seule source de vérité, provoquant des bascules
+          // involontaires du switch sur d'anciennes séries lors d'un nouveau
+          // rendu. On ne s'y replie que si aucun mode n'a jamais été
+          // enregistré (séries créées avant ce correctif).
+          const startsIncremented = hasIncrement && (s.weightMode ? s.weightMode === "on" : incrementedOnlyWeights.includes(currentWeight));
+          const activeList = hasIncrement && startsIncremented ? incrementedOnlyWeights : baseOnlyWeights;
+          const weightList = [...activeList];
+          if (currentWeight !== null && !weightList.includes(currentWeight)) {
+            weightList.push(currentWeight);
+            weightList.sort((a, b) => a - b);
+          }
+          const weightOptions = weightList.length
+            ? weightList.map((w) => `<option value="${w}" ${currentWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
+            : `<option value="">—</option>`;
+          const incrementToggle = hasIncrement
+            ? `<button type="button" class="increment-switch-btn ${startsIncremented ? "active" : ""}" data-increment-switch data-mode="${startsIncremented ? "on" : "off"}" data-increment-value="${effectiveConfig.maxIncrement}">${startsIncremented ? "+" + effectiveConfig.maxIncrement + "kg" : "Standard"}</button>`
+            : "";
+          const weightField = `
         <div class="set-weight-col">
           <select class="set-weight" data-mode="${startsIncremented ? "on" : "off"}" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
           ${incrementToggle}
         </div>`;
-        const repsField = `
+          const repsField = `
         <div class="rep-stepper">
           <button type="button" class="rep-step-btn" data-rep-minus aria-label="Moins">−</button>
           <span class="rep-value" data-rep-value>${s.reps || 0}</span>
           <button type="button" class="rep-step-btn" data-rep-plus aria-label="Plus">+</button>
           <input type="hidden" class="set-reps" value="${s.reps || 0}">
         </div>`;
-        cols = repsField + weightField;
-      }
-      const isFirst = i === 0;
-      const isLast = i === ex.sets.length - 1;
-      return `
+          cols = repsField + weightField;
+        }
+        const isFirst = i === 0;
+        const isLast = i === ex.sets.length - 1;
+        return `
     <div class="set-row" data-id="${s.id}">
       <div class="set-main">
         <div class="set-num">${i + 1}</div>
@@ -242,30 +284,44 @@ function exerciseCardHTML(ex) {
         <button type="button" class="set-action-btn danger" data-remove-set="${s.id}" aria-label="Supprimer" ${ex.sets.length === 1 ? "disabled" : ""}>${ICONS.trash}</button>
       </div>
     </div>`;
-    })
-    .join("");
+      })
+      .join("");
+
+    bodyHTML = `
+    ${categoryAndNameHTML}
+    ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
+    <div class="sets-header"><span class="spacer"></span>${isCardio ? "<span>Min</span><span>Km</span>" : "<span>Reps</span><span>Kg</span>"}</div>
+    <div class="sets-list">${setsHTML}</div>
+    <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>`;
+  }
+
+  const isOpen = openExerciseIds[ex.id] !== false; // par défaut développé, sauf réduction explicite
+  const summaryCount = ex.sets.length ? (isCardio ? `${ex.sets.length} passage${ex.sets.length > 1 ? "s" : ""}` : `${ex.sets.length} série${ex.sets.length > 1 ? "s" : ""}`) : "vide";
+  const summaryLast = last ? ` · ${formatSetsSummary(last.exType, last.sets)}` : "";
 
   return `
-  <div class="exercise-card" data-id="${ex.id}" data-extype="${exType}" data-category="${ex.category || "pecs"}">
+  <div class="exercise-card" data-id="${ex.id}" data-extype="${exType}" data-category="${ex.category || ""}">
     <div class="exercise-head">
       <button type="button" class="drag-handle" data-drag-handle aria-label="Réordonner">${ICONS.grip}</button>
       ${
         isCardio
           ? `<input class="ex-name-input" type="text" placeholder="Nom de l'exercice (optionnel)" list="exercise-suggestions" value="${ex.name.replace(/"/g, "&quot;")}">`
-          : `<div class="ex-name-label">${ex.name || "Choisis un exercice"}</div>`
+          : `<div class="ex-name-label">${ex.name || "Nouvel exercice"}</div>`
       }
+      <button type="button" class="icon-btn" data-toggle-exercise="${ex.id}" aria-label="${isOpen ? "Réduire" : "Développer"}"><span class="chev ${isOpen ? "open" : ""}">${ICONS.chevron}</span></button>
       <button type="button" class="icon-btn" data-duplicate-ex="${ex.id}" aria-label="Dupliquer l'exercice">${ICONS.duplicate}</button>
       <button class="icon-btn" data-remove-ex="${ex.id}">${ICONS.x}</button>
     </div>
+    ${
+      isOpen
+        ? `
     <div class="ex-type-toggle">
-      <button type="button" class="ex-type-btn ${!isCardio ? "active" : ""}" data-set-type="muscu">Muscu</button>
+      <button type="button" class="ex-type-btn ${isMuscu ? "active" : ""}" data-set-type="muscu">Muscu</button>
       <button type="button" class="ex-type-btn ${isCardio ? "active" : ""}" data-set-type="cardio">Cardio</button>
     </div>
-    ${categoryAndNameHTML}
-    ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
-    <div class="sets-header"><span class="spacer"></span>${isCardio ? "<span>Min</span><span>Km</span>" : "<span>Reps</span><span>Kg</span>"}</div>
-    <div class="sets-list">${setsHTML}</div>
-    <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>
+    ${bodyHTML}`
+        : `<div class="exercise-collapsed-summary" data-toggle-exercise="${ex.id}">${ex.name || (isCardio ? "Exercice cardio" : "Nouvel exercice")}${" · "}${summaryCount}${summaryLast}</div>`
+    }
   </div>`;
 }
 
@@ -531,6 +587,7 @@ function attachLogListeners() {
     const hint = card.querySelector("[data-hint]");
 
     function refreshHint(name) {
+      if (!hint) return;
       const last = getLastPerformance(name);
       if (last) {
         hint.style.display = "";
@@ -553,11 +610,22 @@ function attachLogListeners() {
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
         target.name = chosenName;
-        // Le poids de chaque série doit rester valide pour ce nouvel exercice :
-        // on les repositionne sur le premier poids disponible.
-        const newConfig = findExerciseConfig(target.name);
-        const possible = computeBaseWeightsOnly(newConfig);
-        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", weightMode: "off" }));
+        if (!chosenName) {
+          // Retour à "aucun exercice choisi" (option placeholder) : pas de
+          // séries tant qu'un exercice n'est pas explicitement sélectionné.
+          target.sets = [];
+        } else {
+          const newConfig = findExerciseConfig(target.name);
+          const possible = computeBaseWeightsOnly(newConfig);
+          if (target.sets.length === 0) {
+            // Première sélection : on crée la toute première série.
+            target.sets = [{ id: uid(), weight: possible.length ? possible[0] : "", reps: 10, weightMode: "off" }];
+          } else {
+            // Changement d'exercice après coup : les séries existantes
+            // doivent rester valides pour ce nouvel exercice.
+            target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", weightMode: "off" }));
+          }
+        }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
@@ -570,12 +638,29 @@ function attachLogListeners() {
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
         target.category = btn.dataset.categoryBtn;
-        // On change de catégorie : le nom choisi ne correspond plus, on repart
-        // sur le premier exercice configuré dans cette nouvelle catégorie.
-        const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === target.category);
-        target.name = firstInCategory ? firstInCategory.name : "";
-        const possible = firstInCategory ? computeBaseWeightsOnly(firstInCategory) : [];
-        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", weightMode: "off" }));
+        // On change de catégorie : le nom choisi ne correspond plus à rien.
+        // On ne présélectionne plus le premier exercice de la catégorie —
+        // l'utilisateur doit choisir explicitement, et les séries restent
+        // vides tant qu'aucun exercice n'est choisi.
+        target.name = "";
+        target.sets = [];
+        draft.exercises = exs;
+        saveJSON(KEYS.draft, draft);
+        renderContent();
+      });
+    });
+
+    card.querySelectorAll("[data-cardio-category-btn]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (card.dataset.category === btn.dataset.cardioCategoryBtn) return;
+        const exs = serializeExercisesFromDOM();
+        const target = exs.find((e) => e.id === card.dataset.id);
+        target.category = btn.dataset.cardioCategoryBtn;
+        // Les catégories Cardio se comportent toutes pareil pour l'instant :
+        // elles servent uniquement à préremplir le titre par défaut, que
+        // l'utilisateur peut toujours modifier librement ensuite.
+        const cat = CARDIO_CATEGORIES.find((c) => c.key === target.category);
+        target.name = cat ? cat.label : target.name;
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
@@ -653,31 +738,42 @@ function attachLogListeners() {
         const target = exs.find((e) => e.id === card.dataset.id);
         target.exType = btn.dataset.setType;
         if (btn.dataset.setType === "muscu") {
-          const cat = target.category || "pecs";
-          const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === cat);
-          target.name = firstInCategory ? firstInCategory.name : "";
-          const possible = firstInCategory ? computeBaseWeightsOnly(firstInCategory) : [];
-          target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", reps: s.reps || 10, weightMode: "off" }));
+          // Repart entièrement à zéro : rien n'est présélectionné, l'utilisateur
+          // choisit la catégorie puis l'exercice lui-même à son rythme.
+          target.category = "";
+          target.name = "";
+          target.sets = [];
+        } else {
+          // Cardio : catégorie repart à zéro (aucune des catégories Muscu ne
+          // s'applique ici), le nom reste libre (texte). On s'assure juste
+          // qu'il y a au moins une ligne à remplir si aucune série n'existait
+          // déjà.
+          target.category = "";
+          if (target.sets.length === 0) {
+            target.sets = [{ id: uid(), weight: "", reps: "" }];
+          }
         }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
       });
     });
-    card.querySelector("[data-remove-ex]").addEventListener("click", () => {
-      const exs = serializeExercisesFromDOM();
-      if (exs.length <= 1) {
-        const target = exs.find((e) => e.id === card.dataset.id);
-        const fresh = emptyExercise();
-        target.name = fresh.name;
-        target.category = fresh.category;
-        target.exType = "muscu";
-        target.sets = fresh.sets;
-        draft.exercises = exs;
+    card.querySelectorAll("[data-toggle-exercise]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const id = el.dataset.toggleExercise;
+        // On sauvegarde d'abord l'état actuel du DOM (via le repli déjà en
+        // place dans serializeExercisesFromDOM pour les cartes réduites)
+        // avant de changer l'état réduit/développé, pour ne perdre aucune
+        // saisie en cours sur les AUTRES exercices.
+        draft.exercises = serializeExercisesFromDOM();
+        const isCurrentlyOpen = openExerciseIds[id] !== false;
+        openExerciseIds[id] = !isCurrentlyOpen;
         saveJSON(KEYS.draft, draft);
         renderContent();
-        return;
-      }
+      });
+    });
+    card.querySelector("[data-remove-ex]").addEventListener("click", () => {
+      const exs = serializeExercisesFromDOM();
       draft.exercises = exs.filter((e) => e.id !== card.dataset.id);
       saveJSON(KEYS.draft, draft);
       renderContent();
@@ -708,20 +804,23 @@ function attachLogListeners() {
         renderContent();
       });
     });
-    card.querySelector("[data-add-set]").addEventListener("click", () => {
-      const exs = serializeExercisesFromDOM();
-      const target = exs.find((e) => e.id === card.dataset.id);
-      const lastSet = target.sets[target.sets.length - 1];
-      target.sets.push({
-        id: uid(),
-        weight: lastSet ? lastSet.weight : "",
-        reps: lastSet ? lastSet.reps : "",
-        weightMode: lastSet ? lastSet.weightMode : "off",
+    const addSetBtn = card.querySelector("[data-add-set]");
+    if (addSetBtn) {
+      addSetBtn.addEventListener("click", () => {
+        const exs = serializeExercisesFromDOM();
+        const target = exs.find((e) => e.id === card.dataset.id);
+        const lastSet = target.sets[target.sets.length - 1];
+        target.sets.push({
+          id: uid(),
+          weight: lastSet ? lastSet.weight : "",
+          reps: lastSet ? lastSet.reps : "",
+          weightMode: lastSet ? lastSet.weightMode : "off",
+        });
+        draft.exercises = exs;
+        saveJSON(KEYS.draft, draft);
+        renderContent();
       });
-      draft.exercises = exs;
-      saveJSON(KEYS.draft, draft);
-      renderContent();
-    });
+    }
 
     card.querySelector("[data-drag-handle]").addEventListener("pointerdown", (e) => startDragExercise(e, card));
   });

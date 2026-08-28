@@ -117,14 +117,12 @@ function formatDateShortFR(iso) {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 function emptyExercise() {
-  const firstConfig = gymExerciseConfigs.find((c) => (c.category || "pecs") === "pecs") || gymExerciseConfigs[0] || null;
-  const baseWeights = firstConfig ? computeBaseWeightsOnly(firstConfig) : [];
   return {
     id: uid(),
-    name: firstConfig ? firstConfig.name : "",
-    exType: "muscu",
-    category: firstConfig ? firstConfig.category || "pecs" : "pecs",
-    sets: [{ id: uid(), weight: baseWeights.length ? baseWeights[0] : "", reps: 10, weightMode: "off" }],
+    name: "",
+    exType: "", // "" tant qu'aucun type (Muscu/Cardio) n'a été choisi explicitement
+    category: "", // "" tant qu'aucune catégorie musculaire n'a été choisie
+    sets: [],
   };
 }
 function emptyBlock() {
