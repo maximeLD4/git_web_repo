@@ -27,6 +27,12 @@ function serializeExercisesFromDOM() {
         id: row.dataset.id,
         weight: weightEl ? weightEl.value : "",
         reps: repsEl ? repsEl.value : "",
+        // Mode explicite (Standard/"off" ou +Xkg/"on") lu directement depuis
+        // le sélecteur — on ne le redéduit JAMAIS depuis la seule valeur
+        // numérique du poids, car celle-ci peut être ambiguë (ex. un
+        // incrément de 10kg avec des paliers espacés de 10kg : "30kg" peut
+        // être le palier 30 en standard, OU le palier 20 + 10 incrémenté).
+        weightMode: weightEl ? weightEl.dataset.mode || "off" : "off",
       });
     });
     result.push({ id, name, exType, category, sets });
@@ -187,11 +193,15 @@ function exerciseCardHTML(ex) {
         cols = weightInput + repsInput;
       } else {
         const currentWeight = s.weight === "" ? null : parseFloat(s.weight);
-        // Si l'exercice a un incrément configuré, on détermine dans quel
-        // mode se trouve cette série au départ : si sa valeur actuelle
-        // correspond à un poids incrémenté, on ouvre directement en mode
-        // "incrémenté" plutôt que de forcer un retour en mode standard.
-        const startsIncremented = hasIncrement && incrementedOnlyWeights.includes(currentWeight);
+        // On fait confiance en priorité au mode explicitement sauvegardé sur
+        // la série (voir serializeExercisesFromDOM) — la déduction à partir
+        // de la seule valeur numérique est ambiguë dès que l'incrément
+        // correspond à l'écart entre deux paliers, et servait auparavant à
+        // tort de seule source de vérité, provoquant des bascules
+        // involontaires du switch sur d'anciennes séries lors d'un nouveau
+        // rendu. On ne s'y replie que si aucun mode n'a jamais été
+        // enregistré (séries créées avant ce correctif).
+        const startsIncremented = hasIncrement && (s.weightMode ? s.weightMode === "on" : incrementedOnlyWeights.includes(currentWeight));
         const activeList = hasIncrement && startsIncremented ? incrementedOnlyWeights : baseOnlyWeights;
         const weightList = [...activeList];
         if (currentWeight !== null && !weightList.includes(currentWeight)) {
@@ -547,7 +557,7 @@ function attachLogListeners() {
         // on les repositionne sur le premier poids disponible.
         const newConfig = findExerciseConfig(target.name);
         const possible = computeBaseWeightsOnly(newConfig);
-        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "" }));
+        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", weightMode: "off" }));
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
@@ -565,7 +575,7 @@ function attachLogListeners() {
         const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === target.category);
         target.name = firstInCategory ? firstInCategory.name : "";
         const possible = firstInCategory ? computeBaseWeightsOnly(firstInCategory) : [];
-        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "" }));
+        target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", weightMode: "off" }));
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
@@ -647,7 +657,7 @@ function attachLogListeners() {
           const firstInCategory = gymExerciseConfigs.find((c) => (c.category || "pecs") === cat);
           target.name = firstInCategory ? firstInCategory.name : "";
           const possible = firstInCategory ? computeBaseWeightsOnly(firstInCategory) : [];
-          target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", reps: s.reps || 10 }));
+          target.sets = target.sets.map((s) => ({ ...s, weight: possible.length ? possible[0] : "", reps: s.reps || 10, weightMode: "off" }));
         }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
@@ -702,7 +712,12 @@ function attachLogListeners() {
       const exs = serializeExercisesFromDOM();
       const target = exs.find((e) => e.id === card.dataset.id);
       const lastSet = target.sets[target.sets.length - 1];
-      target.sets.push({ id: uid(), weight: lastSet ? lastSet.weight : "", reps: lastSet ? lastSet.reps : "" });
+      target.sets.push({
+        id: uid(),
+        weight: lastSet ? lastSet.weight : "",
+        reps: lastSet ? lastSet.reps : "",
+        weightMode: lastSet ? lastSet.weightMode : "off",
+      });
       draft.exercises = exs;
       saveJSON(KEYS.draft, draft);
       renderContent();

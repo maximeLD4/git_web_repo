@@ -124,7 +124,7 @@ function emptyExercise() {
     name: firstConfig ? firstConfig.name : "",
     exType: "muscu",
     category: firstConfig ? firstConfig.category || "pecs" : "pecs",
-    sets: [{ id: uid(), weight: baseWeights.length ? baseWeights[0] : "", reps: 10 }],
+    sets: [{ id: uid(), weight: baseWeights.length ? baseWeights[0] : "", reps: 10, weightMode: "off" }],
   };
 }
 function emptyBlock() {

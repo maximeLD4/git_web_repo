@@ -7,6 +7,25 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.1.2 - 2026-08-26
+===================
+
+- **Correctif d'un bug de fond** sur le switch Standard/+Xkg (introduit en
+  1.8.0) : le mode de chaque série n'était jamais réellement sauvegardé, il
+  était redéduit à chaque rendu à partir de la seule valeur numérique du
+  poids. Cette déduction est ambiguë dès que l'incrément correspond à
+  l'écart entre deux paliers (ex. paliers tous les 10kg avec un incrément de
+  10kg : « 30kg » peut être le palier 30 en Standard, ou le palier 20 + 10
+  en incrémenté) — le code choisissait alors toujours l'interprétation
+  incrémentée, même quand la série avait été explicitement choisie en
+  Standard, provoquant des bascules imprévisibles du switch sur d'anciennes
+  séries à chaque nouveau rendu (ex. en ajoutant une nouvelle série).
+
+  Le mode de chaque série est désormais explicitement enregistré et lu
+  directement, sans plus jamais être redeviné à partir du poids seul.
+  « Ajouter une série » clone maintenant aussi le mode de la dernière série,
+  pas seulement son poids.
+
 2.1.1 - 2026-08-26
 ===================
 
