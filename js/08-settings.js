@@ -206,6 +206,7 @@ function attachGymSettingsListeners() {
       gymSettingsEditingConfigId = null;
       const defaultCategory = gymSettingsActiveCategory === "other" || gymSettingsActiveCategory === "all" ? "pecs" : gymSettingsActiveCategory;
       gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0 };
+      gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
   }
@@ -221,6 +222,7 @@ function attachGymSettingsListeners() {
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
       };
+      gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
   });
@@ -237,6 +239,7 @@ function attachGymSettingsListeners() {
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
       };
+      gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
   });
@@ -285,6 +288,7 @@ function attachGymSettingsListeners() {
     if (!isNaN(val) && val >= 0 && !gymSettingsFormDraft.baseWeights.includes(val)) {
       gymSettingsFormDraft.baseWeights.push(val);
     }
+    gymSettingsFocusTarget = "weight";
     renderGymSettingsContent();
   });
   document.getElementById("config-scan-weights-btn").addEventListener("click", () => {
@@ -342,5 +346,13 @@ function attachGymSettingsListeners() {
     gymSettingsFormOpen = false;
     renderGymSettingsContent();
   });
-  nameInput.focus();
+  if (gymSettingsFocusTarget === "weight") {
+    const weightInput = document.getElementById("config-new-base-weight");
+    if (weightInput) weightInput.focus();
+  } else {
+    nameInput.focus();
+  }
+  // On retombe sur "name" par défaut pour le prochain rendu, sauf si une
+  // action explicite redemande "weight" avant le prochain appel.
+  gymSettingsFocusTarget = "name";
 }

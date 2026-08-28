@@ -7,6 +7,16 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.1.1 - 2026-08-26
+===================
+
+- Le focus reste désormais sur le champ de saisie du poids après un clic sur
+  « Ajouter », au lieu de repartir systématiquement sur « Nom de
+  l'exercice » — permet de saisir plusieurs valeurs à la suite sans avoir à
+  retaper sur le champ à chaque fois. Corrigé à la fois dans le formulaire
+  d'exercice de Paramètres → Salle de sport et dans le scanner (même motif
+  de saisie manuelle répétée aux deux endroits).
+
 2.1.0 - 2026-08-26
 ===================
 

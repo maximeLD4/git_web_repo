@@ -4,6 +4,7 @@ let sessions = loadJSON(KEYS.sessions, []);
 let library = loadJSON(KEYS.library, []);
 let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
 let gymSettingsFormOpen = false;
+let gymSettingsFocusTarget = "name"; // "name" (par défaut) ou "weight" (après un ajout de poids)
 let gymSettingsEditingConfigId = null;
 let gymSettingsFormDraft = { name: "", category: "pecs", baseWeights: [], maxIncrement: 0 };
 let gymSettingsActiveCategory = "all";

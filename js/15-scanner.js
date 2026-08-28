@@ -371,7 +371,7 @@ function scannerShowAnalyzeError(message, err) {
 
 let scannerLastRawText = "";
 
-function renderScannerExtractedList(rawText) {
+function renderScannerExtractedList(rawText, focusAddInput) {
   if (typeof rawText === "string") scannerLastRawText = rawText;
   const actions = document.getElementById("scanner-actions");
   const chips = scannerExtractedWeights.length
@@ -426,13 +426,17 @@ function renderScannerExtractedList(rawText) {
       renderScannerExtractedList();
     });
   });
+  if (focusAddInput) {
+    const addInput = document.getElementById("scanner-add-weight");
+    if (addInput) addInput.focus();
+  }
   document.getElementById("scanner-add-weight-btn").addEventListener("click", () => {
     const input = document.getElementById("scanner-add-weight");
     const val = parseFloat(input.value);
     if (!isNaN(val) && !scannerExtractedWeights.includes(val)) {
       scannerExtractedWeights.push(val);
       scannerExtractedWeights.sort((a, b) => a - b);
-      renderScannerExtractedList();
+      renderScannerExtractedList(undefined, true);
     }
   });
   document.getElementById("scanner-copy-btn").addEventListener("click", async () => {
