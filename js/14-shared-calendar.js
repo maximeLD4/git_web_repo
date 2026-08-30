@@ -42,6 +42,21 @@ function editActivityFromCalendar(type, id) {
   else startEditBikeSession(session);
 }
 
+function duplicateActivityFromCalendar(type, id) {
+  const session = getActivitySessions(type).find((s) => s.id === id);
+  if (!session) return;
+  // Même logique que "Modifier" : après avoir enregistré (ou annulé) le
+  // doublon dans l'onglet Créer du sport concerné, on revient au calendrier
+  // plutôt que de rester sur ce sport.
+  calendarReturnTarget = true;
+  calendarReturnDate = session.date;
+  currentApp = type;
+  if (type === "gym") duplicateSession(session);
+  else if (type === "run") duplicateRunSession(session);
+  else if (type === "swim") duplicateSwimSession(session);
+  else duplicateBikeSession(session);
+}
+
 function returnToCalendar() {
   const returnDate = calendarReturnDate;
   calendarReturnTarget = null;
@@ -62,6 +77,8 @@ function sharedSessionPreviewHTML(s, type) {
   const color = meta.color;
   const rgb = meta.rgb;
   const label = meta.label;
+  const toggleKey = `${type}:${s.id}`;
+  const open = !!openSharedCalendarIds[toggleKey];
   let detail, metaCount, statsLine;
 
   if (type === "gym") {
@@ -98,20 +115,29 @@ function sharedSessionPreviewHTML(s, type) {
 
   return `
   <div class="history-card" style="border-color: rgba(${rgb},0.35);">
-    <div class="history-head" style="cursor: default;">
+    <div class="history-head" data-shared-toggle="${toggleKey}">
       <div class="history-head-left">
         <div class="history-date">${formatDateFR(s.date)}<span class="source-badge" style="color:${color}; background: rgba(${rgb},0.15);">${label}</span></div>
         ${s.label ? `<div class="history-label" style="color:${color};">${s.label}</div>` : ""}
         ${statsLine}
       </div>
-      <div class="history-meta">${metaCount}</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="history-meta">${metaCount}</div>
+        <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
+      </div>
     </div>
-    <div class="history-body">${detail}</div>
-    <div class="delete-row">
-      <button class="edit-link" data-shared-edit-type="${type}" data-shared-edit-id="${s.id}">${ICONS.edit} Modifier</button>
-      ${isUpcoming(s) ? `<button class="edit-link" data-shared-mark-done-type="${type}" data-shared-mark-done-id="${s.id}">${ICONS.check} Marquer comme faite</button>` : ""}
-      <button class="delete-link" data-shared-delete-type="${type}" data-shared-delete-id="${s.id}">${ICONS.trash} Supprimer</button>
-    </div>
+    ${
+      open
+        ? `<div class="history-body">${detail}</div>
+           <div class="delete-row">
+             <button class="edit-link" data-shared-edit-type="${type}" data-shared-edit-id="${s.id}">${ICONS.edit} Modifier</button>
+             <button class="edit-link" data-shared-duplicate-type="${type}" data-shared-duplicate-id="${s.id}">${ICONS.duplicate} Dupliquer</button>
+             <button class="edit-link" data-shared-share-type="${type}" data-shared-share-id="${s.id}">${ICONS.up} Partager</button>
+             ${isUpcoming(s) ? `<button class="edit-link" data-shared-mark-done-type="${type}" data-shared-mark-done-id="${s.id}">${ICONS.check} Marquer comme faite</button>` : ""}
+             <button class="delete-link" data-shared-delete-type="${type}" data-shared-delete-id="${s.id}">${ICONS.trash} Supprimer</button>
+           </div>`
+        : ""
+    }
   </div>`;
 }
 
@@ -222,19 +248,43 @@ function attachSharedCalendarListeners() {
       renderSharedCalendarContent();
     });
   });
+  document.querySelectorAll("[data-shared-toggle]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const key = el.dataset.sharedToggle;
+      openSharedCalendarIds[key] = !openSharedCalendarIds[key];
+      renderSharedCalendarContent();
+    });
+  });
   document.querySelectorAll("[data-shared-edit-type]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
       editActivityFromCalendar(btn.dataset.sharedEditType, btn.dataset.sharedEditId);
     });
   });
+  document.querySelectorAll("[data-shared-duplicate-type]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      duplicateActivityFromCalendar(btn.dataset.sharedDuplicateType, btn.dataset.sharedDuplicateId);
+    });
+  });
+  document.querySelectorAll("[data-shared-share-type]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const type = btn.dataset.sharedShareType;
+      const session = getActivitySessions(type).find((s) => s.id === btn.dataset.sharedShareId);
+      if (session) exportSingleSession(type, session);
+    });
+  });
   document.querySelectorAll("[data-shared-mark-done-type]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
       markActivityDone(btn.dataset.sharedMarkDoneType, btn.dataset.sharedMarkDoneId);
       renderSharedCalendarContent();
     });
   });
   document.querySelectorAll("[data-shared-delete-type]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
       const type = btn.dataset.sharedDeleteType;
       const id = btn.dataset.sharedDeleteId;
       showConfirm(

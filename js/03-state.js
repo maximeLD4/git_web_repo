@@ -90,6 +90,7 @@ let scannerExtractedWeights = [];
 let scannerReturnTarget = null;
 let calendarReturnTarget = null; // true si on doit revenir au calendrier partagé après avoir édité une séance depuis là (au lieu du menu principal ou de rester sur l'onglet Créer)
 let calendarReturnDate = null; // date de la séance éditée, pour la re-sélectionner au retour dans le calendrier
+let openSharedCalendarIds = {}; // réduit/déplié des séances dans le calendrier partagé (par défaut : réduit)
 let performanceSelectedExerciseId = null;
 let currentUser = null;
 

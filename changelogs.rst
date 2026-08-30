@@ -7,6 +7,29 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.9.0 - 2026-08-26
+===================
+
+- Module **Calendrier** (vue d'ensemble partagée) aligné sur le comportement
+  des calendriers propres à chaque sport :
+
+  - Chaque séance affichée sous une date sélectionnée est désormais
+    **réduite par défaut** (comme dans Salle de sport, Course, Natation,
+    Vélo), avec un chevron pour la développer/réduire au clic.
+  - Une fois développée, quatre actions sont disponibles, cohérentes avec
+    les modules de sport : **Modifier**, **Dupliquer**, **Partager**,
+    **Supprimer** (plus « Marquer comme faite » pour les séances à venir).
+  - « Dupliquer » depuis le calendrier ouvre l'onglet Créer du sport
+    concerné avec le doublon pré-rempli, et revient automatiquement au
+    calendrier (à la bonne date) une fois enregistré ou annulé — même
+    logique que « Modifier » depuis le calendrier (introduite en 2.4.2).
+  - « Partager » réutilise le même mécanisme d'export déjà en place dans
+    chaque module de sport (partage natif si disponible, téléchargement du
+    fichier de la séance sinon).
+
+  Le calendrier lui-même (vue mensuelle, sélection de date, filtre
+  passé/à venir) fonctionnait déjà bien et n'a pas changé.
+
 2.8.0 - 2026-08-26
 ===================
 
