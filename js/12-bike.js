@@ -119,6 +119,7 @@ function renderBikeApp() {
       <div class="header-sub">${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""} enregistrée${bikeSessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>
+    <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${bikeTab === "log" ? "active" : ""}" data-bike-tab="log">${ICONS.bike}Créer</button>
       <button class="tab-btn ${bikeTab === "history" ? "active" : ""}" data-bike-tab="history">${ICONS.history}Séances</button>
@@ -145,6 +146,18 @@ function renderBikeContent() {
   if (bikeTab === "log") content.innerHTML = bikeLogTabHTML();
   else content.innerHTML = bikeHistoryTabHTML();
   attachBikeContentListeners();
+
+  const actionsBar = document.getElementById("log-actions-bar");
+  if (actionsBar) {
+    if (bikeTab === "log") {
+      actionsBar.style.display = "";
+      actionsBar.innerHTML = bikeLogActionsBarContentHTML();
+      attachBikeLogActionsBarListeners();
+    } else {
+      actionsBar.style.display = "none";
+    }
+  }
+  positionLogActionsBar();
 }
 
 function bikeBlockCardHTML(b) {
@@ -185,8 +198,14 @@ function bikeLogTabHTML() {
     <div class="run-summary-bar" id="bike-summary-bar">${formatBikeSessionTotalsLine(bikeDraft.blocks)}</div>
     <div id="bike-blocks-container">${blocksHTML}</div>
     <datalist id="bike-block-suggestions"><option value="Échauffement"><option value="Sortie route"><option value="Home trainer"><option value="Récupération">${libOptions}</datalist>
-    <button class="add-exercise-btn" id="add-bike-block-btn">${ICONS.plus} Ajouter un bloc</button>
+    <div id="log-bottom-spacer" style="height:0;"></div>
+  `;
+}
+
+function bikeLogActionsBarContentHTML() {
+  return `
     <div id="bike-error-slot"></div>
+    <button class="add-exercise-btn" id="add-bike-block-btn">${ICONS.plus} Ajouter un bloc</button>
     <button class="save-btn" id="save-bike-session-btn">${ICONS.check} ${bikeEditingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
     <div id="bike-flash-slot"></div>
   `;
@@ -459,13 +478,22 @@ function attachBikeLogListeners() {
 
     card.querySelector("[data-drag-handle]").addEventListener("pointerdown", (e) => startDragBikeBlock(e, card));
   });
+}
+
+function attachBikeLogActionsBarListeners() {
+  const dateEl = document.getElementById("bike-date");
+  const labelEl = document.getElementById("bike-label");
 
   document.getElementById("add-bike-block-btn").addEventListener("click", () => {
     const blocks = serializeBikeBlocksFromDOM();
-    blocks.push(emptyBikeBlock());
+    const newBlock = emptyBikeBlock();
+    blocks.push(newBlock);
     bikeDraft.blocks = blocks;
     saveJSON(KEYS.bikeDraft, bikeDraft);
-    renderBikeContent();
+    renderContentPreservingScroll(renderBikeContent, () => {
+      const newCard = document.querySelector(`.exercise-card[data-id="${newBlock.id}"]`);
+      scrollCardBottomIntoView(newCard);
+    });
   });
 
   document.getElementById("save-bike-session-btn").addEventListener("click", () => {

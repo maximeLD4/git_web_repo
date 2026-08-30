@@ -20,6 +20,86 @@ function capitalizeFirst(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/* ---------- Suivi d'écran (scroll auto) : partagé par tous les sports ----------
+   Tous les modules (Salle de sport, Course, Natation, Vélo) utilisent les
+   mêmes identifiants (#content, .tabbar, #log-actions-bar) puisqu'un seul
+   écran est monté à la fois — ces fonctions génériques leur servent à tous,
+   pas besoin de les dupliquer par sport. */
+
+function renderContentPreservingScroll(renderFn, afterRenderScroll) {
+  const contentEl = document.getElementById("content");
+  const scrollBefore = contentEl ? contentEl.scrollTop : 0;
+  renderFn();
+  if (contentEl) {
+    // Remplacer le contenu (innerHTML) peut faire réajuster instantanément la
+    // position de scroll par le navigateur lui-même si la hauteur change
+    // (ex. des séries/blocs qui disparaissent en changeant de mode) — AVANT
+    // même que notre propre réalignement ne s'exécute. On restaure d'abord
+    // la position exacte d'avant, sans animation, pour annuler ce saut natif
+    // invisible-mais-brutal, puis on applique le scroll réellement voulu
+    // par-dessus, lui, animé.
+    contentEl.scrollTop = scrollBefore;
+  }
+  if (afterRenderScroll) {
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(afterRenderScroll);
+    else afterRenderScroll();
+  }
+}
+
+function scrollCardTopIntoView(card, topMargin = 16) {
+  if (!card) return;
+  const contentEl = document.getElementById("content");
+  if (!contentEl || typeof contentEl.getBoundingClientRect !== "function" || typeof contentEl.scrollBy !== "function") return;
+  const cardRect = card.getBoundingClientRect();
+  const contentRect = contentEl.getBoundingClientRect();
+  // Aligne systématiquement le haut de la carte avec le haut de la zone
+  // visible (à une petite marge près) — pas seulement si besoin : chaque
+  // sélection (type, catégorie, exercice/bloc) révèle du contenu juste en
+  // dessous, autant garder un repère stable en haut à chaque fois.
+  const delta = cardRect.top - (contentRect.top + topMargin);
+  // En dessous d'un petit seuil, on ne bouge rien : sans ça, un simple
+  // écart d'arrondi de quelques pixels déclenchait une animation de
+  // scroll perceptible alors qu'on était déjà pile au bon endroit.
+  if (Math.abs(delta) < 6) return;
+  contentEl.scrollBy({ top: delta, behavior: "smooth" });
+}
+
+function scrollCardBottomIntoView(card) {
+  if (!card) return;
+  const contentEl = document.getElementById("content");
+  const tabbarEl = document.querySelector(".tabbar");
+  const actionsBarEl = document.getElementById("log-actions-bar");
+  if (!contentEl || typeof contentEl.getBoundingClientRect !== "function" || typeof contentEl.scrollBy !== "function") return;
+  const cardRect = card.getBoundingClientRect();
+  const contentRect = contentEl.getBoundingClientRect();
+  // La marge à réserver correspond à la vraie hauteur mesurée de la barre
+  // d'onglets + la barre d'actions fixe (qui recouvrent visuellement le
+  // bas du conteneur) — une valeur fixe devinée était trop petite sur les
+  // appareils avec une zone de sécurité en bas plus grande, ce qui faisait
+  // s'arrêter le scroll trop tôt.
+  const tabbarHeight = tabbarEl ? tabbarEl.offsetHeight : 0;
+  const actionsBarHeight = actionsBarEl && actionsBarEl.style.display !== "none" ? actionsBarEl.offsetHeight : 0;
+  const bottomMargin = tabbarHeight + actionsBarHeight + 20;
+  const delta = cardRect.bottom - (contentRect.bottom - bottomMargin);
+  // Même seuil que pour l'alignement en haut : évite un scroll perceptible
+  // pour un écart insignifiant.
+  if (Math.abs(delta) < 6) return;
+  contentEl.scrollBy({ top: delta, behavior: "smooth" });
+}
+
+function positionLogActionsBar() {
+  const actionsBar = document.getElementById("log-actions-bar");
+  const tabbarEl = document.querySelector(".tabbar");
+  const spacer = document.getElementById("log-bottom-spacer");
+  if (!actionsBar || !tabbarEl) return;
+  if (actionsBar.style.display === "none") {
+    if (spacer) spacer.style.height = "0";
+    return;
+  }
+  actionsBar.style.bottom = tabbarEl.offsetHeight + "px";
+  if (spacer) spacer.style.height = actionsBar.offsetHeight + 16 + "px";
+}
+
 function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);

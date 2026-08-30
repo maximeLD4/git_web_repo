@@ -151,6 +151,7 @@ function renderSwimApp() {
       <div class="header-sub">${swimSessions.length} séance${swimSessions.length !== 1 ? "s" : ""} enregistrée${swimSessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>
+    <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${swimTab === "log" ? "active" : ""}" data-swim-tab="log">${ICONS.swim}Créer</button>
       <button class="tab-btn ${swimTab === "history" ? "active" : ""}" data-swim-tab="history">${ICONS.history}Séances</button>
@@ -177,6 +178,18 @@ function renderSwimContent() {
   if (swimTab === "log") content.innerHTML = swimLogTabHTML();
   else content.innerHTML = swimHistoryTabHTML();
   attachSwimContentListeners();
+
+  const actionsBar = document.getElementById("log-actions-bar");
+  if (actionsBar) {
+    if (swimTab === "log") {
+      actionsBar.style.display = "";
+      actionsBar.innerHTML = swimLogActionsBarContentHTML();
+      attachSwimLogActionsBarListeners();
+    } else {
+      actionsBar.style.display = "none";
+    }
+  }
+  positionLogActionsBar();
 }
 
 function swimBlockCardHTML(b) {
@@ -260,8 +273,14 @@ function swimLogTabHTML() {
     <div id="swim-blocks-container">${blocksHTML}</div>
     <datalist id="swim-block-suggestions"><option value="Échauffement"><option value="Technique"><option value="Endurance"><option value="Récupération">${libOptions}</datalist>
     <datalist id="swim-stroke-suggestions"><option value="Crawl"><option value="Dos"><option value="Brasse"><option value="Papillon"><option value="4 nages"></datalist>
-    <button class="add-exercise-btn" id="add-swim-block-btn">${ICONS.plus} Ajouter un bloc</button>
+    <div id="log-bottom-spacer" style="height:0;"></div>
+  `;
+}
+
+function swimLogActionsBarContentHTML() {
+  return `
     <div id="swim-error-slot"></div>
+    <button class="add-exercise-btn" id="add-swim-block-btn">${ICONS.plus} Ajouter un bloc</button>
     <button class="save-btn" id="save-swim-session-btn">${ICONS.check} ${swimEditingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
     <div id="swim-flash-slot"></div>
   `;
@@ -576,19 +595,30 @@ function attachSwimLogListeners() {
         target.mode = newMode;
         swimDraft.blocks = blocks;
         saveJSON(KEYS.swimDraft, swimDraft);
-        renderSwimContent();
+        renderContentPreservingScroll(renderSwimContent, () =>
+          scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`))
+        );
       });
     });
 
     card.querySelector("[data-drag-handle]").addEventListener("pointerdown", (e) => startDragSwimBlock(e, card));
   });
+}
+
+function attachSwimLogActionsBarListeners() {
+  const dateEl = document.getElementById("swim-date");
+  const labelEl = document.getElementById("swim-label");
 
   document.getElementById("add-swim-block-btn").addEventListener("click", () => {
     const blocks = serializeSwimBlocksFromDOM();
-    blocks.push(emptySwimBlock());
+    const newBlock = emptySwimBlock();
+    blocks.push(newBlock);
     swimDraft.blocks = blocks;
     saveJSON(KEYS.swimDraft, swimDraft);
-    renderSwimContent();
+    renderContentPreservingScroll(renderSwimContent, () => {
+      const newCard = document.querySelector(`.exercise-card[data-id="${newBlock.id}"]`);
+      scrollCardBottomIntoView(newCard);
+    });
   });
 
   document.getElementById("save-swim-session-btn").addEventListener("click", () => {

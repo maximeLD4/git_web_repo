@@ -7,6 +7,46 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.8.0 - 2026-08-26
+===================
+
+- Les fonctionnalités de « suivi d'écran » de Salle de sport (barre d'actions
+  fixe « Ajouter » / « Enregistrer », alignement automatique en haut lors
+  d'une sélection, alignement en bas lors d'un ajout, préservation de la
+  position de scroll) sont désormais **étendues aux trois autres sports** :
+  Course à pied, Natation et Vélo.
+
+  - **Course à pied / Natation** : le choix du type de bloc (Durée/Distance/
+    Fractionné, ou Distance+Durée/Bassin) aligne le bloc en haut de l'écran ;
+    « Ajouter un bloc » aligne en bas.
+  - **Vélo** : ses blocs n'ont pas de sélecteur de type (toujours en mode
+    unique) — seul l'alignement en bas sur « Ajouter un bloc » s'applique.
+  - Les boutons « Ajouter un bloc » et « Enregistrer » sont collés en bas de
+    l'écran, toujours visibles, sur les trois sports — comme pour Salle de
+    sport depuis la 2.6.0.
+
+  Les fonctions communes (alignement, préservation du scroll, positionnement
+  de la barre) ont été factorisées dans un seul endroit partagé plutôt que
+  dupliquées par sport, pour rester cohérentes si d'autres ajustements sont
+  nécessaires plus tard.
+
+2.7.4 - 2026-08-26
+===================
+
+- **Correctif de la vraie cause** du saut signalé en changeant de
+  sous-catégorie (ex. Bras → Jambes) tout en restant au même niveau de
+  sélection : quand le contenu change de hauteur, le navigateur peut
+  réajuster **instantanément** sa propre position de scroll pour rester dans
+  les limites du nouveau contenu — un saut qui se produit pendant le
+  remplacement du contenu, avant même que notre réalignement volontaire ne
+  s'exécute. Un simple seuil (2.7.3) ne pouvait pas corriger ce mécanisme,
+  différent du calcul de scroll lui-même.
+
+  La position de scroll est désormais explicitement préservée pendant
+  chaque remplacement de contenu (restaurée instantanément si le navigateur
+  l'a modifiée de son propre chef), avant d'appliquer, par-dessus, le
+  réalignement volontaire et animé quand il y en a un.
+
 2.7.3 - 2026-08-26
 ===================
 

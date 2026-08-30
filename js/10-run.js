@@ -176,6 +176,7 @@ function renderRunApp() {
       <div class="header-sub">${runSessions.length} séance${runSessions.length !== 1 ? "s" : ""} enregistrée${runSessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>
+    <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${runTab === "log" ? "active" : ""}" data-run-tab="log">${ICONS.stopwatch}Créer</button>
       <button class="tab-btn ${runTab === "history" ? "active" : ""}" data-run-tab="history">${ICONS.history}Séances</button>
@@ -202,6 +203,18 @@ function renderRunContent() {
   if (runTab === "log") content.innerHTML = runLogTabHTML();
   else content.innerHTML = runHistoryTabHTML();
   attachRunContentListeners();
+
+  const actionsBar = document.getElementById("log-actions-bar");
+  if (actionsBar) {
+    if (runTab === "log") {
+      actionsBar.style.display = "";
+      actionsBar.innerHTML = runLogActionsBarContentHTML();
+      attachRunLogActionsBarListeners();
+    } else {
+      actionsBar.style.display = "none";
+    }
+  }
+  positionLogActionsBar();
 }
 function computeSessionTotals(blocks) {
   let km = 0, min = 0;
@@ -291,8 +304,14 @@ function runLogTabHTML() {
     <div class="run-summary-bar" id="run-summary-bar">${formatSessionTotalsLine(runDraft.blocks)}</div>
     <div id="blocks-container">${blocksHTML}</div>
     <datalist id="block-suggestions"><option value="Échauffement"><option value="Endurance fondamentale"><option value="Fractionné"><option value="Récupération"><option value="Retour au calme">${libOptions}</datalist>
-    <button class="add-exercise-btn" id="add-block-btn">${ICONS.plus} Ajouter un bloc</button>
+    <div id="log-bottom-spacer" style="height:0;"></div>
+  `;
+}
+
+function runLogActionsBarContentHTML() {
+  return `
     <div id="run-error-slot"></div>
+    <button class="add-exercise-btn" id="add-block-btn">${ICONS.plus} Ajouter un bloc</button>
     <button class="save-btn" id="save-run-session-btn">${ICONS.check} ${runEditingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
     <div id="run-flash-slot"></div>
   `;
@@ -661,19 +680,30 @@ function attachRunLogListeners() {
         target.mode = newMode;
         runDraft.blocks = blocks;
         saveJSON(KEYS.runDraft, runDraft);
-        renderRunContent();
+        renderContentPreservingScroll(renderRunContent, () =>
+          scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`))
+        );
       });
     });
 
     card.querySelector("[data-drag-handle]").addEventListener("pointerdown", (e) => startDragBlock(e, card));
   });
+}
+
+function attachRunLogActionsBarListeners() {
+  const dateEl = document.getElementById("run-date");
+  const labelEl = document.getElementById("run-label");
 
   document.getElementById("add-block-btn").addEventListener("click", () => {
     const blocks = serializeBlocksFromDOM();
-    blocks.push(emptyBlock());
+    const newBlock = emptyBlock();
+    blocks.push(newBlock);
     runDraft.blocks = blocks;
     saveJSON(KEYS.runDraft, runDraft);
-    renderRunContent();
+    renderContentPreservingScroll(renderRunContent, () => {
+      const newCard = document.querySelector(`.exercise-card[data-id="${newBlock.id}"]`);
+      scrollCardBottomIntoView(newCard);
+    });
   });
 
   document.getElementById("save-run-session-btn").addEventListener("click", () => {
