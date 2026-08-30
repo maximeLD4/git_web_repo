@@ -33,11 +33,28 @@ function getActivitySessions(key) {
 function editActivityFromCalendar(type, id) {
   const session = getActivitySessions(type).find((s) => s.id === id);
   if (!session) return;
+  calendarReturnTarget = true;
+  calendarReturnDate = session.date;
   currentApp = type;
   if (type === "gym") startEditSession(session);
   else if (type === "run") startEditRunSession(session);
   else if (type === "swim") startEditSwimSession(session);
   else startEditBikeSession(session);
+}
+
+function returnToCalendar() {
+  const returnDate = calendarReturnDate;
+  calendarReturnTarget = null;
+  calendarReturnDate = null;
+  currentApp = "calendar";
+  render(); // construit l'écran (renderSharedCalendarApp réinitialise la sélection par défaut)
+  if (returnDate) {
+    // On impose ensuite la bonne date/mois et on ne rafraîchit que le
+    // contenu, pour ne pas reconstruire tout l'en-tête inutilement.
+    sharedCalendarMonth = returnDate.slice(0, 7);
+    sharedSelectedDate = returnDate;
+    renderSharedCalendarContent();
+  }
 }
 
 function sharedSessionPreviewHTML(s, type) {

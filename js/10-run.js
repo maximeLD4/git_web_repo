@@ -181,7 +181,13 @@ function renderRunApp() {
       <button class="tab-btn ${runTab === "history" ? "active" : ""}" data-run-tab="history">${ICONS.history}Séances</button>
     </div>
   `;
-  document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  document.querySelector("[data-go-home]").addEventListener("click", () => {
+    if (calendarReturnTarget) {
+      returnToCalendar();
+    } else {
+      goHome();
+    }
+  });
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       runTab = btn.dataset.runTab;
@@ -546,7 +552,11 @@ function attachRunLogListeners() {
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener("click", () => {
       clearRunDraft();
-      renderRunContent();
+      if (calendarReturnTarget) {
+        returnToCalendar();
+      } else {
+        renderRunContent();
+      }
     });
   }
 
@@ -695,6 +705,10 @@ function attachRunLogListeners() {
     saveJSON(KEYS.runLibrary, runLibrary);
     clearRunDraft();
 
+    if (calendarReturnTarget) {
+      returnToCalendar();
+      return;
+    }
     renderRunApp();
     document.getElementById("run-flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
     setTimeout(() => {

@@ -81,7 +81,7 @@ function performanceRowHTML(config) {
     <div class="history-card">
       <div class="history-head" style="cursor:default;">
         <div class="history-head-left">
-          <div class="history-date">${config.name}</div>
+          <div class="exercise-config-name">${config.name}</div>
           <div class="history-label" style="color:var(--text-dim);">Pas encore de séance enregistrée</div>
         </div>
       </div>
@@ -104,7 +104,7 @@ function performanceRowHTML(config) {
   <div class="history-card" data-open-exercise="${config.id}" style="cursor:pointer;">
     <div class="history-head">
       <div class="history-head-left">
-        <div class="history-date">${config.name}</div>
+        <div class="exercise-config-name">${config.name}</div>
         <div class="history-label">Indice : ${last.index} <span style="color:${trendColor}; font-weight:700;">${trendIcon}</span></div>
       </div>
       <div class="home-card-arrow">${ICONS.chevronRight}</div>

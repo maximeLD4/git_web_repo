@@ -97,7 +97,13 @@ function startEditSession(session) {
     exercises: JSON.parse(JSON.stringify(session.exercises)),
     editingSessionId,
   };
+  // Réduit tous les exercices par défaut : on ouvre une séance existante
+  // pour la consulter/ajuster ponctuellement, pas pour retaper chaque
+  // exercice depuis le début — inutile d'afficher tout développé d'emblée.
   openExerciseIds = {};
+  draft.exercises.forEach((ex) => {
+    openExerciseIds[ex.id] = false;
+  });
   saveJSON(KEYS.draft, draft);
   tab = "log";
   render();
@@ -111,6 +117,9 @@ function duplicateSession(session) {
   }));
   editingSessionId = null;
   openExerciseIds = {};
+  clonedExercises.forEach((ex) => {
+    openExerciseIds[ex.id] = false;
+  });
   draft = { date: todayISO(), label: session.label || "", exercises: clonedExercises, editingSessionId: null };
   saveJSON(KEYS.draft, draft);
   tab = "log";
@@ -137,12 +146,19 @@ function renderGymApp() {
       <div class="header-sub">${sessions.length} séance${sessions.length !== 1 ? "s" : ""} enregistrée${sessions.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content"></div>
+    <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${tab === "log" ? "active" : ""}" data-tab="log">${ICONS.dumbbell}Créer</button>
       <button class="tab-btn ${tab === "history" ? "active" : ""}" data-tab="history">${ICONS.history}Séances</button>
     </div>
   `;
-  document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  document.querySelector("[data-go-home]").addEventListener("click", () => {
+    if (calendarReturnTarget) {
+      returnToCalendar();
+    } else {
+      goHome();
+    }
+  });
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       tab = btn.dataset.tab;
@@ -157,6 +173,36 @@ function renderContent() {
   if (tab === "log") content.innerHTML = logTabHTML();
   else content.innerHTML = historyTabHTML();
   attachContentListeners();
+
+  const actionsBar = document.getElementById("log-actions-bar");
+  if (actionsBar) {
+    if (tab === "log") {
+      actionsBar.style.display = "";
+      actionsBar.innerHTML = logActionsBarContentHTML();
+      attachLogActionsBarListeners();
+    } else {
+      actionsBar.style.display = "none";
+    }
+  }
+  positionLogActionsBar();
+}
+
+function positionLogActionsBar() {
+  const actionsBar = document.getElementById("log-actions-bar");
+  const tabbarEl = document.querySelector(".tabbar");
+  const spacer = document.getElementById("log-bottom-spacer");
+  if (!actionsBar || !tabbarEl) return;
+  if (actionsBar.style.display === "none") {
+    if (spacer) spacer.style.height = "0";
+    return;
+  }
+  // Positionne la barre d'actions juste au-dessus de la barre d'onglets, en
+  // mesurant sa vraie hauteur rendue plutôt qu'une valeur fixe devinée (qui
+  // varierait selon les appareils à cause de la zone de sécurité en bas).
+  actionsBar.style.bottom = tabbarEl.offsetHeight + "px";
+  // Réserve la même hauteur en bas du contenu défilant, pour que le dernier
+  // exercice ne se retrouve jamais caché derrière cette barre fixe.
+  if (spacer) spacer.style.height = actionsBar.offsetHeight + 16 + "px";
 }
 
 function categoryToggleHTML(category) {
@@ -345,8 +391,14 @@ function logTabHTML() {
     </div>
     <div id="exercises-container">${exercisesHTML}</div>
     <datalist id="exercise-suggestions">${libOptions}</datalist>
-    <button class="add-exercise-btn" id="add-exercise-btn">${ICONS.plus} Ajouter un exercice</button>
+    <div id="log-bottom-spacer" style="height:0;"></div>
+  `;
+}
+
+function logActionsBarContentHTML() {
+  return `
     <div id="error-slot"></div>
+    <button class="add-exercise-btn" id="add-exercise-btn">${ICONS.plus} Ajouter un exercice</button>
     <button class="save-btn" id="save-session-btn">${ICONS.check} ${editingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
     <div id="flash-slot"></div>
   `;
@@ -510,6 +562,59 @@ function attachContentListeners() {
   else attachHistoryListeners();
 }
 
+function scrollCardTopIntoView(card, topMargin = 16) {
+  if (!card) return;
+  const doScroll = () => {
+    const contentEl = document.getElementById("content");
+    if (!contentEl || typeof contentEl.getBoundingClientRect !== "function" || typeof contentEl.scrollBy !== "function") return;
+    const cardRect = card.getBoundingClientRect();
+    const contentRect = contentEl.getBoundingClientRect();
+    // Aligne systématiquement le haut de la carte avec le haut de la zone
+    // visible (à une petite marge près) — pas seulement si besoin : chaque
+    // sélection (type, catégorie, exercice) révèle du contenu juste en
+    // dessous, autant garder un repère stable en haut à chaque fois.
+    const delta = cardRect.top - (contentRect.top + topMargin);
+    // En dessous d'un petit seuil, on ne bouge rien : sans ça, un simple
+    // écart d'arrondi de quelques pixels déclenchait une animation de
+    // scroll perceptible alors qu'on était déjà pile au bon endroit.
+    if (Math.abs(delta) < 6) return;
+    contentEl.scrollBy({ top: delta, behavior: "smooth" });
+  };
+  // On attend une frame avant de mesurer/scroller : juste après avoir inséré
+  // le nouveau contenu, le navigateur peut ne pas avoir encore terminé sa
+  // mise en page, ce qui donnerait une mesure incomplète et un scroll trop
+  // court.
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(doScroll);
+  else doScroll();
+}
+
+function scrollCardBottomIntoView(card) {
+  if (!card) return;
+  const doScroll = () => {
+    const contentEl = document.getElementById("content");
+    const tabbarEl = document.querySelector(".tabbar");
+    const actionsBarEl = document.getElementById("log-actions-bar");
+    if (!contentEl || typeof contentEl.getBoundingClientRect !== "function" || typeof contentEl.scrollBy !== "function") return;
+    const cardRect = card.getBoundingClientRect();
+    const contentRect = contentEl.getBoundingClientRect();
+    // La marge à réserver correspond à la vraie hauteur mesurée de la barre
+    // d'onglets + la barre d'actions fixe (qui recouvrent visuellement le
+    // bas du conteneur) — une valeur fixe devinée était trop petite sur les
+    // appareils avec une zone de sécurité en bas plus grande, ce qui faisait
+    // s'arrêter le scroll trop tôt.
+    const tabbarHeight = tabbarEl ? tabbarEl.offsetHeight : 0;
+    const actionsBarHeight = actionsBarEl && actionsBarEl.style.display !== "none" ? actionsBarEl.offsetHeight : 0;
+    const bottomMargin = tabbarHeight + actionsBarHeight + 20;
+    const delta = cardRect.bottom - (contentRect.bottom - bottomMargin);
+    // Même seuil que pour l'alignement en haut : évite un scroll perceptible
+    // pour un écart insignifiant.
+    if (Math.abs(delta) < 6) return;
+    contentEl.scrollBy({ top: delta, behavior: "smooth" });
+  };
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(doScroll);
+  else doScroll();
+}
+
 function attachLogListeners() {
   const dateEl = document.getElementById("log-date");
   const labelEl = document.getElementById("log-label");
@@ -577,7 +682,11 @@ function attachLogListeners() {
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener("click", () => {
       clearDraft();
-      renderContent();
+      if (calendarReturnTarget) {
+        returnToCalendar();
+      } else {
+        renderContent();
+      }
     });
   }
 
@@ -629,6 +738,7 @@ function attachLogListeners() {
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
+        scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`));
       });
     }
 
@@ -647,6 +757,7 @@ function attachLogListeners() {
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
+        scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`));
       });
     });
 
@@ -664,6 +775,7 @@ function attachLogListeners() {
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
+        scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`));
       });
     });
 
@@ -756,6 +868,7 @@ function attachLogListeners() {
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
+        scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`));
       });
     });
     card.querySelectorAll("[data-toggle-exercise]").forEach((el) => {
@@ -770,6 +883,12 @@ function attachLogListeners() {
         openExerciseIds[id] = !isCurrentlyOpen;
         saveJSON(KEYS.draft, draft);
         renderContent();
+        // On ne scrolle que si on vient de DÉVELOPPER (pas en réduisant) :
+        // le contenu qui se révèle en dessous doit rester accessible avec un
+        // repère stable en haut, comme pour les autres sélections.
+        if (isCurrentlyOpen === false) {
+          scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${id}"]`));
+        }
       });
     });
     card.querySelector("[data-remove-ex]").addEventListener("click", () => {
@@ -808,7 +927,8 @@ function attachLogListeners() {
     if (addSetBtn) {
       addSetBtn.addEventListener("click", () => {
         const exs = serializeExercisesFromDOM();
-        const target = exs.find((e) => e.id === card.dataset.id);
+        const exerciseId = card.dataset.id;
+        const target = exs.find((e) => e.id === exerciseId);
         const lastSet = target.sets[target.sets.length - 1];
         target.sets.push({
           id: uid(),
@@ -819,18 +939,37 @@ function attachLogListeners() {
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContent();
+        // La carte a été reconstruite par renderContent() : on la retrouve
+        // par son id (l'ancienne référence "card" n'existe plus dans le DOM),
+        // puis on aligne son bas avec le bas de l'écran.
+        const updatedCard = document.querySelector(`.exercise-card[data-id="${exerciseId}"]`);
+        scrollCardBottomIntoView(updatedCard);
       });
     }
 
     card.querySelector("[data-drag-handle]").addEventListener("pointerdown", (e) => startDragExercise(e, card));
   });
+}
+
+function attachLogActionsBarListeners() {
+  const dateEl = document.getElementById("log-date");
+  const labelEl = document.getElementById("log-label");
 
   document.getElementById("add-exercise-btn").addEventListener("click", () => {
     const exs = serializeExercisesFromDOM();
-    exs.push(emptyExercise());
+    // Réduit tous les exercices déjà présents : le nouvel exercice devient le
+    // seul développé, au centre de l'attention, sans avoir à scroller parmi
+    // les autres pour le retrouver.
+    exs.forEach((e) => {
+      openExerciseIds[e.id] = false;
+    });
+    const newExercise = emptyExercise();
+    exs.push(newExercise);
     draft.exercises = exs;
     saveJSON(KEYS.draft, draft);
     renderContent();
+    const newCard = document.querySelector(`.exercise-card[data-id="${newExercise.id}"]`);
+    scrollCardBottomIntoView(newCard);
   });
 
   document.getElementById("save-session-btn").addEventListener("click", () => {
@@ -863,6 +1002,10 @@ function attachLogListeners() {
     saveJSON(KEYS.library, library);
     clearDraft();
 
+    if (calendarReturnTarget) {
+      returnToCalendar();
+      return;
+    }
     render();
     document.getElementById("flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
     setTimeout(() => {

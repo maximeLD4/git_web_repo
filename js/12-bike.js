@@ -124,7 +124,13 @@ function renderBikeApp() {
       <button class="tab-btn ${bikeTab === "history" ? "active" : ""}" data-bike-tab="history">${ICONS.history}Séances</button>
     </div>
   `;
-  document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  document.querySelector("[data-go-home]").addEventListener("click", () => {
+    if (calendarReturnTarget) {
+      returnToCalendar();
+    } else {
+      goHome();
+    }
+  });
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       bikeTab = btn.dataset.bikeTab;
@@ -394,7 +400,11 @@ function attachBikeLogListeners() {
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener("click", () => {
       clearBikeDraft();
-      renderBikeContent();
+      if (calendarReturnTarget) {
+        returnToCalendar();
+      } else {
+        renderBikeContent();
+      }
     });
   }
 
@@ -487,6 +497,10 @@ function attachBikeLogListeners() {
     saveJSON(KEYS.bikeLibrary, bikeLibrary);
     clearBikeDraft();
 
+    if (calendarReturnTarget) {
+      returnToCalendar();
+      return;
+    }
     renderBikeApp();
     document.getElementById("bike-flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
     setTimeout(() => {

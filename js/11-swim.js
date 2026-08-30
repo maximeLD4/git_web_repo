@@ -156,7 +156,13 @@ function renderSwimApp() {
       <button class="tab-btn ${swimTab === "history" ? "active" : ""}" data-swim-tab="history">${ICONS.history}Séances</button>
     </div>
   `;
-  document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  document.querySelector("[data-go-home]").addEventListener("click", () => {
+    if (calendarReturnTarget) {
+      returnToCalendar();
+    } else {
+      goHome();
+    }
+  });
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       swimTab = btn.dataset.swimTab;
@@ -468,7 +474,11 @@ function attachSwimLogListeners() {
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener("click", () => {
       clearSwimDraft();
-      renderSwimContent();
+      if (calendarReturnTarget) {
+        returnToCalendar();
+      } else {
+        renderSwimContent();
+      }
     });
   }
 
@@ -610,6 +620,10 @@ function attachSwimLogListeners() {
     saveJSON(KEYS.swimLibrary, swimLibrary);
     clearSwimDraft();
 
+    if (calendarReturnTarget) {
+      returnToCalendar();
+      return;
+    }
     renderSwimApp();
     document.getElementById("swim-flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
     setTimeout(() => {

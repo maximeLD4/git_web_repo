@@ -81,6 +81,7 @@ function pullFromFirebase() {
         // — la synchro normale (debounced) les réécrira ensuite dans la
         // nouvelle structure séparée, sans action supplémentaire ici.
         restoreFromBackupData(oldBackup);
+        migrateGymExerciseConfigNames();
         return;
       }
 
@@ -94,6 +95,11 @@ function pullFromFirebase() {
       bikeLibrary = bikeLibSnap.val() || [];
       gymExerciseConfigs = configsSnap.val() || [];
       weights = weightsSnap.val() || [];
+      // On réapplique la correction de casse des noms d'exercice ici : sans
+      // ça, une éventuelle ancienne valeur non capitalisée encore présente
+      // dans le cloud (pas encore synchronisée avec la correction locale)
+      // écraserait silencieusement la correction, comme observé en pratique.
+      migrateGymExerciseConfigNames();
     })
     .catch((err) => {
       console.error("Impossible de récupérer les données du profil, on continue avec les données locales de cet appareil :", err);

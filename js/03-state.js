@@ -3,6 +3,24 @@
 let sessions = loadJSON(KEYS.sessions, []);
 let library = loadJSON(KEYS.library, []);
 let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
+// Migration ponctuelle : un nom d'exercice enregistré sans majuscule initiale
+// (tapé avant ce correctif, ex. "ischio") est corrigé une bonne fois pour
+// toutes, pour que le nom affiché soit partout identique à ce qui est
+// réellement stocké. Appelée ici pour le chargement local, et à nouveau
+// juste après la récupération Firebase (voir 04-auth.js) — sans quoi une
+// éventuelle ancienne valeur encore présente dans le cloud écraserait cette
+// correction locale au moment de la synchro.
+function migrateGymExerciseConfigNames() {
+  let changed = false;
+  gymExerciseConfigs = gymExerciseConfigs.map((c) => {
+    const fixedName = capitalizeFirst(c.name);
+    if (fixedName === c.name) return c;
+    changed = true;
+    return { ...c, name: fixedName };
+  });
+  if (changed) saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
+}
+migrateGymExerciseConfigNames();
 let gymSettingsFormOpen = false;
 let gymSettingsFocusTarget = "name"; // "name" (par défaut) ou "weight" (après un ajout de poids)
 let gymSettingsEditingConfigId = null;
@@ -70,6 +88,8 @@ const app = document.getElementById("app");
 let scannerStream = null;
 let scannerExtractedWeights = [];
 let scannerReturnTarget = null;
+let calendarReturnTarget = null; // true si on doit revenir au calendrier partagé après avoir édité une séance depuis là (au lieu du menu principal ou de rester sur l'onglet Créer)
+let calendarReturnDate = null; // date de la séance éditée, pour la re-sélectionner au retour dans le calendrier
 let performanceSelectedExerciseId = null;
 let currentUser = null;
 

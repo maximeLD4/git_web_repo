@@ -15,6 +15,11 @@ function formatRelativeTime(iso) {
   return `il y a ${mo} mois`;
 }
 
+function capitalizeFirst(str) {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key);

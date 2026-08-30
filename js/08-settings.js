@@ -89,7 +89,7 @@ function gymSettingsListHTML() {
       <div class="history-card">
         <div class="history-head" data-edit-config="${c.id}" style="cursor:pointer;">
           <div class="history-head-left">
-            <div class="history-date">${c.name}</div>
+            <div class="exercise-config-name">${c.name}</div>
             <div class="history-label">${bases ? bases + " kg" : "Aucun palier"}${incLabel}</div>
           </div>
           <button type="button" class="icon-btn" data-duplicate-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
@@ -314,7 +314,7 @@ function attachGymSettingsListeners() {
   document.getElementById("save-config-btn").addEventListener("click", () => {
     syncFormFromInputs();
     const errorSlot = document.getElementById("config-form-error");
-    const name = gymSettingsFormDraft.name.trim();
+    const name = capitalizeFirst(gymSettingsFormDraft.name.trim());
     if (!name) {
       errorSlot.innerHTML = `<div class="error-msg">Donne un nom à cet exercice.</div>`;
       return;

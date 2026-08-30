@@ -7,6 +7,152 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.7.3 - 2026-08-26
+===================
+
+- Correctif : un simple écart d'arrondi de quelques pixels suffisait à
+  déclencher un scroll perceptible même quand la carte était déjà
+  correctement alignée. Ajout d'un seuil minimal (6px) en dessous duquel
+  aucun scroll ne se déclenche, pour les deux alignements (haut et bas).
+
+2.7.2 - 2026-08-26
+===================
+
+- Développer un exercice réduit (bouton chevron, ou tap sur le résumé
+  compact) aligne désormais aussi la carte en haut de l'écran, comme les
+  autres sélections (type, catégorie, exercice). Réduire un exercice ne
+  déclenche volontairement aucun scroll, seul le développement en a besoin.
+
+2.7.1 - 2026-08-26
+===================
+
+- Correctif du scroll d'alignement (2.7.0) : la marge réservée en bas pour
+  dégager la barre d'onglets et la barre d'actions fixe était une valeur
+  fixe devinée (100px), plus petite que leur vraie hauteur combinée réelle
+  sur la plupart des appareils (surtout avec zone de sécurité en bas) — le
+  défilement s'arrêtait donc trop tôt. Cette marge est désormais calculée
+  dynamiquement à partir des hauteurs réellement mesurées des deux barres.
+  Ajout aussi d'une petite sécurité de timing (attente d'une frame avant de
+  mesurer/défiler) pour les deux alignements, haut et bas.
+
+2.7.0 - 2026-08-26
+===================
+
+- Salle de sport → Créer, alignement automatique par défilement à chaque
+  interaction avec un exercice :
+
+  - **Choix du type (Muscu/Cardio), de la catégorie (groupe musculaire ou
+    catégorie Cardio), ou de l'exercice via le menu déroulant** → la carte
+    de l'exercice s'aligne systématiquement en **haut** de l'écran, pour
+    garder un repère stable pendant que le contenu se révèle juste en
+    dessous à chaque étape.
+  - **« Ajouter une série »** → la carte s'aligne désormais systématiquement
+    en **bas** de l'écran (à chaque clic, plus seulement quand nécessaire
+    comme en 2.5.2), pour un comportement prévisible à chaque fois.
+
+  Les deux calculs sont manuels (mesure réelle des positions), pas basés sur
+  le comportement automatique du navigateur, pour rester cohérents avec la
+  barre d'actions fixe introduite en 2.6.0.
+
+2.6.0 - 2026-08-26
+===================
+
+- Salle de sport → Créer : les boutons « Ajouter un exercice » et
+  « Enregistrer la séance / les modifications » sont désormais **collés en
+  bas de l'écran, toujours visibles**, au lieu de défiler avec la liste des
+  exercices. Leur position s'ajuste dynamiquement juste au-dessus de la
+  barre d'onglets (Créer/Séances), en mesurant sa vraie hauteur plutôt qu'en
+  devinant une valeur fixe — reste donc correct quel que soit l'appareil
+  (encoche, Dynamic Island...). Le contenu défilant réserve automatiquement
+  la place nécessaire en bas pour que le dernier exercice ne soit jamais
+  masqué derrière cette barre.
+
+2.5.2 - 2026-08-26
+===================
+
+- **Meilleur défilement** lors de l'ajout d'un exercice ou d'une série
+  (2.5.0/2.5.1) : le comportement automatique du navigateur positionnait
+  l'élément juste au bord visible de l'écran, exactement là où la barre
+  d'onglets fixe en bas recouvre le contenu par-dessus — la nouvelle série
+  ou le nouvel exercice se retrouvait donc partiellement caché. Remplacé par
+  un calcul manuel qui réserve une marge de sécurité pour dégager la barre
+  d'onglets, et qui ne déclenche un scroll que si l'élément n'est pas déjà
+  visible (pas de saut inutile).
+
+- Ouvrir une séance existante en modification (que ce soit directement
+  depuis l'onglet Séances, ou via le calendrier) affiche désormais tous les
+  exercices **réduits** par défaut, au lieu de tout développer d'un coup —
+  cohérent avec l'esprit du mode réduit/développé introduit en 2.2.0. Un
+  exercice fraîchement ajouté via « Ajouter un exercice » continue de
+  s'ouvrir développé, comme avant.
+
+2.5.1 - 2026-08-26
+===================
+
+- Même principe que l'ajout d'exercice (2.5.0), appliqué à l'ajout d'une
+  série au sein d'un exercice : l'écran défile désormais automatiquement
+  pour suivre le bas de l'exercice et montrer la nouvelle série, sans avoir
+  à scroller manuellement à chaque série ajoutée.
+
+2.5.0 - 2026-08-26
+===================
+
+- Salle de sport → Créer : cliquer sur « Ajouter un exercice » réduit
+  désormais automatiquement tous les exercices déjà présents dans la
+  séance — seul le nouvel exercice reste développé, au centre de
+  l'attention, avec un défilement automatique jusqu'à lui pour le voir
+  directement sans avoir à chercher parmi les autres. Aucune donnée des
+  exercices réduits n'est perdue (déjà garanti depuis la 2.2.0).
+
+2.4.3 - 2026-08-26
+===================
+
+- **Correctif du correctif précédent (2.4.1)** : la capitalisation
+  rétroactive des noms d'exercice fonctionnait bien localement, mais était
+  systématiquement écrasée juste après par la synchronisation Firebase — la
+  correction s'appliquait avant que la fonction de synchro cloud n'existe
+  encore en mémoire (fichiers chargés dans un ordre différent), donc jamais
+  renvoyée vers le cloud ; la connexion Firebase qui suivait ramenait alors
+  l'ancienne valeur non corrigée depuis le cloud, qui écrasait la correction
+  locale. La correction est désormais réappliquée systématiquement juste
+  après toute récupération de données depuis Firebase (connexion normale et
+  migration depuis l'ancien format), pas seulement au tout premier chargement
+  local.
+
+2.4.2 - 2026-08-26
+===================
+
+- **Correctif d'un bug de navigation** : modifier une séance (n'importe quel
+  sport) depuis le calendrier partagé ramenait soit vers l'accueil (bouton
+  retour ou « Annuler »), soit laissait sur l'onglet Créer du sport concerné
+  (après « Enregistrer ») — jamais vers le calendrier lui-même. Corrigé de
+  façon cohérente dans les 4 sports (Salle de sport, Course à pied,
+  Natation, Vélo) et pour les 3 façons de quitter l'édition (bouton retour de
+  l'en-tête, bouton « Annuler » de la bannière d'édition, et « Enregistrer »)
+  : on revient désormais systématiquement au calendrier partagé, avec la
+  date de la séance concernée automatiquement re-sélectionnée pour la
+  retrouver directement en vue. La navigation normale (sans passer par le
+  calendrier) n'est pas affectée.
+
+2.4.1 - 2026-08-26
+===================
+
+- **Correctif d'un bug de fond sur la casse des noms d'exercice configurés**
+  (ex. « ischio » affiché « Ischio » dans Paramètres, mais « ischio » partout
+  ailleurs). La cause : l'écran Paramètres affichait le nom via une classe
+  CSS prévue à l'origine pour les dates, qui simule visuellement une
+  majuscule sans jamais toucher à la valeur réellement enregistrée — les
+  autres écrans (menu déroulant en Créer, module Performance) affichaient
+  donc la vraie casse, non corrigée.
+
+  Corrigé à la racine : le nom d'un exercice est désormais réellement
+  capitalisé (première lettre) au moment de l'enregistrement, et les
+  exercices déjà configurés avec un nom non capitalisé sont corrigés
+  automatiquement et une bonne fois pour toutes au prochain chargement de
+  l'app. La classe CSS trompeuse a aussi été retirée des deux écrans qui
+  affichent le nom d'un exercice configuré (Paramètres et Performance), au
+  profit d'une classe dédiée qui n'altère jamais l'affichage.
+
 2.4.0 - 2026-08-26
 ===================
 
