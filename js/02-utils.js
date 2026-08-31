@@ -243,38 +243,6 @@ function emptyBikeBlock() {
   return { id: uid(), label: "", mode: "both", duration: "", distance: "", speed: "" };
 }
 
-function findExerciseConfig(name) {
-  const norm = (name || "").trim().toLowerCase();
-  if (!norm) return null;
-  return gymExerciseConfigs.find((c) => c.name.trim().toLowerCase() === norm) || null;
-}
-
-function computePossibleWeights(config) {
-  if (!config || !config.baseWeights || config.baseWeights.length === 0) return [];
-  // L'incrément représente un poids fixe qu'on peut ajouter manuellement sur
-  // la machine (ex. +5kg) — pas une plage continue. Sur chaque palier, on a
-  // donc exactement deux choix : le palier seul, ou le palier + cet
-  // incrément fixe (jamais +1, +2, +3... entre les deux).
-  const inc = config.maxIncrement || 0;
-  const set = new Set();
-  config.baseWeights.forEach((b) => {
-    set.add(Math.round(b * 100) / 100);
-    if (inc > 0) set.add(Math.round((b + inc) * 100) / 100);
-  });
-  return Array.from(set).sort((a, b) => a - b);
-}
-
-function computeBaseWeightsOnly(config) {
-  if (!config || !config.baseWeights) return [];
-  return [...new Set(config.baseWeights.map((b) => Math.round(b * 100) / 100))].sort((a, b) => a - b);
-}
-
-function computeIncrementedWeightsOnly(config) {
-  if (!config || !config.baseWeights || !config.maxIncrement) return [];
-  const inc = config.maxIncrement;
-  return [...new Set(config.baseWeights.map((b) => Math.round((b + inc) * 100) / 100))].sort((a, b) => a - b);
-}
-
 /* ---------- run app: rendering ---------- */
 function splitPaceForDisplay(paceStr) {
   const val = parseFloat(paceStr);

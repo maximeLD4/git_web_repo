@@ -7,6 +7,42 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.10.0 - 2026-08-26
+====================
+
+- **Refactor de structure du projet** (aucun changement de comportement,
+  uniquement d'organisation du code) :
+
+  1. **Commentaires de section ajoutés au CSS** (12 en-têtes), pour
+     naviguer aussi facilement que dans les fichiers JS. Vérifié à l'octet
+     près qu'aucune règle n'a été modifiée dans l'opération.
+  2. **Fonctions propres à Salle de sport déplacées hors de
+     `02-utils.js`** (`findExerciseConfig`, `computeBaseWeightsOnly`,
+     `computeIncrementedWeightsOnly`) vers `09a-gym-create.js`. Au passage,
+     suppression de `computePossibleWeights`, du code mort jamais utilisé
+     nulle part dans le projet. Les 4 fonctions de fabrication d'objet vide
+     (`emptyExercise`, `emptyBlock`, `emptySwimBlock`, `emptyBikeBlock`)
+     restent volontairement dans `02-utils.js` : elles sont appelées dès le
+     chargement initial de l'état (`03-state.js`), avant que les fichiers
+     de sport ne soient chargés — les déplacer casserait l'app.
+  3. **Chaque fichier de sport scindé en deux** (Créer / Séances), sur le
+     même principe partout :
+
+     - ``09-gym.js`` → ``09a-gym-create.js`` + ``09b-gym-history.js``
+     - ``10-run.js`` → ``10a-run-create.js`` + ``10b-run-history.js``
+     - ``11-swim.js`` → ``11a-swim-create.js`` + ``11b-swim-history.js``
+     - ``12-bike.js`` → ``12a-bike-create.js`` + ``12b-bike-history.js``
+
+     Chaque fichier fait désormais 250 à 820 lignes au lieu de 650 à 1075,
+     et ne mélange plus deux préoccupations distinctes. Les fichiers 13 à
+     17 n'ont pas été renumérotés, pour limiter le risque de cette
+     opération déjà conséquente.
+
+  Testé un sport à la fois (flux Créer, historique en vue Liste et
+  Calendrier, Modifier/Dupliquer/Supprimer) puis un test global couvrant
+  les modules qui dépendent des fichiers de sport (calendrier partagé,
+  Performance, Scanner) — aucune régression détectée.
+
 2.9.0 - 2026-08-26
 ===================
 
