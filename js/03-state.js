@@ -94,6 +94,25 @@ let openSharedCalendarIds = {}; // réduit/déplié des séances dans le calendr
 let performanceSelectedExerciseId = null;
 let currentUser = null;
 
+/* ---------- Séance en direct : état du parcours pas-à-pas ---------- */
+// La séance elle-même (persistée en continu, reprise si l'app se ferme en
+// cours de route). null tant qu'aucune séance en direct n'est active.
+let liveSession = loadJSON(KEYS.liveSession, null);
+// Étape actuelle du parcours : "type" | "category" | "exercise" | "log-set"
+let liveStep = "type";
+// Sélections en cours, avant qu'un exercice ne soit confirmé/repris
+let liveDraftType = ""; // "muscu" | "cardio"
+let liveDraftCategory = "";
+let liveDraftName = "";
+// L'exercice actif dans liveSession.exercises pendant qu'on saisit une série
+// (peut être un exercice déjà entamé plus tôt dans la séance, repris ici)
+let liveActiveExerciseId = null;
+let liveDraftWeight = null;
+let liveDraftReps = 10;
+let liveDraftWeightMode = "off";
+let liveDraftDuration = null;
+let liveDraftDistance = null;
+
 // Garde globale : aucune valeur physique ne peut être négative (poids, reps, distance,
 // durée, vitesse, allure...). S'applique à tous les champs numériques, présents et futurs,
 // en phase de capture pour corriger la valeur avant que les autres écouteurs ne la lisent.

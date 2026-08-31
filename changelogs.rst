@@ -7,6 +7,83 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.12.1 - 2026-08-26
+====================
+
+- Séance en direct : le poids proposé pour la prochaine série **avance
+  automatiquement au palier disponible supérieur** (ex. 60kg → 65kg → 70kg),
+  aussi bien en enchaînant directement des séries qu'en reprenant un
+  exercice déjà entamé plus tôt dans la séance (à partir de sa dernière
+  série). S'arrête proprement une fois le palier maximum atteint, sans
+  erreur. Fonctionne aussi bien en mode Standard qu'en mode +Xkg (chacun
+  progresse dans sa propre liste de paliers). Les répétitions ne sont pas
+  concernées, seul le poids avance automatiquement.
+
+2.12.0 - 2026-08-26
+====================
+
+- Séance en direct : deux ajouts.
+
+  - **Bouton « Annuler »** (à côté de « Fin », en haut de l'écran) :
+    supprime complètement la séance en direct en cours après confirmation
+    (utile après un lancement par erreur, ou pour tout arrêter). Contrairement
+    à « Fin », rien n'est enregistré — la séance disparaît intégralement.
+  - **Frise chronologique** des séries déjà validées, affichée sur l'écran de
+    saisie, dans le **véritable ordre de validation** (pas regroupée par
+    exercice) — utile pour confirmer d'un coup d'œil que chaque série s'est
+    bien enregistrée, notamment en alternant entre plusieurs exercices
+    (superset). Défile automatiquement pour toujours montrer la dernière
+    série ajoutée. N'apparaît qu'une fois la première série validée, et
+    disparaît proprement de la séance une fois enregistrée (donnée
+    strictement interne à la séance en direct).
+
+2.11.1 - 2026-08-26
+====================
+
+- Séance en direct : **suppression de l'écran de confirmation
+  intermédiaire**. « Valider la série » devient **« Série suivante »** — un
+  seul bouton qui enregistre la série et reste directement sur le même
+  écran, prêt pour la suivante (poids/reps conservés), avec une confirmation
+  discrète qui disparaît d'elle-même. « Changer d'exercice » est désormais
+  accessible directement depuis l'écran de saisie, plus besoin de valider
+  une série pour y accéder.
+
+2.11.0 - 2026-08-26
+====================
+
+- Nouveau module **Séance en direct** (accueil), en complément de « Salle de
+  sport » (celui-ci reste inchangé) : remplir sa séance **en même temps
+  qu'on l'effectue**, plutôt que la construire puis l'enregistrer à la fin.
+
+  - **Écran plein, sans aucun scroll** — uniquement de gros boutons, pensés
+    pour être tapés facilement entre deux séries.
+  - **Parcours pas-à-pas linéaire** : type (Muscu/Cardio) → catégorie →
+    exercice → poids/reps (ou durée/distance pour le cardio) → validation
+    de la série.
+  - **Verrouillage strict** : une fois une série validée, elle est figée —
+    aucun retour en arrière possible pour la modifier, cohérent avec l'esprit
+    « on enregistre ce qui s'est vraiment passé, en direct ».
+  - **Reprendre un exercice déjà entamé** (ex. alterner Squat/Développé
+    couché en superset) : les nouvelles séries viennent bien se cumuler à la
+    suite de celles déjà faites pour ce même exercice, pas de doublon créé.
+    Un badge sur le bouton de l'exercice indique combien de séries y sont
+    déjà enregistrées cette séance.
+  - **Persistance continue** : chaque série validée est immédiatement
+    sauvegardée. Si l'app se ferme accidentellement en cours de route, la
+    séance en direct reprend automatiquement là où elle en était en
+    rouvrant le module (repart à l'étape de choix du type, sans rien
+    perdre des séries déjà validées).
+  - **« Fin »** (toujours accessible en haut de l'écran) convertit la séance
+    en direct en une séance classique, enregistrée exactement comme les
+    séances construites depuis « Salle de sport » — visible ensuite dans
+    l'historique, le calendrier partagé et le module Performance sans
+    aucune différence.
+
+  Testé de bout en bout : parcours Muscu complet, parcours Cardio complet,
+  cumul de séries en reprenant un exercice, persistance/reprise après une
+  fermeture accidentelle simulée, et enregistrement final identique aux
+  séances classiques.
+
 2.10.0 - 2026-08-26
 ====================
 

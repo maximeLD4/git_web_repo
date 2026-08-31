@@ -33,6 +33,7 @@ function render() {
   if (currentApp === "scanner") { renderScannerApp(); return; }
   if (currentApp === "performance") { renderPerformanceApp(); return; }
   if (currentApp === "performance-detail") { renderPerformanceDetailApp(); return; }
+  if (currentApp === "live") { renderLiveApp(true); return; }
   renderGymApp();
 }
 
