@@ -29,7 +29,7 @@ function sessionCardHTML(s) {
     .map(
       (ex) => `
   <div>
-    <div class="history-ex-name">${ex.name}</div>
+    <div class="history-ex-name">${ex.name}${getExerciseDurationSeconds(ex) != null ? ` <span style="color:var(--text-dim); font-weight:600;">· ${formatLiveDuration(getExerciseDurationSeconds(ex))}</span>` : ""}</div>
     ${
       (ex.exType || "muscu") === "cardio"
         ? `<div class="history-sets">${ex.sets.map((set) => `<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`
@@ -38,6 +38,7 @@ function sessionCardHTML(s) {
   </div>`
     )
     .join("");
+  const durationLabel = getSessionDurationSeconds(s) != null ? `${formatLiveDuration(getSessionDurationSeconds(s))} · ` : "";
   return `
   <div class="history-card ${upcoming ? "upcoming" : ""}">
     <div class="history-head" data-toggle="${s.id}">
@@ -46,7 +47,7 @@ function sessionCardHTML(s) {
         ${s.label ? `<div class="history-label">${s.label}</div>` : ""}
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="history-meta">${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}</div>
+        <div class="history-meta">${durationLabel}${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}</div>
         <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
       </div>
     </div>

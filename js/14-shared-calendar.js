@@ -86,7 +86,7 @@ function sharedSessionPreviewHTML(s, type) {
       .map(
         (ex) => `
     <div>
-      <div class="history-ex-name">${ex.name}</div>
+      <div class="history-ex-name">${ex.name}${getExerciseDurationSeconds(ex) != null ? ` <span style="color:var(--text-dim); font-weight:600;">· ${formatLiveDuration(getExerciseDurationSeconds(ex))}</span>` : ""}</div>
       ${
         (ex.exType || "muscu") === "cardio"
           ? `<div class="history-sets">${ex.sets.map((set) => `<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`
@@ -95,7 +95,7 @@ function sharedSessionPreviewHTML(s, type) {
     </div>`
       )
       .join("");
-    metaCount = `${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}`;
+    metaCount = `${getSessionDurationSeconds(s) != null ? formatLiveDuration(getSessionDurationSeconds(s)) + " · " : ""}${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}`;
     statsLine = "";
   } else {
     const formatSummary = type === "run" ? formatBlockSummary : type === "swim" ? formatSwimBlockSummary : formatBikeBlockSummary;

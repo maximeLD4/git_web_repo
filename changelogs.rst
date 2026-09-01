@@ -7,6 +7,50 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.15.1 - 2026-08-26
+====================
+
+- Les durées (séance totale et par exercice) issues d'une séance en direct
+  s'affichent désormais **en minutes ET en secondes** (ex. « 12min 34s »)
+  dans l'historique de Salle de sport et le calendrier partagé, au lieu de
+  minutes arrondies. Stockage passé de minutes arrondies à secondes
+  précises. Les séances déjà archivées avant ce changement (qui n'ont que
+  des minutes arrondies) restent affichées correctement, sans les secondes
+  qu'elles n'ont jamais eues.
+
+2.15.0 - 2026-08-26
+====================
+
+- **Correctif** : la frise chronologique disparaissait en cliquant sur
+  « Changer d'exercice » (elle n'était affichée que sur l'écran de saisie).
+  Elle reste désormais visible sur les 4 écrans du parcours (type,
+  catégorie, exercice, saisie).
+
+- **Nouveau** : la carte « Séance en direct » de l'accueil signale
+  désormais visuellement qu'une séance est en cours — fond noir, petit
+  point rouge pulsant façon « REC », et sous-titre « Séance en cours... ».
+  Redevient normale automatiquement une fois la séance terminée ou annulée.
+
+2.14.0 - 2026-08-26
+====================
+
+- Séance en direct : ajout d'un **chronomètre**, visible en permanence dans
+  l'en-tête (format MM:SS, ou H:MM:SS au-delà d'une heure), qui montre le
+  temps écoulé depuis le début de la séance.
+
+- **Suivi du temps réellement passé sur chaque exercice** : à chaque
+  changement d'exercice (ou reprise d'un exercice déjà entamé), le temps
+  s'arrête pour l'un et repart pour l'autre. En cas de superset (alterner
+  entre plusieurs exercices), les durées se cumulent correctement pour
+  chaque exercice, plutôt que de ne compter que le dernier passage.
+
+- **Durée totale de la séance et durée de chaque exercice sauvegardées dans
+  la séance archivée**, et affichées aussi bien dans l'historique de Salle
+  de sport que dans le calendrier partagé (résumé réduit et détail
+  développé). N'apparaît que pour les séances issues de la Séance en direct
+  — les séances classiques construites depuis Salle de sport n'ont pas
+  cette donnée et restent affichées normalement, sans rien de cassé.
+
 2.13.0 - 2026-08-26
 ====================
 

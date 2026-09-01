@@ -5,7 +5,7 @@ function renderLiveApp(freshEntry) {
   // Reprend une séance en cours si elle existe déjà (fermeture accidentelle
   // de l'app en plein entraînement) — sinon en démarre une toute nouvelle.
   if (!liveSession) {
-    liveSession = { id: uid(), date: todayISO(), label: "", exercises: [], log: [] };
+    liveSession = { id: uid(), date: todayISO(), label: "", exercises: [], log: [], startedAt: Date.now(), segments: [] };
     saveJSON(KEYS.liveSession, liveSession);
   }
   // Une entrée "fraîche" (depuis l'accueil) repart toujours de l'étape de
@@ -29,7 +29,10 @@ function renderLiveApp(freshEntry) {
     <div class="live-screen">
       <div class="live-header">
         <button type="button" class="back-btn" data-live-back>${ICONS.back}</button>
-        <div class="live-header-title">${titles[liveStep] || ""}</div>
+        <div class="live-header-center">
+          <div class="live-header-title">${titles[liveStep] || ""}</div>
+          <div class="live-header-chrono" id="live-chrono">00:00</div>
+        </div>
         <div class="live-header-actions">
           <button type="button" class="live-cancel-btn" data-live-cancel>Annuler</button>
           <button type="button" class="live-stop-btn" data-live-stop>${ICONS.check} Fin</button>
@@ -48,6 +51,8 @@ function renderLiveApp(freshEntry) {
     } else if (liveStep === "exercise") {
       liveStep = "category";
     } else if (liveStep === "log-set") {
+      closeCurrentLiveSegment();
+      saveJSON(KEYS.liveSession, liveSession);
       liveActiveExerciseId = null;
       liveStep = "type";
     }
@@ -55,6 +60,7 @@ function renderLiveApp(freshEntry) {
   });
   document.querySelector("[data-live-stop]").addEventListener("click", finishLiveSession);
   document.querySelector("[data-live-cancel]").addEventListener("click", cancelLiveSession);
+  startLiveChrono();
   renderLiveStep();
 }
 
@@ -80,32 +86,43 @@ function renderLiveStep() {
 }
 
 function liveTypeStepHTML() {
-  return `
+  return (
+    liveTimelineHTML() +
+    `
     <div class="live-grid" style="grid-template-columns:1fr;">
       <button type="button" class="live-btn" style="font-size:19px; padding:26px;" data-live-type="muscu">${ICONS.dumbbell} Muscu</button>
       <button type="button" class="live-btn" style="font-size:19px; padding:26px;" data-live-type="cardio">${ICONS.stopwatch} Cardio</button>
-    </div>`;
+    </div>`
+  );
 }
 
 function liveCategoryStepHTML() {
   if (liveDraftType === "cardio") {
-    return `
+    return (
+      liveTimelineHTML() +
+      `
       <div class="live-grid" style="grid-template-columns:1fr 1fr;">
         ${CARDIO_CATEGORIES.map((c) => `<button type="button" class="live-btn" data-live-cardio-category="${c.key}">${c.label}</button>`).join("")}
-      </div>`;
+      </div>`
+    );
   }
-  return `
+  return (
+    liveTimelineHTML() +
+    `
     <div class="live-grid" style="grid-template-columns:1fr 1fr;">
       ${GYM_EXERCISE_CATEGORIES.map((c) => `<button type="button" class="live-btn" data-live-category="${c.key}">${c.label}</button>`).join("")}
-    </div>`;
+    </div>`
+  );
 }
 
 function liveExerciseStepHTML() {
   const configs = gymExerciseConfigs.filter((c) => (c.category || "pecs") === liveDraftCategory);
   if (configs.length === 0) {
-    return `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Ajoute-en dans Paramètres → Salle de sport.</div>`;
+    return liveTimelineHTML() + `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Ajoute-en dans Paramètres → Salle de sport.</div>`;
   }
-  return `
+  return (
+    liveTimelineHTML() +
+    `
     <div class="live-grid" style="grid-template-columns:1fr 1fr;">
       ${[...configs]
         .sort((a, b) => a.name.localeCompare(b.name))
@@ -115,7 +132,8 @@ function liveExerciseStepHTML() {
           return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}">${c.name}${badge}</button>`;
         })
         .join("")}
-    </div>`;
+    </div>`
+  );
 }
 
 function liveTimelineHTML() {
@@ -254,7 +272,74 @@ function deleteLiveTimelineEntry(idx) {
   renderLiveApp();
 }
 
+function formatLiveDuration(totalSeconds) {
+  if (totalSeconds == null) return "";
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  if (m === 0) return `${s}s`;
+  return s === 0 ? `${m}min` : `${m}min ${String(s).padStart(2, "0")}s`;
+}
+
+// Compatibilité avec les séances déjà archivées avant ce changement, qui
+// n'ont qu'une durée en minutes arrondies (durationMin) plutôt qu'en
+// secondes précises (durationSec) — on affiche alors sans les secondes,
+// plutôt que de ne rien afficher du tout.
+function getSessionDurationSeconds(s) {
+  if (s.durationSec != null) return s.durationSec;
+  if (s.durationMin != null) return s.durationMin * 60;
+  return null;
+}
+
+function getExerciseDurationSeconds(ex) {
+  if (ex.durationSec != null) return ex.durationSec;
+  if (ex.durationMin != null) return ex.durationMin * 60;
+  return null;
+}
+
+let liveChronoInterval = null;
+
+function startLiveChrono() {
+  clearInterval(liveChronoInterval);
+  updateLiveChronoDisplay();
+  liveChronoInterval = setInterval(updateLiveChronoDisplay, 1000);
+}
+
+function updateLiveChronoDisplay() {
+  const el = document.getElementById("live-chrono");
+  if (!el || !liveSession || !liveSession.startedAt) {
+    clearInterval(liveChronoInterval);
+    return;
+  }
+  const elapsedSec = Math.max(0, Math.floor((Date.now() - liveSession.startedAt) / 1000));
+  el.textContent = formatLiveChrono(elapsedSec);
+}
+
+function formatLiveChrono(totalSeconds) {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const pad = (n) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+// Suivi du temps réellement passé sur chaque exercice : à chaque fois qu'on
+// entre sur un exercice (nouveau ou repris), on ferme le segment en cours
+// (s'il y en a un) et on en ouvre un nouveau. À la fin de la séance, on
+// additionne les segments par nom d'exercice pour obtenir sa durée totale.
+function closeCurrentLiveSegment() {
+  if (!liveSession.segments) liveSession.segments = [];
+  const openSeg = liveSession.segments.find((s) => s.end === null);
+  if (openSeg) openSeg.end = Date.now();
+}
+
+function openLiveSegment(name, exType) {
+  if (!liveSession.segments) liveSession.segments = [];
+  liveSession.segments.push({ name, exType, start: Date.now(), end: null });
+}
+
 function startOrResumeLiveExercise() {
+  closeCurrentLiveSegment();
+  openLiveSegment(liveDraftName, liveDraftType);
   const norm = liveDraftName.trim().toLowerCase();
   const existing = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === norm);
   if (existing) {
@@ -335,6 +420,7 @@ function cancelLiveSession() {
   showConfirm(
     "Annuler cette séance en direct ? Toutes les séries déjà enregistrées seront définitivement perdues.",
     () => {
+      clearInterval(liveChronoInterval);
       liveSession = null;
       saveJSON(KEYS.liveSession, null);
       liveStep = "type";
@@ -353,25 +439,40 @@ function finishLiveSession() {
   if (cleaned.length === 0) {
     // Rien d'enregistré cette fois-ci : on quitte simplement, sans créer de
     // séance vide.
+    clearInterval(liveChronoInterval);
     liveSession = null;
     saveJSON(KEYS.liveSession, null);
     goHome();
     return;
   }
   showConfirm("Terminer et enregistrer cette séance ?", () => {
+    closeCurrentLiveSegment();
+    const totalDurationSec = liveSession.startedAt ? Math.round((Date.now() - liveSession.startedAt) / 1000) : null;
+    // Additionne, pour chaque exercice, la somme de ses segments de temps
+    // (utile en cas de reprise multiple d'un même exercice en superset).
+    const withDurations = cleaned.map((ex) => {
+      const norm = ex.name.trim().toLowerCase();
+      const totalMs = (liveSession.segments || [])
+        .filter((s) => s.name.trim().toLowerCase() === norm && s.end !== null)
+        .reduce((sum, s) => sum + (s.end - s.start), 0);
+      return { ...ex, durationSec: Math.round(totalMs / 1000) };
+    });
+
     const otherCount = sessions.length;
     const session = {
       id: uid(),
       date: liveSession.date,
       label: liveSession.label || `Séance ${otherCount + 1}`,
-      exercises: cleaned,
+      exercises: withDurations,
       planned: false,
+      durationSec: totalDurationSec,
     };
     sessions = [session, ...sessions];
     library = Array.from(new Set([...library, ...cleaned.map((e) => e.name)])).sort((a, b) => a.localeCompare(b));
     saveJSON(KEYS.sessions, sessions);
     saveJSON(KEYS.library, library);
 
+    clearInterval(liveChronoInterval);
     liveSession = null;
     saveJSON(KEYS.liveSession, null);
     liveStep = "type";
@@ -484,6 +585,8 @@ function attachLiveStepListeners() {
   const changeExBtn = content.querySelector("[data-live-change-exercise]");
   if (changeExBtn) {
     changeExBtn.addEventListener("click", () => {
+      closeCurrentLiveSegment();
+      saveJSON(KEYS.liveSession, liveSession);
       liveActiveExerciseId = null;
       liveStep = "type";
       renderLiveApp();

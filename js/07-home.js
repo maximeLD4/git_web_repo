@@ -49,10 +49,11 @@ function renderHome() {
           <div class="home-tile-title">Performance</div>
           <div class="home-tile-sub">Suivi de tes progrès</div>
         </div>
-        <div class="home-tile" data-open-app="live">
-          <div class="home-tile-icon" style="background: rgba(255,159,10,0.14); color: #FF9F0A;">${ICONS.bolt}</div>
+        <div class="home-tile ${liveSession ? "live-recording" : ""}" data-open-app="live">
+          ${liveSession ? `<div class="live-rec-dot"></div>` : ""}
+          <div class="home-tile-icon" style="background: ${liveSession ? "rgba(255,59,48,0.18)" : "rgba(255,159,10,0.14)"}; color: ${liveSession ? "#FF3B30" : "#FF9F0A"};">${ICONS.bolt}</div>
           <div class="home-tile-title">Séance en direct</div>
-          <div class="home-tile-sub">Remplis en t'entraînant</div>
+          <div class="home-tile-sub">${liveSession ? "Séance en cours..." : "Remplis en t'entraînant"}</div>
         </div>
       </div>
     </div>
