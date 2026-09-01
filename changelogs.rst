@@ -7,6 +7,41 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.17.0 - 2026-08-26
+====================
+
+- Séance en direct (Muscu) : **fusion de l'étape "exercice" dans l'écran
+  catégorie**, même principe que la fusion type/catégorie de la 2.16.0. Le
+  switch Muscu/Cardio, la rangée de catégories musculaires, et la liste des
+  exercices de la catégorie choisie sont désormais tous sur le même écran,
+  sans aucune navigation entre eux.
+
+  - Les catégories s'affichent en rangée compacte de puces (plus le grand
+    format en grille d'avant).
+  - Cliquer une catégorie l'active et fait apparaître ses exercices juste en
+    dessous ; la **recliquer la désélectionne** et referme la liste
+    d'exercices, sans changer d'écran.
+  - Le titre de l'en-tête s'adapte automatiquement (« Quel groupe
+    musculaire ? » tant qu'aucune catégorie n'est choisie, puis « Quel
+    exercice ? » une fois qu'elle l'est).
+  - La catégorie reste sélectionnée après « Changer d'exercice », pratique
+    pour enchaîner plusieurs exercices du même groupe musculaire sans avoir
+    à la reselectionner à chaque fois.
+  - Le parcours Cardio n'est pas concerné (déjà direct depuis la 2.16.0) et
+    reste inchangé.
+
+2.16.0 - 2026-08-26
+====================
+
+- Séance en direct : **fusion des écrans "type" et "catégorie"** en un seul.
+  Un switch Muscu/Cardio pleine largeur reste fixe en haut de l'écran ; les
+  catégories correspondantes (groupes musculaires, ou Rameur/Vélo/Course)
+  s'affichent juste en dessous et changent instantanément au clic sur le
+  switch — sans jamais changer de page. Le parcours passe ainsi de 4 à 3
+  écrans (type+catégorie fusionnés → exercice → saisie), le choix du type
+  restant préservé d'un aller-retour à l'autre (« Changer d'exercice » ne
+  remet plus Muscu par défaut si on était sur Cardio, et inversement).
+
 2.15.1 - 2026-08-26
 ====================
 

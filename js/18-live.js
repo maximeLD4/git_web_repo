@@ -8,21 +8,20 @@ function renderLiveApp(freshEntry) {
     liveSession = { id: uid(), date: todayISO(), label: "", exercises: [], log: [], startedAt: Date.now(), segments: [] };
     saveJSON(KEYS.liveSession, liveSession);
   }
-  // Une entrée "fraîche" (depuis l'accueil) repart toujours de l'étape de
-  // choix du type, quelle que soit l'étape où on se trouvait avant une
-  // fermeture accidentelle — les séries déjà validées, elles, restent
-  // intactes dans liveSession.
+  // Une entrée "fraîche" (depuis l'accueil) repart toujours de l'étape
+  // fusionnée type+catégorie (Muscu par défaut), quelle que soit l'étape où
+  // on se trouvait avant une fermeture accidentelle — les séries déjà
+  // validées, elles, restent intactes dans liveSession.
   if (freshEntry) {
-    liveStep = "type";
-    liveDraftType = "";
+    liveStep = "category";
+    liveDraftType = "muscu";
     liveDraftCategory = "";
     liveDraftName = "";
     liveActiveExerciseId = null;
   }
   const titles = {
-    type: "Quel type d'exercice ?",
-    category: liveDraftType === "cardio" ? "Quelle catégorie ?" : "Quel groupe musculaire ?",
-    exercise: "Quel exercice ?",
+    category:
+      liveDraftType === "cardio" ? "Quelle catégorie ?" : liveDraftCategory ? "Quel exercice ?" : "Quel groupe musculaire ?",
     "log-set": liveDraftName || "Enregistre ta série",
   };
   app.innerHTML = `
@@ -42,19 +41,15 @@ function renderLiveApp(freshEntry) {
     </div>
   `;
   document.querySelector("[data-live-back]").addEventListener("click", () => {
-    if (liveStep === "type") {
+    if (liveStep === "category") {
       goHome();
       return;
     }
-    if (liveStep === "category") {
-      liveStep = "type";
-    } else if (liveStep === "exercise") {
-      liveStep = "category";
-    } else if (liveStep === "log-set") {
+    if (liveStep === "log-set") {
       closeCurrentLiveSegment();
       saveJSON(KEYS.liveSession, liveSession);
       liveActiveExerciseId = null;
-      liveStep = "type";
+      liveStep = "category";
     }
     renderLiveApp();
   });
@@ -74,9 +69,7 @@ function renderLiveStep() {
   const wasAtEnd = prevTimeline ? prevTimeline.scrollLeft + prevTimeline.clientWidth >= prevTimeline.scrollWidth - 4 : true;
   const prevScrollLeft = prevTimeline ? prevTimeline.scrollLeft : null;
 
-  if (liveStep === "type") content.innerHTML = liveTypeStepHTML();
-  else if (liveStep === "category") content.innerHTML = liveCategoryStepHTML();
-  else if (liveStep === "exercise") content.innerHTML = liveExerciseStepHTML();
+  if (liveStep === "category") content.innerHTML = liveCategoryStepHTML();
   else if (liveStep === "log-set") content.innerHTML = liveLogSetStepHTML();
   attachLiveStepListeners();
   const timeline = document.getElementById("live-timeline");
@@ -85,55 +78,51 @@ function renderLiveStep() {
   }
 }
 
-function liveTypeStepHTML() {
-  return (
-    liveTimelineHTML() +
-    `
-    <div class="live-grid" style="grid-template-columns:1fr;">
-      <button type="button" class="live-btn" style="font-size:19px; padding:26px;" data-live-type="muscu">${ICONS.dumbbell} Muscu</button>
-      <button type="button" class="live-btn" style="font-size:19px; padding:26px;" data-live-type="cardio">${ICONS.stopwatch} Cardio</button>
-    </div>`
-  );
-}
-
 function liveCategoryStepHTML() {
-  if (liveDraftType === "cardio") {
-    return (
-      liveTimelineHTML() +
-      `
+  const isCardio = liveDraftType === "cardio";
+  const switchHTML = `
+    <div class="live-type-switch">
+      <button type="button" class="live-type-switch-btn ${!isCardio ? "active" : ""}" data-live-type-switch="muscu">${ICONS.dumbbell} Muscu</button>
+      <button type="button" class="live-type-switch-btn ${isCardio ? "active" : ""}" data-live-type-switch="cardio">${ICONS.stopwatch} Cardio</button>
+    </div>`;
+
+  if (isCardio) {
+    // Cardio : la catégorie EST déjà le choix final (préremplit le nom), pas
+    // de niveau supplémentaire nécessaire — inchangé.
+    const categoriesHTML = `
       <div class="live-grid" style="grid-template-columns:1fr 1fr;">
         ${CARDIO_CATEGORIES.map((c) => `<button type="button" class="live-btn" data-live-cardio-category="${c.key}">${c.label}</button>`).join("")}
-      </div>`
-    );
+      </div>`;
+    return liveTimelineHTML() + switchHTML + categoriesHTML;
   }
-  return (
-    liveTimelineHTML() +
-    `
-    <div class="live-grid" style="grid-template-columns:1fr 1fr;">
-      ${GYM_EXERCISE_CATEGORIES.map((c) => `<button type="button" class="live-btn" data-live-category="${c.key}">${c.label}</button>`).join("")}
-    </div>`
-  );
-}
 
-function liveExerciseStepHTML() {
-  const configs = gymExerciseConfigs.filter((c) => (c.category || "pecs") === liveDraftCategory);
-  if (configs.length === 0) {
-    return liveTimelineHTML() + `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Ajoute-en dans Paramètres → Salle de sport.</div>`;
+  // Muscu : la catégorie s'affiche en rangée compacte de puces (comme un
+  // filtre), sélectionnable et désélectionnable — la reselectionner referme
+  // la liste d'exercices sans changer d'écran.
+  const categoryRowHTML = `
+    <div class="live-subcat-row">
+      ${GYM_EXERCISE_CATEGORIES.map((c) => `<button type="button" class="live-subcat-btn ${liveDraftCategory === c.key ? "active" : ""}" data-live-category="${c.key}">${c.label}</button>`).join("")}
+    </div>`;
+
+  let exercisesHTML = "";
+  if (liveDraftCategory) {
+    const configs = gymExerciseConfigs.filter((c) => (c.category || "pecs") === liveDraftCategory);
+    exercisesHTML =
+      configs.length === 0
+        ? `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Ajoute-en dans Paramètres → Salle de sport.</div>`
+        : `<div class="live-grid" style="grid-template-columns:1fr 1fr;">
+            ${[...configs]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((c) => {
+                const already = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === c.name.trim().toLowerCase());
+                const badge = already ? ` (${already.sets.length})` : "";
+                return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}">${c.name}${badge}</button>`;
+              })
+              .join("")}
+          </div>`;
   }
-  return (
-    liveTimelineHTML() +
-    `
-    <div class="live-grid" style="grid-template-columns:1fr 1fr;">
-      ${[...configs]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((c) => {
-          const already = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === c.name.trim().toLowerCase());
-          const badge = already ? ` (${already.sets.length})` : "";
-          return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}">${c.name}${badge}</button>`;
-        })
-        .join("")}
-    </div>`
-  );
+
+  return liveTimelineHTML() + switchHTML + categoryRowHTML + exercisesHTML;
 }
 
 function liveTimelineHTML() {
@@ -261,7 +250,7 @@ function deleteLiveTimelineEntry(idx) {
       liveSession.exercises = liveSession.exercises.filter((e) => e.id !== exercise.id);
       if (liveActiveExerciseId === exercise.id) {
         liveActiveExerciseId = null;
-        liveStep = "type";
+        liveStep = "category";
       }
     }
   }
@@ -423,7 +412,7 @@ function cancelLiveSession() {
       clearInterval(liveChronoInterval);
       liveSession = null;
       saveJSON(KEYS.liveSession, null);
-      liveStep = "type";
+      liveStep = "category";
       liveDraftType = "";
       liveDraftCategory = "";
       liveDraftName = "";
@@ -475,7 +464,7 @@ function finishLiveSession() {
     clearInterval(liveChronoInterval);
     liveSession = null;
     saveJSON(KEYS.liveSession, null);
-    liveStep = "type";
+    liveStep = "category";
     liveDraftType = "";
     liveDraftCategory = "";
     liveDraftName = "";
@@ -512,18 +501,23 @@ function attachLiveStepListeners() {
     });
   });
 
-  content.querySelectorAll("[data-live-type]").forEach((btn) => {
+  content.querySelectorAll("[data-live-type-switch]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      liveDraftType = btn.dataset.liveType;
-      liveStep = "category";
+      const newType = btn.dataset.liveTypeSwitch;
+      if (liveDraftType === newType) return;
+      liveDraftType = newType;
+      // On reste sur le même écran : seules les catégories affichées en
+      // dessous changent, pas de navigation vers une autre page.
       renderLiveApp();
     });
   });
 
   content.querySelectorAll("[data-live-category]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      liveDraftCategory = btn.dataset.liveCategory;
-      liveStep = "exercise";
+      const key = btn.dataset.liveCategory;
+      // Re-cliquer sur la catégorie déjà active la désélectionne et referme
+      // la liste d'exercices, sans changer d'écran.
+      liveDraftCategory = liveDraftCategory === key ? "" : key;
       renderLiveApp();
     });
   });
@@ -588,7 +582,7 @@ function attachLiveStepListeners() {
       closeCurrentLiveSegment();
       saveJSON(KEYS.liveSession, liveSession);
       liveActiveExerciseId = null;
-      liveStep = "type";
+      liveStep = "category";
       renderLiveApp();
     });
   }
