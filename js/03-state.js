@@ -112,6 +112,11 @@ let liveDraftReps = 10;
 let liveDraftWeightMode = "off";
 let liveDraftDuration = null;
 let liveDraftDistance = null;
+// Suppression d'un élément de la frise en deux temps : index (dans
+// liveSession.log) actuellement en attente de confirmation, et minuteur
+// d'annulation automatique après 2 secondes sans second appui.
+let liveTimelineConfirmIndex = null;
+let liveTimelineConfirmTimer = null;
 
 // Garde globale : aucune valeur physique ne peut être négative (poids, reps, distance,
 // durée, vitesse, allure...). S'applique à tous les champs numériques, présents et futurs,

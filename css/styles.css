@@ -305,6 +305,13 @@
   .live-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
   .live-cancel-btn { background: var(--surface-2); color: var(--text-dim); border: none; border-radius: 999px; padding: 9px 13px; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
   .live-timeline { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; flex-shrink: 0; -webkit-overflow-scrolling: touch; }
-  .live-timeline-chip { flex-shrink: 0; background: var(--surface-2); border-radius: 10px; padding: 6px 10px; text-align: center; white-space: nowrap; display: flex; flex-direction: column; }
-  .live-timeline-chip .ex { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-dim); font-weight: 700; max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
-  .live-timeline-chip .val { font-size: 12px; color: var(--accent); font-weight: 800; font-family: -apple-system, system-ui, sans-serif; }
+  .live-timeline-chip { position: relative; flex-shrink: 0; background: var(--surface-2); border-radius: 10px; padding: 6px 10px; text-align: center; white-space: nowrap; display: flex; flex-direction: column; cursor: pointer; transition: background 0.15s ease; }
+  .live-timeline-chip .ex { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-dim); font-weight: 700; max-width: 90px; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.15s ease; }
+  .live-timeline-chip .val { font-size: 12px; color: var(--accent); font-weight: 800; font-family: -apple-system, system-ui, sans-serif; transition: opacity 0.15s ease; }
+  .live-timeline-delete-overlay { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; border-radius: 10px; color: #fff; }
+  .live-timeline-chip.confirm-delete { background: rgba(255, 59, 48, 0.18); }
+  .live-timeline-chip.confirm-delete .ex, .live-timeline-chip.confirm-delete .val { opacity: 0.2; }
+  .live-timeline-chip.confirm-delete .live-timeline-delete-overlay { display: flex; color: #FF3B30; }
+  .live-timeline-chip.deleting { background: #FF3B30; }
+  .live-timeline-chip.deleting .ex, .live-timeline-chip.deleting .val { opacity: 0; }
+  .live-timeline-chip.deleting .live-timeline-delete-overlay { display: flex; color: #fff; }

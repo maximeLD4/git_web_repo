@@ -7,6 +7,29 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.13.0 - 2026-08-26
+====================
+
+- Séance en direct : possibilité de **supprimer une entrée de la frise**, en
+  deux temps comme demandé :
+
+  1. **Premier appui** sur une puce : elle se teinte d'un rouge léger (canal
+     alpha faible), une icône de suppression apparaît par-dessus. Sans
+     second appui dans les **2 secondes**, elle revient automatiquement à la
+     normale.
+  2. **Second appui** (dans les 2 secondes) sur la même puce : elle passe en
+     rouge plein, puis la série correspondante est réellement supprimée de
+     l'exercice concerné et de la frise.
+
+  Si la série supprimée était la dernière de son exercice pour cette séance,
+  l'exercice est retiré entièrement (pas d'exercice vide qui traîne) ; si
+  c'était l'exercice en cours de saisie, on repart proprement au choix du
+  type. Taper sur une autre puce pendant qu'une était déjà en attente de
+  confirmation annule cette dernière et démarre la confirmation sur la
+  nouvelle. La position de défilement de la frise est préservée pendant la
+  fenêtre de confirmation (ne saute pas au bout si l'utilisateur avait
+  scrollé vers une ancienne entrée).
+
 2.12.1 - 2026-08-26
 ====================
 

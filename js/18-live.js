@@ -60,13 +60,23 @@ function renderLiveApp(freshEntry) {
 
 function renderLiveStep() {
   const content = document.getElementById("live-content");
+  const prevTimeline = document.getElementById("live-timeline");
+  // On ne force le défilement tout à droite que si l'utilisateur y était déjà
+  // (cas normal après validation d'une série) — s'il avait scrollé vers la
+  // gauche pour taper sur une ancienne puce, on préserve sa position plutôt
+  // que de la faire disparaître au moment où il tente de la supprimer.
+  const wasAtEnd = prevTimeline ? prevTimeline.scrollLeft + prevTimeline.clientWidth >= prevTimeline.scrollWidth - 4 : true;
+  const prevScrollLeft = prevTimeline ? prevTimeline.scrollLeft : null;
+
   if (liveStep === "type") content.innerHTML = liveTypeStepHTML();
   else if (liveStep === "category") content.innerHTML = liveCategoryStepHTML();
   else if (liveStep === "exercise") content.innerHTML = liveExerciseStepHTML();
   else if (liveStep === "log-set") content.innerHTML = liveLogSetStepHTML();
   attachLiveStepListeners();
   const timeline = document.getElementById("live-timeline");
-  if (timeline) timeline.scrollLeft = timeline.scrollWidth;
+  if (timeline) {
+    timeline.scrollLeft = wasAtEnd ? timeline.scrollWidth : prevScrollLeft;
+  }
 }
 
 function liveTypeStepHTML() {
@@ -111,18 +121,21 @@ function liveExerciseStepHTML() {
 function liveTimelineHTML() {
   if (!liveSession.log || liveSession.log.length === 0) return "";
   const chips = liveSession.log
-    .map((entry) => {
+    .map((entry, idx) => {
       const ex = liveSession.exercises.find((e) => e.id === entry.exerciseId);
       if (!ex) return "";
       const set = ex.sets.find((s) => s.id === entry.setId);
       if (!set) return "";
       const valueLabel = ex.exType === "cardio" ? `${set.weight}min${set.reps ? "/" + set.reps + "km" : ""}` : `${set.weight}kg×${set.reps}`;
-      return `<div class="live-timeline-chip"><span class="ex">${ex.name}</span><span class="val">${valueLabel}</span></div>`;
+      const confirming = idx === liveTimelineConfirmIndex;
+      return `
+        <div class="live-timeline-chip ${confirming ? "confirm-delete" : ""}" data-live-timeline-chip="${idx}">
+          <span class="ex">${ex.name}</span>
+          <span class="val">${valueLabel}</span>
+          <div class="live-timeline-delete-overlay">${ICONS.trash}</div>
+        </div>`;
     })
     .join("");
-  // On scrolle automatiquement la frise tout à droite après le rendu, pour
-  // que la série qu'on vient de valider soit toujours immédiatement visible
-  // sans avoir à la faire défiler manuellement.
   return `<div class="live-timeline" id="live-timeline">${chips}</div>`;
 }
 
@@ -215,6 +228,30 @@ function computeNextLiveWeight(name, currentWeight, mode) {
   // au palier le plus haut disponible, on ne change rien.
   if (idx === -1 || idx >= activeList.length - 1) return currentWeight;
   return activeList[idx + 1];
+}
+
+function deleteLiveTimelineEntry(idx) {
+  const entry = liveSession.log[idx];
+  if (!entry) return;
+  const exercise = liveSession.exercises.find((e) => e.id === entry.exerciseId);
+  if (exercise) {
+    exercise.sets = exercise.sets.filter((s) => s.id !== entry.setId);
+    // Si l'exercice n'a plus aucune série après cette suppression, on le
+    // retire aussi complètement de la séance — pas d'exercice vide qui
+    // traîne. Si c'était l'exercice actif, on repart au choix du type.
+    if (exercise.sets.length === 0) {
+      liveSession.exercises = liveSession.exercises.filter((e) => e.id !== exercise.id);
+      if (liveActiveExerciseId === exercise.id) {
+        liveActiveExerciseId = null;
+        liveStep = "type";
+      }
+    }
+  }
+  liveSession.log.splice(idx, 1);
+  saveJSON(KEYS.liveSession, liveSession);
+  liveTimelineConfirmIndex = null;
+  clearTimeout(liveTimelineConfirmTimer);
+  renderLiveApp();
 }
 
 function startOrResumeLiveExercise() {
@@ -350,6 +387,29 @@ function finishLiveSession() {
 function attachLiveStepListeners() {
   const content = document.getElementById("live-content");
   if (!content) return;
+
+  content.querySelectorAll("[data-live-timeline-chip]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const idx = parseInt(chip.dataset.liveTimelineChip, 10);
+      clearTimeout(liveTimelineConfirmTimer);
+      if (liveTimelineConfirmIndex === idx) {
+        // 2e appui sur la même puce : suppression effective, après un bref
+        // flash "très rouge" pour confirmer visuellement l'action.
+        chip.classList.add("deleting");
+        setTimeout(() => deleteLiveTimelineEntry(idx), 220);
+      } else {
+        // 1er appui (ou appui sur une autre puce pendant qu'une était déjà
+        // en attente) : passe cette puce en mode confirmation, avec 2
+        // secondes pour confirmer avant annulation automatique.
+        liveTimelineConfirmIndex = idx;
+        liveTimelineConfirmTimer = setTimeout(() => {
+          liveTimelineConfirmIndex = null;
+          renderLiveStep();
+        }, 2000);
+        renderLiveStep();
+      }
+    });
+  });
 
   content.querySelectorAll("[data-live-type]").forEach((btn) => {
     btn.addEventListener("click", () => {
