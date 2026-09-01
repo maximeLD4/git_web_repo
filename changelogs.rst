@@ -7,6 +7,37 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.17.3 - 2026-08-26
+====================
+
+- Séance en direct : retrait du titre descriptif partout dans l'en-tête,
+  y compris sur l'écran de saisie (qui affichait le nom de l'exercice en
+  double avec le corps de l'écran). Seul le chronomètre en gros reste
+  affiché, sur tous les écrans du module sans exception.
+
+2.17.2 - 2026-08-26
+====================
+
+- Séance en direct : sur l'écran de choix type/catégorie/exercice (Muscu et
+  Cardio), retrait des titres descriptifs (« Quel groupe musculaire ? »,
+  « Quelle catégorie ? », « Quel exercice ? ») au profit du **chronomètre
+  affiché en plus gros** à leur place. L'écran de saisie (poids/reps ou
+  durée/distance), lui, garde son titre (nom de l'exercice) et son petit
+  chrono habituel, inchangé.
+
+2.17.1 - 2026-08-26
+====================
+
+- Séance en direct : le switch Muscu/Cardio a maintenant un **curseur qui
+  glisse** d'un côté à l'autre au lieu de changer de fond instantanément.
+  Techniquement, comme tout l'écran se reconstruit à chaque interaction
+  (remplacement complet du HTML), une simple transition CSS ne se serait
+  pas animée — le curseur est déplacé sur l'élément déjà présent à
+  l'écran (déclenchant une vraie transition), et le contenu en dessous
+  (catégories) n'est reconstruit qu'une fois le glissement visuellement
+  terminé, pour éviter que tout change d'un coup en même temps que
+  l'animation.
+
 2.17.0 - 2026-08-26
 ====================
 

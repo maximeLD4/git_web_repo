@@ -293,12 +293,14 @@
   .live-header-center { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1px; }
   .live-header-title { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 15px; color: var(--text-dim); text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .live-header-chrono { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 11px; color: var(--accent); letter-spacing: 0.3px; font-variant-numeric: tabular-nums; }
+  .live-header-chrono-big { font-size: 21px; font-weight: 800; }
   .live-stop-btn { background: rgba(255,59,48,0.12); color: var(--rust); border: none; border-radius: 999px; padding: 9px 15px; font-size: 12.5px; font-weight: 700; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; gap: 5px; }
   .live-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   .live-grid { flex: 1; display: grid; gap: 10px; align-content: center; overflow: hidden; }
-  .live-type-switch { display: flex; gap: 6px; background: var(--surface-2); border-radius: 16px; padding: 5px; margin-bottom: 12px; flex-shrink: 0; }
-  .live-type-switch-btn { flex: 1; background: none; border: none; border-radius: 12px; padding: 12px 8px; font-size: 14.5px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .live-type-switch-btn.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+  .live-type-switch { position: relative; display: flex; gap: 6px; background: var(--surface-2); border-radius: 16px; padding: 5px; margin-bottom: 12px; flex-shrink: 0; }
+  .live-type-thumb { position: absolute; top: 5px; left: 5px; width: calc(50% - 8px); height: calc(100% - 10px); background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-sm); transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1); z-index: 0; }
+  .live-type-switch-btn { position: relative; z-index: 1; flex: 1; background: none; border: none; border-radius: 12px; padding: 12px 8px; font-size: 14.5px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: color 0.22s ease; }
+  .live-type-switch-btn.active { color: var(--accent); }
   .live-subcat-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
   .live-subcat-btn { background: var(--surface-2); border: none; border-radius: 999px; padding: 9px 14px; font-size: 13px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; color: var(--text-dim); cursor: pointer; }
   .live-subcat-btn.active { background: var(--accent); color: #fff; }

@@ -19,18 +19,12 @@ function renderLiveApp(freshEntry) {
     liveDraftName = "";
     liveActiveExerciseId = null;
   }
-  const titles = {
-    category:
-      liveDraftType === "cardio" ? "Quelle catégorie ?" : liveDraftCategory ? "Quel exercice ?" : "Quel groupe musculaire ?",
-    "log-set": liveDraftName || "Enregistre ta série",
-  };
   app.innerHTML = `
     <div class="live-screen">
       <div class="live-header">
         <button type="button" class="back-btn" data-live-back>${ICONS.back}</button>
         <div class="live-header-center">
-          <div class="live-header-title">${titles[liveStep] || ""}</div>
-          <div class="live-header-chrono" id="live-chrono">00:00</div>
+          <div class="live-header-chrono live-header-chrono-big" id="live-chrono">00:00</div>
         </div>
         <div class="live-header-actions">
           <button type="button" class="live-cancel-btn" data-live-cancel>Annuler</button>
@@ -82,6 +76,7 @@ function liveCategoryStepHTML() {
   const isCardio = liveDraftType === "cardio";
   const switchHTML = `
     <div class="live-type-switch">
+      <div class="live-type-thumb" id="live-type-thumb" style="transform: translateX(${isCardio ? "calc(100% + 6px)" : "0"});"></div>
       <button type="button" class="live-type-switch-btn ${!isCardio ? "active" : ""}" data-live-type-switch="muscu">${ICONS.dumbbell} Muscu</button>
       <button type="button" class="live-type-switch-btn ${isCardio ? "active" : ""}" data-live-type-switch="cardio">${ICONS.stopwatch} Cardio</button>
     </div>`;
@@ -506,9 +501,18 @@ function attachLiveStepListeners() {
       const newType = btn.dataset.liveTypeSwitch;
       if (liveDraftType === newType) return;
       liveDraftType = newType;
-      // On reste sur le même écran : seules les catégories affichées en
-      // dessous changent, pas de navigation vers une autre page.
-      renderLiveApp();
+      // On anime d'abord le curseur sur l'élément DOM déjà présent (pour que
+      // la transition CSS glisse vraiment), puis on ne reconstruit le
+      // contenu (catégories) qu'une fois le glissement visuellement
+      // terminé — sinon tout changerait d'un coup, en même temps que le
+      // glissement, ce qui casserait l'effet.
+      const thumb = document.getElementById("live-type-thumb");
+      if (thumb) {
+        thumb.style.transform = `translateX(${newType === "cardio" ? "calc(100% + 6px)" : "0"})`;
+        setTimeout(() => renderLiveApp(), 220);
+      } else {
+        renderLiveApp();
+      }
     });
   });
 
