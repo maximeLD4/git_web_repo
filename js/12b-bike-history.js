@@ -140,8 +140,8 @@ function attachBikeHistoryListeners() {
   });
   const calPrev = document.querySelector("[data-bike-cal-prev]");
   const calNext = document.querySelector("[data-bike-cal-next]");
-  if (calPrev) calPrev.addEventListener("click", () => { shiftBikeCalendarMonth(-1); renderBikeContent(); });
-  if (calNext) calNext.addEventListener("click", () => { shiftBikeCalendarMonth(1); renderBikeContent(); });
+  if (calPrev) calPrev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftBikeCalendarMonth(-1); renderBikeContent(); }));
+  if (calNext) calNext.addEventListener("click", () => animateCalendarMonthChange(1, () => { shiftBikeCalendarMonth(1); renderBikeContent(); }));
   document.querySelectorAll("[data-bike-cal-date]").forEach((cell) => {
     cell.addEventListener("click", () => {
       const d = cell.dataset.bikeCalDate;

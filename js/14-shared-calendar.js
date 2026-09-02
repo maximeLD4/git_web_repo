@@ -232,8 +232,8 @@ function markActivityDone(type, id) {
 function attachSharedCalendarListeners() {
   const prev = document.querySelector("[data-shared-cal-prev]");
   const next = document.querySelector("[data-shared-cal-next]");
-  if (prev) prev.addEventListener("click", () => { shiftSharedCalendarMonth(-1); renderSharedCalendarContent(); });
-  if (next) next.addEventListener("click", () => { shiftSharedCalendarMonth(1); renderSharedCalendarContent(); });
+  if (prev) prev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftSharedCalendarMonth(-1); renderSharedCalendarContent(); }));
+  if (next) next.addEventListener("click", () => animateCalendarMonthChange(1, () => { shiftSharedCalendarMonth(1); renderSharedCalendarContent(); }));
   document.querySelectorAll("[data-shared-time-filter]").forEach((btn) => {
     btn.addEventListener("click", () => {
       sharedCalendarTimeFilter = btn.dataset.sharedTimeFilter;

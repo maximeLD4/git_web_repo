@@ -163,8 +163,8 @@ function attachRunHistoryListeners() {
   });
   const calPrev = document.querySelector("[data-run-cal-prev]");
   const calNext = document.querySelector("[data-run-cal-next]");
-  if (calPrev) calPrev.addEventListener("click", () => { shiftRunCalendarMonth(-1); renderRunContent(); });
-  if (calNext) calNext.addEventListener("click", () => { shiftRunCalendarMonth(1); renderRunContent(); });
+  if (calPrev) calPrev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftRunCalendarMonth(-1); renderRunContent(); }));
+  if (calNext) calNext.addEventListener("click", () => animateCalendarMonthChange(1, () => { shiftRunCalendarMonth(1); renderRunContent(); }));
   document.querySelectorAll("[data-run-cal-date]").forEach((cell) => {
     cell.addEventListener("click", () => {
       const d = cell.dataset.runCalDate;

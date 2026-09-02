@@ -118,6 +118,15 @@ let liveDraftDistance = null;
 // d'annulation automatique après 2 secondes sans second appui.
 let liveTimelineConfirmIndex = null;
 let liveTimelineConfirmTimer = null;
+// Index (dans liveSession.log) de l'entrée qui vient tout juste d'être
+// ajoutée — consommé une seule fois au rendu suivant, pour que l'animation
+// d'entrée ne s'applique QUE lors de l'ajout réel, pas à chaque interaction.
+let liveJustAddedLogIndex = null;
+// true seulement juste après un vrai changement de catégorie (sélection ou
+// désélection) — consommé une seule fois au rendu suivant, pour que
+// l'animation d'entrée de la liste d'exercices ne rejoue pas à chaque
+// interaction sans rapport (ex. premier appui sur une puce de la frise).
+let liveCategoryJustChanged = false;
 
 // Garde globale : aucune valeur physique ne peut être négative (poids, reps, distance,
 // durée, vitesse, allure...). S'applique à tous les champs numériques, présents et futurs,

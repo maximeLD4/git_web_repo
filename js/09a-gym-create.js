@@ -310,14 +310,10 @@ function exerciseCardHTML(ex) {
           const incrementToggle = hasIncrement
             ? `<button type="button" class="increment-switch-btn ${startsIncremented ? "active" : ""}" data-increment-switch data-mode="${startsIncremented ? "on" : "off"}" data-increment-value="${effectiveConfig.maxIncrement}">${startsIncremented ? "+" + effectiveConfig.maxIncrement + "kg" : "Standard"}</button>`
             : "";
-          const totalHint = hasIncrement
-            ? `<div class="set-weight-total" data-weight-total ${startsIncremented ? "" : 'style="display:none;"'}>→ ${currentWeight !== null ? currentWeight : ""}kg au total</div>`
-            : "";
           const weightField = `
         <div class="set-weight-col">
           <select class="set-weight" data-mode="${startsIncremented ? "on" : "off"}" data-increment="${effectiveConfig ? effectiveConfig.maxIncrement || 0 : 0}" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
           ${incrementToggle}
-          ${totalHint}
         </div>`;
           const repsField = `
         <div class="rep-stepper">
@@ -585,18 +581,7 @@ function attachLogListeners() {
     });
 
     card.querySelectorAll(".set-weight").forEach((select) => {
-      select.addEventListener("change", () => {
-        // Si le mode +Xkg est actif, l'indication du total doit suivre le
-        // nouveau palier de base choisi.
-        const row = select.closest(".set-row");
-        const totalEl = row ? row.querySelector("[data-weight-total]") : null;
-        if (totalEl && select.dataset.mode === "on") {
-          const incVal = parseFloat(select.dataset.increment) || 0;
-          const baseVal = select.value === "" ? null : parseFloat(select.value);
-          totalEl.textContent = baseVal !== null ? `→ ${baseVal + incVal}kg au total` : "";
-        }
-        scheduleDraftSave();
-      });
+      select.addEventListener("change", scheduleDraftSave);
     });
 
     card.querySelectorAll(".set-row").forEach((row) => {
@@ -634,18 +619,8 @@ function attachLogListeners() {
           switchBtn.textContent = mode === "on" ? `+${incValue}kg` : "Standard";
 
           // Le menu déroulant ne change JAMAIS de liste ni de sélection ici —
-          // seuls le mode et l'indication du total sont mis à jour.
+          // seul le mode change.
           weightSelect.dataset.mode = mode;
-          const baseVal = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
-          const totalEl = row.querySelector("[data-weight-total]");
-          if (totalEl) {
-            if (mode === "on" && baseVal !== null) {
-              totalEl.style.display = "";
-              totalEl.textContent = `→ ${baseVal + incValue}kg au total`;
-            } else {
-              totalEl.style.display = "none";
-            }
-          }
           scheduleDraftSave();
         });
       }
@@ -699,17 +674,27 @@ function attachLogListeners() {
         // le contenu qui se révèle en dessous doit rester accessible avec un
         // repère stable en haut, comme pour les autres sélections.
         if (isCurrentlyOpen === false) {
-          renderContentPreservingScroll(renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${id}"]`)));
+          renderContentPreservingScroll(renderContent, () => {
+            const updatedCard = document.querySelector(`.exercise-card[data-id="${id}"]`);
+            if (updatedCard) updatedCard.classList.add("exercise-card-toggle-anim");
+            scrollCardTopIntoView(updatedCard);
+          });
         } else {
-          renderContentPreservingScroll(renderContent, null);
+          renderContentPreservingScroll(renderContent, () => {
+            const updatedCard = document.querySelector(`.exercise-card[data-id="${id}"]`);
+            if (updatedCard) updatedCard.classList.add("exercise-card-toggle-anim");
+          });
         }
       });
     });
     card.querySelector("[data-remove-ex]").addEventListener("click", () => {
-      const exs = serializeExercisesFromDOM();
-      draft.exercises = exs.filter((e) => e.id !== card.dataset.id);
-      saveJSON(KEYS.draft, draft);
-      renderContent();
+      card.classList.add("exercise-card-exit");
+      setTimeout(() => {
+        const exs = serializeExercisesFromDOM();
+        draft.exercises = exs.filter((e) => e.id !== card.dataset.id);
+        saveJSON(KEYS.draft, draft);
+        renderContent();
+      }, 200);
     });
     card.querySelector("[data-duplicate-ex]").addEventListener("click", () => {
       const exs = serializeExercisesFromDOM();
@@ -784,6 +769,7 @@ function attachLogActionsBarListeners() {
     saveJSON(KEYS.draft, draft);
     renderContentPreservingScroll(renderContent, () => {
       const newCard = document.querySelector(`.exercise-card[data-id="${newExercise.id}"]`);
+      if (newCard) newCard.classList.add("exercise-card-enter");
       scrollCardBottomIntoView(newCard);
     });
   });

@@ -168,8 +168,8 @@ function attachHistoryListeners() {
   });
   const calPrev = document.querySelector("[data-cal-prev]");
   const calNext = document.querySelector("[data-cal-next]");
-  if (calPrev) calPrev.addEventListener("click", () => { shiftCalendarMonth(-1); renderContent(); });
-  if (calNext) calNext.addEventListener("click", () => { shiftCalendarMonth(1); renderContent(); });
+  if (calPrev) calPrev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftCalendarMonth(-1); renderContent(); }));
+  if (calNext) calNext.addEventListener("click", () => animateCalendarMonthChange(1, () => { shiftCalendarMonth(1); renderContent(); }));
   document.querySelectorAll("[data-cal-date]").forEach((cell) => {
     cell.addEventListener("click", () => {
       const d = cell.dataset.calDate;

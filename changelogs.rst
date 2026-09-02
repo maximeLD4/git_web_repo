@@ -7,6 +7,151 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.22.0 - 2026-08-26
+====================
+
+- **Réorganisation complète de l'accueil**, par groupes logiques plutôt
+  qu'une liste plate de 9 cartes :
+
+  - **Séance en direct** reste seule en tête, pleine largeur (inchangée).
+  - **« Tes sports »** : Salle de sport, Course à pied, Natation, Vélo,
+    regroupés en 2×2 sous un intitulé de section.
+  - **« Suivi »** : Performance et Poids, regroupés ensemble — ce sont des
+    écrans pour regarder en arrière, pas pour démarrer une activité.
+  - **Calendrier** : passe d'une grosse carte carrée à une ligne pleine
+    largeur plus discrète (icône + libellé + chevron), cohérent avec son
+    rôle de vue d'ensemble transverse.
+  - **Paramètres** : redescendu tout en bas, en simple lien texte plutôt
+    qu'une carte de la même taille qu'un sport — c'est l'écran le moins
+    consulté au quotidien.
+
+  Toutes les fonctionnalités existantes sont préservées (compteurs de
+  séances/pesées, mode « REC » de Séance en direct, navigation) — seule la
+  disposition change.
+
+2.21.1 - 2026-08-26
+====================
+
+- Carte « Séance en direct » de l'accueil : hauteur alignée sur celle des
+  autres cartes (elle était plus courte du fait de sa mise en page
+  horizontale), icône légèrement agrandie pour bien remplir l'espace. Le
+  jaune doré d'origine (#FF9F0A) est de retour sur le logo, à la place du
+  vert repris de Salle de sport.
+
+2.21.0 - 2026-08-26
+====================
+
+- La carte « Séance en direct » de l'accueil est **remontée en tête de
+  grille**, en **pleine largeur** (rectangle sur toute la largeur, mise en
+  page horizontale) plutôt qu'une simple carte carrée parmi les autres.
+- **Nouveau logo** : le même haltère que « Salle de sport », avec une petite
+  pastille superposée en bas à droite pour signaler le côté « en direct ».
+- **Nouveau message** : « Lance ta séance » (au lieu de « Remplis en
+  t'entraînant »). Le mode « REC » (fond noir, pastille pulsante, « Séance
+  en cours... ») reste inchangé et fonctionne toujours normalement dans ce
+  nouveau format pleine largeur.
+
+2.20.2 - 2026-08-26
+====================
+
+- **Correctif** (même cause profonde que le correctif de la frise en
+  2.20.1) : l'animation d'entrée de la liste d'exercices d'une catégorie se
+  rejouait à chaque rendu de l'écran catégorie — y compris lors du premier
+  appui sur une puce de la frise (qui la passe en mode confirmation de
+  suppression), sans rapport avec un vrai changement de catégorie. Corrigé
+  avec le même principe de drapeau, qui ne s'active que juste après une
+  vraie sélection/désélection de catégorie, et se consomme immédiatement
+  pour ne pas rejouer aux rendus suivants déclenchés par d'autres
+  interactions.
+
+2.20.1 - 2026-08-26
+====================
+
+- **Correctif** : la dernière puce de la frise rejouait son animation
+  d'entrée à chaque interaction (changement de catégorie, ajustement des
+  répétitions, etc.), donnant l'impression qu'elle « clignotait » en
+  permanence — puisque l'animation était appliquée à la dernière puce à
+  chaque rendu, pas seulement lors d'un ajout réel. Corrigé avec un drapeau
+  qui ne s'active que juste après une validation de série, et se consomme
+  immédiatement pour ne pas rejouer aux rendus suivants.
+
+- **Retrait** du message « Enregistrée » sur l'écran de saisie (Séance en
+  direct), devenu redondant et perturbateur visuellement maintenant que la
+  frise elle-même s'anime pour confirmer l'ajout d'une série.
+
+2.20.0 - 2026-08-26
+====================
+
+- **Vague d'animations** pour dynamiser l'expérience, sur toute l'app :
+
+  - **Effets d'appui universels** (léger rétrécissement) sur les boutons,
+    cartes d'accueil, steppers, puces de la frise, cases du calendrier.
+  - **Bandeau de confirmation** ("Enregistrée") : glisse désormais depuis le
+    bas avec un léger rebond, au lieu d'un simple fondu statique.
+  - **Modales de confirmation** : fondu du fond + léger zoom d'apparition de
+    la boîte, au lieu d'apparaître d'un coup.
+  - **Frise (Séance en direct)** : seule la puce la plus récente glisse en
+    entrée depuis la droite — les précédentes restent statiques.
+  - **Sélection d'une date au calendrier** : petit effet "pop" à l'appui,
+    appliqué à tous les calendriers d'un coup (une seule classe CSS
+    partagée).
+  - **Changement de mois** (5 calendriers : Salle de sport, Course,
+    Natation, Vélo, calendrier partagé) : glissement latéral directionnel
+    (gauche/droite selon le sens), via une fonction générique partagée.
+  - **Nouvelle carte d'exercice** (Salle de sport classique) : apparaît en
+    grandissant légèrement plutôt que d'un coup.
+  - **Suppression d'un exercice** : rétrécissement + fondu avant disparition
+    réelle.
+  - **Réduire/développer une carte** : fondu doux + léger décalage vertical
+    au lieu d'un changement instantané.
+  - **Graphique de Performance** : le tracé se dessine désormais
+    progressivement (calcul de la longueur du chemin, animation de
+    stroke-dashoffset), les points apparaissent en fondu différé une fois le
+    tracé arrivé.
+  - **Compteurs animés** (Poids max, Meilleure série) : montent de 0 jusqu'à
+    leur valeur finale à l'ouverture du détail d'un exercice.
+
+  Deux défis techniques récurrents à noter : plusieurs écrans (Séance en
+  direct, calendriers) reconstruisent tout leur contenu à chaque
+  interaction — une simple transition CSS ne s'y anime jamais. Ces cas ont
+  nécessité de détacher une copie de l'ancien contenu du document (position
+  fixe aux coordonnées exactes de l'écran) pour qu'elle survive le temps de
+  son animation de sortie pendant que le nouveau contenu apparaît. Pour les
+  éléments SVG (tracé du graphique), la longueur du chemin a dû être
+  calculée manuellement (somme des distances entre points), impossible
+  d'appeler getTotalLength() sur une simple chaîne HTML avant qu'elle ne
+  soit posée dans le DOM.
+
+  Testé méthodiquement chaque animation, en particulier les mécanismes les
+  plus délicats (glissement du calendrier, tracé du graphique, compteurs) —
+  aucune régression fonctionnelle détectée sur l'ensemble de l'app.
+
+2.19.2 - 2026-08-26
+====================
+
+- Séance en direct : la liste des exercices d'une catégorie musculaire
+  (ex. Jambes) glisse désormais **depuis la droite** en apparaissant, tandis
+  que la liste précédente (si on bascule directement d'une catégorie à une
+  autre, ou qu'on désélectionne) **glisse vers la gauche** en disparaissant
+  — au lieu d'un pop instantané.
+
+  Défi technique rencontré : `renderLiveApp()` reconstruit tout l'écran (pas
+  seulement le contenu), donc une copie de l'ancienne liste simplement
+  laissée sur place se faisait détruire instantanément avant même de
+  pouvoir s'animer. Corrigé en détachant cette copie du document (position
+  fixe aux coordonnées exactes de l'écran, hors de l'arborescence
+  reconstruite), pour qu'elle survive le temps de son animation de sortie
+  pendant que le nouveau contenu apparaît en dessous.
+
+2.19.1 - 2026-08-26
+====================
+
+- Retrait de l'indication « → Xkg au total » (Séance en direct et Salle de
+  sport classique), jugée redondante : le menu (poids réel) et le toggle
+  Standard/+Xkg suffisent par eux-mêmes à comprendre ce qui est en train
+  d'être saisi, sans texte de confirmation supplémentaire. L'historique
+  continue d'afficher le poids total uniquement, sans changement.
+
 2.19.0 - 2026-08-26
 ====================
 

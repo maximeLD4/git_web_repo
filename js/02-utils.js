@@ -87,6 +87,31 @@ function scrollCardBottomIntoView(card) {
   contentEl.scrollBy({ top: delta, behavior: "smooth" });
 }
 
+// Glissement latéral au changement de mois, réutilisable par tous les
+// calendriers (chaque sport + le calendrier partagé) puisqu'ils utilisent
+// tous la même classe ".cal-grid" et qu'un seul est visible à la fois.
+function animateCalendarMonthChange(delta, renderFn) {
+  const oldGrid = document.querySelector(".cal-grid");
+  if (oldGrid) {
+    const rect = oldGrid.getBoundingClientRect();
+    const clone = oldGrid.cloneNode(true);
+    clone.style.position = "fixed";
+    clone.style.top = rect.top + "px";
+    clone.style.left = rect.left + "px";
+    clone.style.width = rect.width + "px";
+    clone.style.pointerEvents = "none";
+    clone.style.zIndex = "20";
+    clone.style.animation = delta > 0 ? "cal-grid-slide-out-to-left 0.2s ease forwards" : "cal-grid-slide-out-to-right 0.2s ease forwards";
+    document.body.appendChild(clone);
+    clone.addEventListener("animationend", () => clone.remove(), { once: true });
+  }
+  renderFn();
+  const newGrid = document.querySelector(".cal-grid");
+  if (newGrid) {
+    newGrid.style.animation = delta > 0 ? "cal-grid-slide-in-from-right 0.22s cubic-bezier(0.4,0,0.2,1)" : "cal-grid-slide-in-from-left 0.22s cubic-bezier(0.4,0,0.2,1)";
+  }
+}
+
 function positionLogActionsBar() {
   const actionsBar = document.getElementById("log-actions-bar");
   const tabbarEl = document.querySelector(".tabbar");

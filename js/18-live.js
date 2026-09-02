@@ -101,8 +101,14 @@ function liveCategoryStepHTML() {
 
   let exercisesHTML = "";
   if (liveDraftCategory) {
+    // Ce drapeau n'est vrai que juste après un changement réel de catégorie
+    // — on le consomme immédiatement pour qu'il ne rejoue pas l'animation
+    // lors des rendus suivants déclenchés par d'autres interactions (ex.
+    // premier appui sur une puce de la frise pour la supprimer).
+    const shouldAnimateEnter = liveCategoryJustChanged;
+    liveCategoryJustChanged = false;
     const configs = gymExerciseConfigs.filter((c) => (c.category || "pecs") === liveDraftCategory);
-    exercisesHTML =
+    const inner =
       configs.length === 0
         ? `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Ajoute-en dans Paramètres → Salle de sport.</div>`
         : `<div class="live-grid" style="grid-template-columns:1fr 1fr;">
@@ -115,6 +121,7 @@ function liveCategoryStepHTML() {
               })
               .join("")}
           </div>`;
+    exercisesHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}" data-category-key="${liveDraftCategory}">${inner}</div>`;
   }
 
   return liveTimelineHTML() + switchHTML + categoryRowHTML + exercisesHTML;
@@ -122,6 +129,13 @@ function liveCategoryStepHTML() {
 
 function liveTimelineHTML() {
   if (!liveSession.log || liveSession.log.length === 0) return "";
+  // Ce drapeau n'est vrai que juste après un ajout réel (voir
+  // validateLiveSet) — on le consomme immédiatement pour qu'il ne rejoue
+  // plus l'animation lors des rendus suivants déclenchés par d'autres
+  // interactions (changement de catégorie, toggle, etc.), ce qui donnait
+  // l'impression que la dernière puce "clignotait" à chaque clic.
+  const enterIdx = liveJustAddedLogIndex;
+  liveJustAddedLogIndex = null;
   const chips = liveSession.log
     .map((entry, idx) => {
       const ex = liveSession.exercises.find((e) => e.id === entry.exerciseId);
@@ -131,7 +145,7 @@ function liveTimelineHTML() {
       const valueLabel = ex.exType === "cardio" ? `${set.weight}min${set.reps ? "/" + set.reps + "km" : ""}` : `${set.weight}kg×${set.reps}`;
       const confirming = idx === liveTimelineConfirmIndex;
       return `
-        <div class="live-timeline-chip ${confirming ? "confirm-delete" : ""}" data-live-timeline-chip="${idx}">
+        <div class="live-timeline-chip ${confirming ? "confirm-delete" : ""} ${idx === enterIdx ? "live-timeline-chip-enter" : ""}" data-live-timeline-chip="${idx}">
           <span class="ex">${ex.name}</span>
           <span class="val">${valueLabel}</span>
           <div class="live-timeline-delete-overlay">${ICONS.trash}</div>
@@ -171,7 +185,6 @@ function liveMuscuSetFormHTML(activeExercise) {
     <div class="live-set-form">
       <div class="live-exercise-name">${liveDraftName}</div>
       ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}kg × ${lastSet.reps}</div>` : ""}
-      <div id="live-flash-slot"></div>
       <div class="live-stepper-group">
         <div class="live-stepper-label">Répétitions</div>
         <div class="live-stepper">
@@ -181,7 +194,7 @@ function liveMuscuSetFormHTML(activeExercise) {
         </div>
       </div>
       <div class="live-stepper-group">
-        <div class="live-stepper-label">Poids${finalWeight !== null && liveDraftWeightMode === "on" ? ` <span style="color:var(--accent);">→ ${finalWeight}kg au total</span>` : ""}</div>
+        <div class="live-stepper-label">Poids</div>
         <select class="live-weight-select" id="live-weight-select" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
         ${
           hasIncrement
@@ -202,7 +215,6 @@ function liveCardioSetFormHTML(activeExercise) {
     <div class="live-set-form">
       <div class="live-exercise-name">${liveDraftName}</div>
       ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}min${lastSet.reps ? " · " + lastSet.reps + "km" : ""}</div>` : ""}
-      <div id="live-flash-slot"></div>
       <div class="live-stepper-group">
         <div class="live-stepper-label">Durée (minutes)</div>
         <div class="live-stepper">
@@ -408,6 +420,7 @@ function validateLiveSet() {
   exercise.sets.push(newSet);
   if (!liveSession.log) liveSession.log = [];
   liveSession.log.push({ exerciseId: exercise.id, setId: newSet.id });
+  liveJustAddedLogIndex = liveSession.log.length - 1;
   saveJSON(KEYS.liveSession, liveSession);
   // Pour la prochaine série, on propose automatiquement le palier de base
   // disponible juste au-dessus (progression naturelle d'une série à
@@ -419,16 +432,9 @@ function validateLiveSet() {
   }
   // On reste volontairement sur le même écran, prêt pour la série suivante
   // (poids/reps conservés tels quels) — pas de reconstruction complète de la
-  // page, juste une confirmation brève qui disparaît toute seule.
+  // page. La confirmation visuelle vient désormais de la nouvelle puce qui
+  // apparaît dans la frise, plus besoin d'un message texte séparé.
   renderLiveStep();
-  const flashSlot = document.getElementById("live-flash-slot");
-  if (flashSlot) {
-    flashSlot.innerHTML = `<div class="flash">${ICONS.check} Enregistrée</div>`;
-    setTimeout(() => {
-      const f = document.getElementById("live-flash-slot");
-      if (f) f.innerHTML = "";
-    }, 1200);
-  }
 }
 
 function cancelLiveSession() {
@@ -550,9 +556,32 @@ function attachLiveStepListeners() {
   content.querySelectorAll("[data-live-category]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const key = btn.dataset.liveCategory;
+      // On capture l'ancienne liste d'exercices AVANT de changer d'état, pour
+      // l'animer en sortie (glissement vers la gauche) pendant que la
+      // nouvelle liste entre par la droite. renderLiveApp() reconstruit tout
+      // l'écran (pas juste le contenu) : une copie simplement rattachée au
+      // même parent serait détruite instantanément. On la détache donc
+      // complètement, positionnée en fixe aux coordonnées exactes de
+      // l'écran, pour qu'elle survive à la reconstruction et s'anime
+      // par-dessus pendant que le nouveau contenu apparaît en dessous.
+      const oldList = document.getElementById("live-exercise-list");
+      if (oldList) {
+        const rect = oldList.getBoundingClientRect();
+        const clone = oldList.cloneNode(true);
+        clone.removeAttribute("id");
+        clone.classList.remove("live-exercise-list-enter");
+        clone.classList.add("live-exercise-list-exit");
+        clone.style.position = "fixed";
+        clone.style.top = rect.top + "px";
+        clone.style.left = rect.left + "px";
+        clone.style.width = rect.width + "px";
+        document.body.appendChild(clone);
+        clone.addEventListener("animationend", () => clone.remove(), { once: true });
+      }
       // Re-cliquer sur la catégorie déjà active la désélectionne et referme
       // la liste d'exercices, sans changer d'écran.
       liveDraftCategory = liveDraftCategory === key ? "" : key;
+      liveCategoryJustChanged = true;
       renderLiveApp();
     });
   });

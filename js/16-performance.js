@@ -159,14 +159,25 @@ function performanceChartSVG(history) {
   });
 
   const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  // Longueur approximative du tracé (somme des distances entre points
+  // consécutifs) — utilisée pour l'astuce classique du "dessin progressif"
+  // via stroke-dasharray/stroke-dashoffset : on ne peut pas appeler
+  // getTotalLength() ici puisqu'on construit une chaîne HTML, pas un
+  // élément SVG réellement posé dans le DOM.
+  let pathLength = 0;
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].x - points[i - 1].x;
+    const dy = points[i].y - points[i - 1].y;
+    pathLength += Math.sqrt(dx * dx + dy * dy);
+  }
   const dots = points
-    .map((p) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" style="fill:var(--accent);" />`)
+    .map((p) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" style="fill:var(--accent); opacity:0; animation: chart-dot-fade-in 0.3s ease 0.7s forwards;" />`)
     .join("");
 
   return `
     <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; display:block;">
       <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" style="stroke:var(--border); stroke-width:1;" />
-      <path d="${pathD}" style="fill:none; stroke:var(--accent); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round;" />
+      <path d="${pathD}" style="fill:none; stroke:var(--accent); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:${pathLength.toFixed(1)}; stroke-dashoffset:${pathLength.toFixed(1)}; animation: chart-draw-line 0.7s ease forwards;" />
       ${dots}
     </svg>`;
 }
@@ -220,12 +231,12 @@ function renderPerformanceDetailContent(config) {
     <div class="perf-records-row">
       <div class="perf-record-card">
         <div class="perf-record-label">Poids max</div>
-        <div class="perf-record-value">${records.maxWeight}kg</div>
+        <div class="perf-record-value" data-count-to="${records.maxWeight}" data-count-suffix="kg">0kg</div>
         <div class="perf-record-date">${formatDateFR(records.maxWeightDate)}</div>
       </div>
       <div class="perf-record-card">
         <div class="perf-record-label">Meilleure série</div>
-        <div class="perf-record-value">${records.bestSet.weight}kg × ${records.bestSet.reps}</div>
+        <div class="perf-record-value" data-count-to="${records.bestSet.weight}" data-count-suffix="kg × ${records.bestSet.reps}">0kg × ${records.bestSet.reps}</div>
         <div class="perf-record-date">${formatDateFR(records.bestSetDate)}</div>
       </div>
     </div>
@@ -236,4 +247,26 @@ function renderPerformanceDetailContent(config) {
     <div class="weight-chip-label">Historique des séances</div>
     ${historyRowsHTML}
   `;
+  content.querySelectorAll(".perf-record-value[data-count-to]").forEach((el) => animateCountUp(el));
+}
+
+function animateCountUp(el) {
+  const target = parseFloat(el.dataset.countTo);
+  const suffix = el.dataset.countSuffix || "";
+  if (isNaN(target) || typeof requestAnimationFrame !== "function") {
+    el.textContent = `${target}${suffix ? suffix : ""}`;
+    return;
+  }
+  const duration = 450;
+  const start = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
+  function step(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic : rapide au début, doux à l'arrivée
+    const current = Math.round(target * eased * 10) / 10;
+    el.textContent = `${current}${suffix}`;
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = `${target}${suffix}`;
+  }
+  requestAnimationFrame(step);
 }

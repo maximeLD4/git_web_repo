@@ -140,8 +140,8 @@ function attachSwimHistoryListeners() {
   });
   const calPrev = document.querySelector("[data-swim-cal-prev]");
   const calNext = document.querySelector("[data-swim-cal-next]");
-  if (calPrev) calPrev.addEventListener("click", () => { shiftSwimCalendarMonth(-1); renderSwimContent(); });
-  if (calNext) calNext.addEventListener("click", () => { shiftSwimCalendarMonth(1); renderSwimContent(); });
+  if (calPrev) calPrev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftSwimCalendarMonth(-1); renderSwimContent(); }));
+  if (calNext) calNext.addEventListener("click", () => animateCalendarMonthChange(1, () => { shiftSwimCalendarMonth(1); renderSwimContent(); }));
   document.querySelectorAll("[data-swim-cal-date]").forEach((cell) => {
     cell.addEventListener("click", () => {
       const d = cell.dataset.swimCalDate;
