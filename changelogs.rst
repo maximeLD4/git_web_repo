@@ -7,6 +7,52 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.22.4 - 2026-08-26
+====================
+
+- Accueil : passage d'une disposition à hauteurs fixes en pixels à une
+  **disposition fluide** — chaque grand bloc (Séance en direct, rangée
+  Sports, rangée Suivi, Calendrier) se partage désormais proportionnellement
+  l'espace vertical réellement disponible (flexbox), plutôt que des tailles
+  devinées à l'avance. S'adapte ainsi automatiquement à la hauteur réelle de
+  l'écran, quel que soit l'appareil.
+- **Zone tactile de « Paramètres » agrandie** (44px de hauteur minimum,
+  padding généreux), et **marge de sécurité ajoutée en bas** de l'accueil
+  (zone du bouton d'accueil / barre de geste sur iPhone), pour ne plus se
+  faire recouvrir ou rogner en bas d'écran.
+
+2.22.3 - 2026-08-26
+====================
+
+- Accueil : **plus aucun défilement vertical** — tout tient fixe sur un
+  seul écran (le défilement horizontal des rangées Sport/Suivi reste bien
+  sûr actif). Ce blocage est spécifique à l'accueil ; les autres écrans
+  (historiques, etc.) conservent leur défilement vertical normal, essentiel
+  pour les longues listes.
+
+2.22.2 - 2026-08-26
+====================
+
+- Accueil : les cartes Sport et Suivi ont retrouvé leur **taille pleine**
+  (icône et texte d'origine, non réduits) dans leurs rangées défilables —
+  seule leur largeur reste fixe pour permettre le défilement horizontal.
+- **Calendrier** repasse d'une ligne fine à une **carte pleine hauteur**,
+  cohérente avec Séance en direct — les deux partagent désormais la même
+  hauteur. Hypothèse prise sur ce point précis, à confirmer.
+
+2.22.1 - 2026-08-26
+====================
+
+- Accueil : l'intitulé « Tes sports » devient simplement **« Sports »**.
+- Les sections « Sports » et « Suivi » sont désormais des **rangées
+  défilables horizontalement** (une ligne de cartes compactes qu'on fait
+  glisser), plutôt qu'une grille 2×2 qui empilait plusieurs lignes. Toute la
+  page d'accueil tient ainsi sur un seul écran, sans défilement vertical, et
+  l'alignement Séance en direct / Sports / Suivi / Calendrier / Paramètres
+  reste stable même en ajoutant de nouveaux modules à l'avenir — ils
+  viendront simplement s'ajouter au bout de la rangée concernée, sans
+  décaler le reste de la page.
+
 2.22.0 - 2026-08-26
 ====================
 
