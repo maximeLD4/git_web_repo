@@ -150,17 +150,21 @@ function liveLogSetStepHTML() {
 function liveMuscuSetFormHTML(activeExercise) {
   const config = findExerciseConfig(liveDraftName);
   const hasIncrement = !!config && config.maxIncrement > 0;
+  const increment = hasIncrement ? config.maxIncrement : 0;
   const baseOnly = config ? computeBaseWeightsOnly(config) : [];
-  const incremented = config ? computeIncrementedWeightsOnly(config) : [];
-  const activeList = hasIncrement && liveDraftWeightMode === "on" ? incremented : baseOnly;
-  const weightList = [...activeList];
-  if (liveDraftWeight !== null && !weightList.includes(liveDraftWeight)) {
-    weightList.push(liveDraftWeight);
+  // Le menu déroulant ne liste et ne sélectionne QUE des paliers réellement
+  // configurés — le toggle Standard/+Xkg juste en dessous ne modifie jamais
+  // cette liste ni la valeur sélectionnée, il s'ajoute simplement par-dessus
+  // au moment de calculer le poids final.
+  const weightList = [...baseOnly];
+  if (liveDraftBaseWeight !== null && !weightList.includes(liveDraftBaseWeight)) {
+    weightList.push(liveDraftBaseWeight);
     weightList.sort((a, b) => a - b);
   }
   const weightOptions = weightList.length
-    ? weightList.map((w) => `<option value="${w}" ${liveDraftWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
+    ? weightList.map((w) => `<option value="${w}" ${liveDraftBaseWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
     : `<option value="">—</option>`;
+  const finalWeight = liveDraftBaseWeight !== null ? liveDraftBaseWeight + (liveDraftWeightMode === "on" ? increment : 0) : null;
   const lastSet = activeExercise && activeExercise.sets.length ? activeExercise.sets[activeExercise.sets.length - 1] : null;
 
   return `
@@ -177,15 +181,15 @@ function liveMuscuSetFormHTML(activeExercise) {
         </div>
       </div>
       <div class="live-stepper-group">
-        <div class="live-stepper-label">Poids</div>
+        <div class="live-stepper-label">Poids${finalWeight !== null && liveDraftWeightMode === "on" ? ` <span style="color:var(--accent);">→ ${finalWeight}kg au total</span>` : ""}</div>
         <select class="live-weight-select" id="live-weight-select" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
         ${
           hasIncrement
-            ? `<button type="button" class="increment-switch-btn live-increment-btn ${liveDraftWeightMode === "on" ? "active" : ""}" data-live-toggle-increment>${liveDraftWeightMode === "on" ? "+" + config.maxIncrement + "kg" : "Standard"}</button>`
+            ? `<button type="button" class="increment-switch-btn live-increment-btn ${liveDraftWeightMode === "on" ? "active" : ""}" data-live-toggle-increment>${liveDraftWeightMode === "on" ? "+" + increment + "kg" : "Standard"}</button>`
             : ""
         }
       </div>
-      <button type="button" class="live-validate-btn" data-live-validate-set ${liveDraftWeight === null ? "disabled" : ""}>${ICONS.plus} Série suivante</button>
+      <button type="button" class="live-validate-btn" data-live-validate-set ${finalWeight === null ? "disabled" : ""}>${ICONS.plus} Série suivante</button>
       <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
     </div>`;
 }
@@ -220,16 +224,16 @@ function liveCardioSetFormHTML(activeExercise) {
     </div>`;
 }
 
-function computeNextLiveWeight(name, currentWeight, mode) {
-  if (currentWeight === null) return currentWeight;
+function computeNextLiveBaseWeight(name, currentBaseWeight) {
+  if (currentBaseWeight === null) return currentBaseWeight;
   const config = findExerciseConfig(name);
-  if (!config) return currentWeight;
-  const activeList = [...(mode === "on" ? computeIncrementedWeightsOnly(config) : computeBaseWeightsOnly(config))].sort((a, b) => a - b);
-  const idx = activeList.indexOf(currentWeight);
+  if (!config) return currentBaseWeight;
+  const baseList = [...computeBaseWeightsOnly(config)].sort((a, b) => a - b);
+  const idx = baseList.indexOf(currentBaseWeight);
   // Si le poids actuel ne correspond à aucun palier connu, ou si on est déjà
   // au palier le plus haut disponible, on ne change rien.
-  if (idx === -1 || idx >= activeList.length - 1) return currentWeight;
-  return activeList[idx + 1];
+  if (idx === -1 || idx >= baseList.length - 1) return currentBaseWeight;
+  return baseList[idx + 1];
 }
 
 function deleteLiveTimelineEntry(idx) {
@@ -242,12 +246,26 @@ function deleteLiveTimelineEntry(idx) {
     // retire aussi complètement de la séance — pas d'exercice vide qui
     // traîne. Si c'était l'exercice actif, on repart au choix du type.
     if (exercise.sets.length === 0) {
+      const norm = exercise.name.trim().toLowerCase();
       liveSession.exercises = liveSession.exercises.filter((e) => e.id !== exercise.id);
+      // L'exercice n'existant plus, son suivi de temps (segments) n'a plus
+      // lieu d'être — qu'il soit déjà clos ou encore EN COURS (si on
+      // supprime l'exercice qu'on est justement en train de faire). Sans ce
+      // nettoyage, un segment resterait ouvert indéfiniment (jamais refermé
+      // par la suite, puisque l'exercice n'existe plus pour déclencher sa
+      // fermeture), ou du temps orphelin traînerait sans jamais être
+      // affiché nulle part.
+      if (liveSession.segments) {
+        liveSession.segments = liveSession.segments.filter((s) => s.name.trim().toLowerCase() !== norm);
+      }
       if (liveActiveExerciseId === exercise.id) {
         liveActiveExerciseId = null;
         liveStep = "category";
       }
     }
+    // Suppression partielle (il reste d'autres séries) : on laisse les
+    // segments de temps intacts — le temps passé sur l'exercice reste réel,
+    // seule une série mal saisie a été retirée.
   }
   liveSession.log.splice(idx, 1);
   saveJSON(KEYS.liveSession, liveSession);
@@ -334,8 +352,15 @@ function startOrResumeLiveExercise() {
       liveDraftDistance = lastSet ? parseFloat(lastSet.reps) || 0 : 0;
     } else {
       liveDraftWeightMode = lastSet ? lastSet.weightMode || "off" : "off";
-      const lastWeight = lastSet ? parseFloat(lastSet.weight) : null;
-      liveDraftWeight = computeNextLiveWeight(liveDraftName, lastWeight, liveDraftWeightMode);
+      const config = findExerciseConfig(liveDraftName);
+      const increment = config && config.maxIncrement ? config.maxIncrement : 0;
+      // Le poids sauvegardé sur la dernière série est le poids FINAL (base +
+      // incrément le cas échéant) — on en déduit le palier de base réel
+      // avant de calculer le palier suivant, pour ne jamais faire avancer le
+      // menu déroulant sur une valeur incrémentée qui n'existe pas dans sa
+      // liste.
+      const lastBaseWeight = lastSet ? parseFloat(lastSet.weight) - (liveDraftWeightMode === "on" ? increment : 0) : null;
+      liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, lastBaseWeight);
       liveDraftReps = lastSet ? parseFloat(lastSet.reps) || 10 : 10;
     }
   } else {
@@ -348,7 +373,7 @@ function startOrResumeLiveExercise() {
     } else {
       const config = findExerciseConfig(liveDraftName);
       const base = config ? computeBaseWeightsOnly(config) : [];
-      liveDraftWeight = base.length ? base[0] : null;
+      liveDraftBaseWeight = base.length ? base[0] : null;
       liveDraftReps = 10;
       liveDraftWeightMode = "off";
     }
@@ -358,7 +383,7 @@ function startOrResumeLiveExercise() {
 }
 
 function validateLiveSet() {
-  if (liveDraftType !== "cardio" && liveDraftWeight === null) return;
+  if (liveDraftType !== "cardio" && liveDraftBaseWeight === null) return;
   let exercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
   if (!exercise) {
     exercise = {
@@ -371,20 +396,26 @@ function validateLiveSet() {
     liveSession.exercises.push(exercise);
     liveActiveExerciseId = exercise.id;
   }
+  // Le poids final sauvegardé est la somme du palier réellement sélectionné
+  // dans le menu et de l'incrément le cas échéant — jamais l'inverse.
+  const config = findExerciseConfig(liveDraftName);
+  const increment = config && config.maxIncrement ? config.maxIncrement : 0;
+  const finalWeight = liveDraftType === "cardio" ? null : liveDraftBaseWeight + (liveDraftWeightMode === "on" ? increment : 0);
   const newSet =
     liveDraftType === "cardio"
       ? { id: uid(), weight: liveDraftDuration || 0, reps: liveDraftDistance || 0 }
-      : { id: uid(), weight: liveDraftWeight, reps: liveDraftReps, weightMode: liveDraftWeightMode };
+      : { id: uid(), weight: finalWeight, reps: liveDraftReps, weightMode: liveDraftWeightMode };
   exercise.sets.push(newSet);
   if (!liveSession.log) liveSession.log = [];
   liveSession.log.push({ exerciseId: exercise.id, setId: newSet.id });
   saveJSON(KEYS.liveSession, liveSession);
-  // Pour la prochaine série, on propose automatiquement le palier de poids
+  // Pour la prochaine série, on propose automatiquement le palier de base
   // disponible juste au-dessus (progression naturelle d'une série à
   // l'autre), sauf si on est déjà au maximum disponible. Les reps restent
-  // inchangées — seul le poids avance.
+  // inchangées — seul le poids avance. Le mode Standard/+Xkg est conservé
+  // tel quel, sans y toucher.
   if (liveDraftType !== "cardio") {
-    liveDraftWeight = computeNextLiveWeight(liveDraftName, liveDraftWeight, liveDraftWeightMode);
+    liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, liveDraftBaseWeight);
   }
   // On reste volontairement sur le même écran, prêt pour la série suivante
   // (poids/reps conservés tels quels) — pas de reconstruction complète de la
@@ -550,19 +581,17 @@ function attachLiveStepListeners() {
   const weightSelect = content.querySelector("#live-weight-select");
   if (weightSelect) {
     weightSelect.addEventListener("change", () => {
-      liveDraftWeight = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
+      liveDraftBaseWeight = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
+      renderLiveApp();
     });
   }
 
   const incToggle = content.querySelector("[data-live-toggle-increment]");
   if (incToggle) {
     incToggle.addEventListener("click", () => {
-      const config = findExerciseConfig(liveDraftName);
-      const inc = (config && config.maxIncrement) || 0;
-      const newMode = liveDraftWeightMode === "on" ? "off" : "on";
-      const base = liveDraftWeightMode === "on" ? (liveDraftWeight || 0) - inc : liveDraftWeight || 0;
-      liveDraftWeightMode = newMode;
-      liveDraftWeight = newMode === "on" ? base + inc : base;
+      // Le toggle ne change QUE le mode — il ne touche jamais au poids de
+      // base sélectionné dans le menu, ni à sa liste d'options.
+      liveDraftWeightMode = liveDraftWeightMode === "on" ? "off" : "on";
       renderLiveApp();
     });
   }

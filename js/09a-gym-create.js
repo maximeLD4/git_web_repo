@@ -35,20 +35,29 @@ function serializeExercisesFromDOM() {
       rows.forEach((row) => {
         const weightEl = row.querySelector(".set-weight");
         const repsEl = row.querySelector(".set-reps");
+        const weightMode = weightEl ? weightEl.dataset.mode || "off" : "off";
+        // Le menu déroulant ne contient jamais que le palier de base réel —
+        // le poids final sauvegardé est cette valeur, plus l'incrément si le
+        // mode +Xkg est actif (jamais l'inverse). Pour les lignes Cardio,
+        // l'attribut data-increment est absent, incVal vaut alors 0 et le
+        // calcul redonne simplement la valeur saisie telle quelle.
+        const baseVal = weightEl && weightEl.value !== "" ? parseFloat(weightEl.value) : "";
+        const incVal = weightEl ? parseFloat(weightEl.dataset.increment) || 0 : 0;
+        const finalWeight = baseVal === "" ? "" : weightMode === "on" ? baseVal + incVal : baseVal;
         sets.push({
           id: row.dataset.id,
-          weight: weightEl ? weightEl.value : "",
+          weight: finalWeight,
           reps: repsEl ? repsEl.value : "",
           // Mode explicite (Standard/"off" ou +Xkg/"on") lu directement depuis
           // le sélecteur — on ne le redéduit JAMAIS depuis la seule valeur
           // numérique du poids, car celle-ci peut être ambiguë (ex. un
           // incrément de 10kg avec des paliers espacés de 10kg : "30kg" peut
           // être le palier 30 en standard, OU le palier 20 + 10 incrémenté).
-          weightMode: weightEl ? weightEl.dataset.mode || "off" : "off",
+          weightMode,
         });
       });
     }
-    result.push({ id, name, exType, category, sets });
+    result.push({ id, name, exType, category, sets, ...(existing && existing.durationSec != null ? { durationSec: existing.durationSec } : {}) });
   });
   return result;
 }
@@ -289,22 +298,26 @@ function exerciseCardHTML(ex) {
           // rendu. On ne s'y replie que si aucun mode n'a jamais été
           // enregistré (séries créées avant ce correctif).
           const startsIncremented = hasIncrement && (s.weightMode ? s.weightMode === "on" : incrementedOnlyWeights.includes(currentWeight));
-          const activeList = hasIncrement && startsIncremented ? incrementedOnlyWeights : baseOnlyWeights;
-          const weightList = [...activeList];
-          if (currentWeight !== null && !weightList.includes(currentWeight)) {
-            weightList.push(currentWeight);
+          const currentBaseWeight = currentWeight === null ? null : startsIncremented ? currentWeight - effectiveConfig.maxIncrement : currentWeight;
+          const weightList = [...baseOnlyWeights];
+          if (currentBaseWeight !== null && !weightList.includes(currentBaseWeight)) {
+            weightList.push(currentBaseWeight);
             weightList.sort((a, b) => a - b);
           }
           const weightOptions = weightList.length
-            ? weightList.map((w) => `<option value="${w}" ${currentWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
+            ? weightList.map((w) => `<option value="${w}" ${currentBaseWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
             : `<option value="">—</option>`;
           const incrementToggle = hasIncrement
             ? `<button type="button" class="increment-switch-btn ${startsIncremented ? "active" : ""}" data-increment-switch data-mode="${startsIncremented ? "on" : "off"}" data-increment-value="${effectiveConfig.maxIncrement}">${startsIncremented ? "+" + effectiveConfig.maxIncrement + "kg" : "Standard"}</button>`
             : "";
+          const totalHint = hasIncrement
+            ? `<div class="set-weight-total" data-weight-total ${startsIncremented ? "" : 'style="display:none;"'}>→ ${currentWeight !== null ? currentWeight : ""}kg au total</div>`
+            : "";
           const weightField = `
         <div class="set-weight-col">
-          <select class="set-weight" data-mode="${startsIncremented ? "on" : "off"}" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
+          <select class="set-weight" data-mode="${startsIncremented ? "on" : "off"}" data-increment="${effectiveConfig ? effectiveConfig.maxIncrement || 0 : 0}" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
           ${incrementToggle}
+          ${totalHint}
         </div>`;
           const repsField = `
         <div class="rep-stepper">
@@ -572,7 +585,18 @@ function attachLogListeners() {
     });
 
     card.querySelectorAll(".set-weight").forEach((select) => {
-      select.addEventListener("change", scheduleDraftSave);
+      select.addEventListener("change", () => {
+        // Si le mode +Xkg est actif, l'indication du total doit suivre le
+        // nouveau palier de base choisi.
+        const row = select.closest(".set-row");
+        const totalEl = row ? row.querySelector("[data-weight-total]") : null;
+        if (totalEl && select.dataset.mode === "on") {
+          const incVal = parseFloat(select.dataset.increment) || 0;
+          const baseVal = select.value === "" ? null : parseFloat(select.value);
+          totalEl.textContent = baseVal !== null ? `→ ${baseVal + incVal}kg au total` : "";
+        }
+        scheduleDraftSave();
+      });
     });
 
     card.querySelectorAll(".set-row").forEach((row) => {
@@ -605,25 +629,23 @@ function attachLogListeners() {
           const mode = currentMode === "on" ? "off" : "on";
           const incValue = parseFloat(switchBtn.dataset.incrementValue) || 0;
 
-          const cfg = findExerciseConfig(nameInput ? nameInput.value : "");
-          const currentVal = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
-          // On essaie de rester sur le même palier de machine en changeant
-          // de mode (ex. 70kg standard -> 75kg incrémenté), plutôt que de
-          // sauter arbitrairement à la première valeur de la nouvelle liste.
-          const currentBase = currentVal === null ? null : currentMode === "on" ? currentVal - incValue : currentVal;
-          const newList = mode === "on" ? computeIncrementedWeightsOnly(cfg) : computeBaseWeightsOnly(cfg);
-          const target = currentBase === null ? null : mode === "on" ? currentBase + incValue : currentBase;
-          const selectedValue = target !== null && newList.includes(target) ? target : newList[0];
-
           switchBtn.dataset.mode = mode;
           switchBtn.classList.toggle("active", mode === "on");
           switchBtn.textContent = mode === "on" ? `+${incValue}kg` : "Standard";
 
+          // Le menu déroulant ne change JAMAIS de liste ni de sélection ici —
+          // seuls le mode et l'indication du total sont mis à jour.
           weightSelect.dataset.mode = mode;
-          weightSelect.innerHTML = newList.length
-            ? newList.map((w) => `<option value="${w}" ${w === selectedValue ? "selected" : ""}>${w}kg</option>`).join("")
-            : `<option value="">—</option>`;
-          weightSelect.disabled = newList.length === 0;
+          const baseVal = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
+          const totalEl = row.querySelector("[data-weight-total]");
+          if (totalEl) {
+            if (mode === "on" && baseVal !== null) {
+              totalEl.style.display = "";
+              totalEl.textContent = `→ ${baseVal + incValue}kg au total`;
+            } else {
+              totalEl.style.display = "none";
+            }
+          }
           scheduleDraftSave();
         });
       }
@@ -785,7 +807,14 @@ function attachLogActionsBarListeners() {
     const planned = existingSession ? isUpcoming(existingSession) : dateEl.value > todayISO();
     const otherCount = sessions.filter((s) => s.id !== editingSessionId).length;
     const sessionLabel = labelEl.value.trim() || `Séance ${otherCount + 1}`;
-    const session = { id: editingSessionId || uid(), date: dateEl.value, label: sessionLabel, exercises: cleaned, planned };
+    const session = {
+      id: editingSessionId || uid(),
+      date: dateEl.value,
+      label: sessionLabel,
+      exercises: cleaned,
+      planned,
+      ...(existingSession && existingSession.durationSec != null ? { durationSec: existingSession.durationSec } : {}),
+    };
     if (wasEditing) {
       sessions = sessions.map((s) => (s.id === editingSessionId ? session : s));
     } else {

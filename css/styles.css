@@ -82,6 +82,7 @@
   .rep-stepper { flex: 1 1 0; display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); border-radius: 12px; padding: 5px; min-width: 0; }
   .set-weight-col { flex: 1 1 0; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .increment-switch-btn { border: none; border-radius: 8px; padding: 5px 6px; font-size: 10.5px; font-weight: 700; cursor: pointer; text-align: center; background: var(--surface-2); color: var(--text-dim); }
+  .set-weight-total { font-size: 10px; font-weight: 700; color: var(--accent); text-align: center; }
   .increment-switch-btn.active { background: var(--accent); color: #fff; }
   .rep-step-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: var(--surface); color: var(--accent); font-size: 19px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: var(--shadow-sm); }
   .rep-step-btn:active { background: var(--accent); color: #fff; }

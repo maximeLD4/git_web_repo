@@ -107,7 +107,8 @@ let liveDraftName = "";
 // L'exercice actif dans liveSession.exercises pendant qu'on saisit une série
 // (peut être un exercice déjà entamé plus tôt dans la séance, repris ici)
 let liveActiveExerciseId = null;
-let liveDraftWeight = null;
+let liveDraftWeight = null; // poids final utilisé (base + incrément le cas échéant) — calculé, jamais saisi directement
+let liveDraftBaseWeight = null; // poids réellement sélectionné dans le menu déroulant (toujours un palier existant, jamais l'incrément)
 let liveDraftReps = 10;
 let liveDraftWeightMode = "off";
 let liveDraftDuration = null;

@@ -7,6 +7,76 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.19.0 - 2026-08-26
+====================
+
+- Salle de sport (Créer) : même principe qu'en Séance en direct (2.18.0)
+  appliqué au module classique. Le menu déroulant du poids, sur chaque
+  série, ne liste et ne sélectionne désormais que les **paliers réellement
+  configurés** — plus jamais les valeurs incrémentées comme options
+  séparées. Le toggle Standard/+Xkg ne modifie plus jamais ce menu ni sa
+  sélection : il s'ajoute simplement par-dessus au moment de calculer le
+  poids réellement enregistré. Une petite indication « → 45kg au total »
+  apparaît sous le menu quand le mode +Xkg est actif.
+
+  Rouvrir une série déjà sauvegardée en mode incrémenté déduit correctement
+  son vrai palier de base pour l'afficher dans le menu (jamais la valeur
+  incrémentée en option).
+
+2.18.0 - 2026-08-26
+====================
+
+- Séance en direct (Muscu) : **un seul menu déroulant pour le poids**, qui
+  ne liste et ne sélectionne désormais que les **paliers réellement
+  configurés** (ex. 40, 50, 60kg) — plus jamais les valeurs incrémentées
+  (45, 55, 65) comme options séparées. Le toggle Standard/+Xkg juste en
+  dessous ne modifie plus jamais ce menu ni sa sélection : il s'ajoute
+  simplement par-dessus au moment de calculer le poids réellement
+  enregistré. Une petite indication « → 45kg au total » apparaît quand le
+  mode +Xkg est actif, pour confirmer ce qui sera vraiment sauvegardé.
+
+  L'avancée automatique au palier disponible supérieur (introduite en
+  2.12.1) porte désormais sur ce palier de base, aussi bien en enchaînant
+  des séries qu'en reprenant un exercice déjà entamé (le poids final
+  précédemment sauvegardé est correctement retraduit en palier de base
+  avant de faire avancer le menu).
+
+  Ce changement ne concerne que Séance en direct — Salle de sport classique
+  fonctionne encore avec l'ancien principe (le menu change de liste selon
+  le mode). Prévenez-moi si vous voulez le même traitement là-bas.
+
+2.17.5 - 2026-08-26
+====================
+
+- **Correctif** : modifier une séance issue de Séance en direct via
+  « Modifier » (flux classique de Salle de sport) effaçait silencieusement
+  ses durées (séance totale et par exercice), puisque la sauvegarde
+  classique reconstruit ces objets sans jamais avoir connaissance de ce
+  champ. Les durées sont désormais préservées lors d'une modification
+  classique. Un exercice ajouté pendant cette modification n'hérite jamais
+  d'une durée inventée — seule une durée déjà connue est reportée.
+
+2.17.4 - 2026-08-26
+====================
+
+- **Correctif** (suivi du temps par exercice, introduit en 2.14.0) :
+  supprimer entièrement un exercice via la frise ne nettoyait pas son suivi
+  de temps (segments) associé. Deux conséquences possibles : du temps
+  orphelin qui traînait sans jamais s'afficher nulle part (inoffensif mais
+  sale), ou pire, si l'exercice supprimé était **celui activement en cours**
+  (segment de temps encore ouvert), ce segment restait ouvert indéfiniment.
+
+  Corrigé : supprimer entièrement un exercice retire aussi tous ses
+  segments de temps (ouvert ou fermés). Une suppression **partielle** (il
+  reste d'autres séries pour cet exercice) laisse le temps déjà suivi
+  intact, à raison — le temps passé reste réel même si une série mal saisie
+  est retirée.
+
+  Testé précisément : suppression de l'exercice actif en cours (segment
+  ouvert), suppression partielle (temps préservé), et suppression d'un
+  exercice terminé pendant qu'un autre est activement en cours (son segment
+  ouvert n'est pas affecté).
+
 2.17.3 - 2026-08-26
 ====================
 
