@@ -12,6 +12,7 @@ function setBarsHTML(ex, colorOverride) {
       const heightPx = w > 0 ? Math.round(20 + (w / maxWeight) * 70) : 8;
       const widthPx = r > 0 ? Math.round(18 + (r / maxReps) * 40) : 14;
       return `
+      ${historyRestBadgeHTML(s.restSec)}
       <div class="set-bar-col">
         <div class="set-bar-reps" style="${repsColorStyle}">${r ? `×${r}` : ""}</div>
         <div class="set-bar" style="height:${heightPx}px;width:${widthPx}px;${barColorStyle}"></div>
@@ -32,7 +33,7 @@ function sessionCardHTML(s) {
     <div class="history-ex-name">${ex.name}${getExerciseDurationSeconds(ex) != null ? ` <span style="color:var(--text-dim); font-weight:600;">· ${formatLiveDuration(getExerciseDurationSeconds(ex))}</span>` : ""}</div>
     ${
       (ex.exType || "muscu") === "cardio"
-        ? `<div class="history-sets">${ex.sets.map((set) => `<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`
+        ? `<div class="history-sets">${ex.sets.map((set) => `${historyRestBadgeHTML(set.restSec)}<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`
         : setBarsHTML(ex)
     }
   </div>`

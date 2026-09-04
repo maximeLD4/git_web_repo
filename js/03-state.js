@@ -113,6 +113,11 @@ let liveDraftReps = 10;
 let liveDraftWeightMode = "off";
 let liveDraftDuration = null;
 let liveDraftDistance = null;
+// Dernier temps de repos mesuré MANUELLEMENT (bouton "Démarrer le repos" puis
+// arrêt automatique dès qu'on touche au poids/reps de la série suivante) —
+// conservé ici jusqu'à la validation de cette prochaine série, à laquelle il
+// sera attaché (voir startLiveSet). Remis à null une fois consommé.
+let liveDraftRestSec = null;
 // Suppression d'un élément de la frise en deux temps : index (dans
 // liveSession.log) actuellement en attente de confirmation, et minuteur
 // d'annulation automatique après 2 secondes sans second appui.

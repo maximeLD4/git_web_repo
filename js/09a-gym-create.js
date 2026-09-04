@@ -8,6 +8,23 @@ function formatSetChip(exType, s) {
 function formatSetsSummary(exType, sets) {
   return sets.map((s) => formatSetChip(exType, s)).join(", ");
 }
+// Petit badge "repos" affiché dans l'historique/le calendrier partagé, entre
+// deux séries — repris depuis la Séance en direct (restSec mesuré
+// manuellement via "Débuter"/"Finir la série"). Absent si le repos n'a pas
+// été chronométré pour cette série (séance créée manuellement, ou série
+// enregistrée avant l'ajout de cette fonctionnalité).
+function historyRestBadgeHTML(restSec) {
+  if (restSec === undefined || restSec === null) return "";
+  return `<div class="history-set-rest">${ICONS.stopwatch}<span>${formatLiveChrono(restSec)}</span></div>`;
+}
+// Version "ligne pleine largeur, plutôt fine" utilisée dans l'écran Créer
+// (contrairement au badge compact ci-dessus, pensé pour être intercalé
+// entre des barres/puces) — affichée juste au-dessus de la série à
+// laquelle ce repos est attaché (celle qui LE SUIT chronologiquement).
+function setRestLineHTML(restSec) {
+  if (restSec === undefined || restSec === null) return "";
+  return `<div class="set-rest-line">${ICONS.stopwatch} Repos ${formatLiveChrono(restSec)}</div>`;
+}
 
 /* ---------- draft helpers ---------- */
 function serializeExercisesFromDOM() {
@@ -44,7 +61,7 @@ function serializeExercisesFromDOM() {
         const baseVal = weightEl && weightEl.value !== "" ? parseFloat(weightEl.value) : "";
         const incVal = weightEl ? parseFloat(weightEl.dataset.increment) || 0 : 0;
         const finalWeight = baseVal === "" ? "" : weightMode === "on" ? baseVal + incVal : baseVal;
-        sets.push({
+        const newSet = {
           id: row.dataset.id,
           weight: finalWeight,
           reps: repsEl ? repsEl.value : "",
@@ -54,7 +71,18 @@ function serializeExercisesFromDOM() {
           // incrément de 10kg avec des paliers espacés de 10kg : "30kg" peut
           // être le palier 30 en standard, OU le palier 20 + 10 incrémenté).
           weightMode,
-        });
+        };
+        // Le temps de repos (mesuré uniquement en Séance en direct) et
+        // l'horodatage ne sont saisissables nulle part dans cet écran — sans
+        // ce report explicite depuis la série déjà connue, ils seraient
+        // silencieusement perdus à la moindre interaction ici (ajouter une
+        // série, en supprimer une autre, replier/déplier l'exercice...),
+        // puisque ce formulaire reconstruit entièrement chaque série depuis
+        // le DOM à chaque changement.
+        const existingSet = existing ? existing.sets.find((s) => s.id === row.dataset.id) : null;
+        if (existingSet && existingSet.restSec !== undefined) newSet.restSec = existingSet.restSec;
+        if (existingSet && existingSet.timestamp !== undefined) newSet.timestamp = existingSet.timestamp;
+        sets.push(newSet);
       });
     }
     result.push({ id, name, exType, category, sets, ...(existing && existing.durationSec != null ? { durationSec: existing.durationSec } : {}) });
@@ -327,6 +355,7 @@ function exerciseCardHTML(ex) {
         const isFirst = i === 0;
         const isLast = i === ex.sets.length - 1;
         return `
+    ${setRestLineHTML(s.restSec)}
     <div class="set-row" data-id="${s.id}">
       <div class="set-main">
         <div class="set-num">${i + 1}</div>
@@ -716,6 +745,11 @@ function attachLogListeners() {
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
         if (target.sets.length <= 1) return;
+        // Contrairement à la Séance en direct, on ne cumule pas ici le repos
+        // de la série supprimée sur la suivante — trop ambigu dans un écran
+        // d'édition manuelle où l'ordre peut lui-même avoir été modifié à la
+        // main (voir "Monter"/"Descendre"). Le repos attaché à la série
+        // supprimée disparaît donc avec elle, pour le moment.
         target.sets = target.sets.filter((s) => s.id !== btn.dataset.removeSet);
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);

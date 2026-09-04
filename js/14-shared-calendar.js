@@ -89,7 +89,7 @@ function sharedSessionPreviewHTML(s, type) {
       <div class="history-ex-name">${ex.name}${getExerciseDurationSeconds(ex) != null ? ` <span style="color:var(--text-dim); font-weight:600;">· ${formatLiveDuration(getExerciseDurationSeconds(ex))}</span>` : ""}</div>
       ${
         (ex.exType || "muscu") === "cardio"
-          ? `<div class="history-sets">${ex.sets.map((set) => `<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`
+          ? `<div class="history-sets">${ex.sets.map((set) => `${historyRestBadgeHTML(set.restSec)}<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`
           : setBarsHTML(ex, color)
       }
     </div>`

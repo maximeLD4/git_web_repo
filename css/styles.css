@@ -151,7 +151,9 @@
   .set-main { display: flex; align-items: flex-start; gap: 10px; margin: 0 14px 8px 17px; }
   .set-num { width: 22px; flex-shrink: 0; font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 13px; color: var(--text-dim); text-align: center; }
   .set-main input { flex: 1 1 0; width: auto; min-width: 0; padding: 10px; font-size: 16px; text-align: center; font-family: -apple-system, system-ui, sans-serif; font-weight: 600; }
-  .set-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin: 0 14px 0 17px; }
+  .set-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 14px 0 17px; }
+  .set-rest-line { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px 14px 6px 17px; padding: 4px 0; border-radius: 8px; background: var(--surface-2); color: var(--text-dim); font-size: 11px; font-weight: 700; }
+  .set-rest-line svg { width: 12px; height: 12px; flex-shrink: 0; }
   .set-action-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: none; color: var(--text-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .set-action-btn:hover { color: var(--text); }
   .set-action-btn:disabled { opacity: 0.3; cursor: default; }
@@ -202,6 +204,9 @@
   .history-ex-name { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
   .history-sets { display: flex; flex-wrap: wrap; gap: 6px; }
   .history-set-chip { background: var(--surface-2); border-radius: 8px; padding: 5px 10px; font-size: 12px; font-family: -apple-system, system-ui, sans-serif; font-weight: 600; color: var(--text); }
+  .history-set-rest { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; align-self: stretch; color: var(--text-dim); font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 2px 1px; }
+  .history-set-rest svg { width: 10px; height: 10px; flex-shrink: 0; }
+  .history-set-rest span { writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 0.2px; }
   .set-bars-row { display: flex; align-items: flex-end; gap: 12px; padding: 6px 2px 2px; flex-wrap: wrap; }
   .set-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .set-bar-reps { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 12px; color: var(--accent); min-height: 15px; }
@@ -348,6 +353,20 @@
   .live-header-title { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 15px; color: var(--text-dim); text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .live-header-chrono { font-family: -apple-system, system-ui, sans-serif; font-weight: 700; font-size: 11px; color: var(--accent); letter-spacing: 0.3px; font-variant-numeric: tabular-nums; }
   .live-header-chrono-big { font-size: 21px; font-weight: 800; }
+  /* ---------- Chrono de repos (Séance en direct) : gros bloc bien visible,
+     affiché tant qu'un repos est en cours, sur n'importe quel écran du Live ---------- */
+  .live-rest-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgba(var(--accent-rgb), 0.14); border-radius: 22px; padding: 20px 14px; margin-bottom: 12px; flex-shrink: 0; }
+  .live-rest-hero-label { display: flex; align-items: center; gap: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 800; color: var(--accent); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .live-rest-hero-label svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .live-rest-hero-value { font-size: 52px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); line-height: 1.1; }
+  /* Variante "série en cours" (entre "Débuter" et "Finir la série") : même
+     bloc, teinté en rouge comme les autres indicateurs d'enregistrement de
+     l'app, pour se distinguer au premier coup d'œil du repos (orange). */
+  .live-rest-hero-active { background: rgba(255, 59, 48, 0.14); }
+  .live-rest-hero-active .live-rest-hero-label,
+  .live-rest-hero-active .live-rest-hero-value { color: var(--rust); }
+  .live-timeline-rest { display: flex; align-items: center; gap: 2px; flex-shrink: 0; align-self: center; color: var(--text-dim); font-size: 9.5px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 0 1px; }
+  .live-timeline-rest svg { width: 10px; height: 10px; }
   .live-stop-btn { background: rgba(255,59,48,0.12); color: var(--rust); border: none; border-radius: 999px; padding: 9px 15px; font-size: 12.5px; font-weight: 700; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; gap: 5px; }
   .live-body { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   @keyframes live-slide-in-right { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -379,6 +398,8 @@
   .live-validate-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 999px; padding: 20px; font-size: 17px; font-weight: 800; font-family: -apple-system, system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35); flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .live-post-set { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
   .live-post-btn { width: 100%; border: none; border-radius: 20px; padding: 20px; font-size: 16px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .live-validate-btn.live-finish-btn { background: var(--rust); box-shadow: 0 4px 14px rgba(255, 59, 48, 0.35); }
+  .live-in-progress-banner { text-align: center; background: rgba(var(--accent-rgb), 0.12); color: var(--accent); border-radius: 16px; padding: 14px; font-size: 14.5px; font-weight: 700; }
   .live-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
   .live-cancel-btn { background: var(--surface-2); color: var(--text-dim); border: none; border-radius: 999px; padding: 9px 13px; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
   .live-timeline { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; flex-shrink: 0; -webkit-overflow-scrolling: touch; }

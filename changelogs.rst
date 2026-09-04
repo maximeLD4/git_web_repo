@@ -7,6 +7,111 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.24.6 - 2026-09-04
+====================
+
+- Le gros bloc de statut en Séance en direct (jusqu'ici uniquement "Repos" +
+  son chrono) reste maintenant affiché en permanence, y compris pendant une
+  série en cours ("Débuter la série" tapé, "Finir la série" pas encore) : il
+  affiche alors le nom de l'exercice et le temps écoulé depuis le début de
+  cette série, teinté en rouge pour se distinguer du repos (orange) au
+  premier coup d'œil.
+
+2.24.5 - 2026-09-04
+====================
+
+- Écran "Créer" (modification d'une séance existante) : le temps de repos
+  d'une série s'affiche désormais sur une **ligne fine pleine largeur**,
+  juste au-dessus de la série qu'il précède — plus lisible que l'ancien
+  petit badge coincé dans la barre d'actions.
+- **Supprimer une série dans cet écran** ne cumule plus son repos sur la
+  suivante (le repos disparaît simplement avec elle, pour le moment) : trop
+  ambigu dans un écran où l'ordre des séries peut lui-même avoir été modifié
+  manuellement (boutons Monter/Descendre).
+- Historique et calendrier partagé : le badge de repos intercalé entre deux
+  séries (barres ou puces) s'affiche maintenant **à la verticale** plutôt
+  qu'à l'horizontal — bien plus compact et lisible une fois coincé entre
+  deux éléments.
+
+2.24.4 - 2026-09-04
+====================
+
+- Le temps de repos d'une série est maintenant **visible** dans l'écran
+  "Créer" en modifiant une séance existante (petit badge chronomètre à
+  côté des boutons de chaque série) — le correctif précédent (2.24.3)
+  évitait de le perdre, mais ne l'affichait nulle part dans cet écran ; il
+  était donc invisible bien que conservé.
+
+2.24.3 - 2026-09-04
+====================
+
+- **Correctif plus profond, même famille de bug que les précédents** : en
+  modifiant une séance déjà enregistrée depuis "Créer" (bouton "Modifier"
+  dans l'historique), le temps de repos de chaque série était
+  silencieusement perdu dès la première interaction dans cet écran (ajouter
+  une série, en supprimer une autre, replier/déplier un exercice...) — cet
+  écran ne connaissait tout simplement pas ce champ. Il est désormais
+  reporté correctement à chaque modification.
+- **Supprimer une série (pas la dernière) dans cet écran** fusionne
+  maintenant son repos avec celui de la série suivante, exactement comme
+  dans la frise de la Séance en direct — au lieu de le perdre.
+
+2.24.2 - 2026-09-04
+====================
+
+- **Supprimer une série au milieu de la frise (pas la dernière)** fusionne
+  désormais correctement les temps de repos : celui qui avait été mesuré
+  avant la série supprimée est reversé à la série suivante, pour que le
+  total entre la série précédente et la série suivante reste juste — y
+  compris quand la série supprimée était la seule d'un exercice, qui
+  disparaît alors entièrement de la séance.
+- **Annuler une série en cours** (la supprimer depuis la frise juste après
+  avoir tapé "Débuter la série", avant "Finir la série") renvoie maintenant
+  en mode repos plutôt que dans un état neutre — en reprenant le chrono là
+  où il en était juste avant d'avoir tapé "Débuter", pas de zéro.
+
+2.24.1 - 2026-09-04
+====================
+
+- **Annuler une série en cours** : supprimer depuis la frise la série qu'on
+  est justement en train de faire ("Débuter la série" tapé, "Finir la
+  série" pas encore) l'annule proprement — elle disparaît de la séance et on
+  repart en état prêt (poids/reps toujours modifiables), sans déclencher de
+  repos.
+- **Supprimer la dernière série pendant le repos qui la suit** ne repart
+  plus de zéro : le repos qui avait été mesuré avant cette série (attachée
+  à elle) est reversé au repos actuellement en cours, qui continue de
+  s'écouler en se cumulant avec lui. Le temps total (avant + après la
+  série supprimée, comme si elle n'avait jamais eu lieu) apparaît alors
+  correctement dans la frise une fois la vraie série suivante démarrée.
+- Les temps de repos mesurés en Séance en direct apparaissent désormais
+  aussi dans l'historique de la Salle de sport et dans le calendrier
+  partagé (même badge chronomètre qu'en direct, entre deux séries) — ils
+  étaient déjà sauvegardés mais pas affichés une fois la séance archivée.
+
+2.24.0 - 2026-09-04
+====================
+
+- **Refonte du repos en Séance en direct : deux actions explicites plutôt
+  qu'un chrono en tâche de fond.** Sur l'écran de saisie d'une série,
+  l'ancien bouton unique de validation est remplacé par :
+
+  - **Débuter la série** (▶) — enregistre la série (poids/reps affichés)
+    dans la frise, et si un repos était en cours, l'arrête et lui attache sa
+    durée mesurée.
+  - **Finir la série** (⏹), affiché une fois la série démarrée — lance le
+    mode repos et son chronomètre.
+
+  Le chrono de repos n'est donc plus jamais automatique : il ne démarre
+  qu'en tapant "Finir la série", et ne s'arrête qu'en tapant "Débuter la
+  série" pour la suivante. Fini aussi le petit indicateur illisible dans
+  l'en-tête : tant qu'un repos est en cours, un gros chrono bien visible
+  s'affiche en haut de l'écran, quel que soit l'écran du Live où l'on se
+  trouve (y compris pendant qu'on choisit le prochain exercice).
+- La frise de la séance affiche ce même temps de repos mesuré entre deux
+  puces (petite icône chronomètre + durée), uniquement quand il a
+  effectivement été chronométré.
+
 2.23.0 - 2026-09-04
 ====================
 

@@ -13,6 +13,7 @@ function renderLiveApp(freshEntry) {
   // on se trouvait avant une fermeture accidentelle — les séries déjà
   // validées, elles, restent intactes dans liveSession.
   if (freshEntry) {
+    autoFinishLiveSetIfInProgress();
     liveStep = "category";
     liveDraftType = "muscu";
     liveDraftCategory = "";
@@ -40,6 +41,7 @@ function renderLiveApp(freshEntry) {
       return;
     }
     if (liveStep === "log-set") {
+      autoFinishLiveSetIfInProgress();
       closeCurrentLiveSegment();
       saveJSON(KEYS.liveSession, liveSession);
       liveActiveExerciseId = null;
@@ -50,6 +52,7 @@ function renderLiveApp(freshEntry) {
   document.querySelector("[data-live-stop]").addEventListener("click", finishLiveSession);
   document.querySelector("[data-live-cancel]").addEventListener("click", cancelLiveSession);
   startLiveChrono();
+  ensureLiveRestTicking();
   renderLiveStep();
 }
 
@@ -63,13 +66,47 @@ function renderLiveStep() {
   const wasAtEnd = prevTimeline ? prevTimeline.scrollLeft + prevTimeline.clientWidth >= prevTimeline.scrollWidth - 4 : true;
   const prevScrollLeft = prevTimeline ? prevTimeline.scrollLeft : null;
 
-  if (liveStep === "category") content.innerHTML = liveCategoryStepHTML();
-  else if (liveStep === "log-set") content.innerHTML = liveLogSetStepHTML();
+  const stepHTML = liveStep === "category" ? liveCategoryStepHTML() : liveLogSetStepHTML();
+  // Le bloc de statut (gros chrono, bien visible) s'affiche en haut du
+  // contenu sur N'IMPORTE QUEL écran du Live tant qu'un repos OU une série
+  // est en cours — pas seulement sur l'écran de saisie — puisqu'on peut très
+  // bien être en train de choisir le prochain exercice pendant qu'on
+  // récupère, ou avoir laissé le chrono de la série tourner en arrière-plan.
+  content.innerHTML = liveStatusHeroHTML() + stepHTML;
   attachLiveStepListeners();
+  ensureLiveRestTicking();
   const timeline = document.getElementById("live-timeline");
   if (timeline) {
     timeline.scrollLeft = wasAtEnd ? timeline.scrollWidth : prevScrollLeft;
   }
+}
+
+// Gros bloc de statut, bien visible (contrairement à l'ancien indicateur
+// minuscule dans l'en-tête) — reste à l'écran en permanence tant qu'un
+// repos OU une série est en cours (voir startLiveRestManually / startLiveSet
+// / finishLiveSet) :
+// - pendant un repos : "Repos" + le chrono de repos.
+// - pendant une série en cours ("Débuter" tapé, "Finir" pas encore) : le nom
+//   de l'exercice + le temps écoulé depuis le début de cette série.
+// Absent uniquement quand ni l'un ni l'autre n'est en cours (état "prêt",
+// avant la toute première série par exemple).
+function liveStatusHeroHTML() {
+  if (!liveSession) return "";
+  if (liveSession.restStartedAt) {
+    return `
+    <div class="live-rest-hero" id="live-rest-hero">
+      <div class="live-rest-hero-label">${ICONS.stopwatch} Repos</div>
+      <div class="live-rest-hero-value" id="live-rest-chrono">00:00</div>
+    </div>`;
+  }
+  if (liveSession.setInProgressStartedAt) {
+    return `
+    <div class="live-rest-hero live-rest-hero-active" id="live-rest-hero">
+      <div class="live-rest-hero-label">${ICONS.play} ${liveDraftName || "Série en cours"}</div>
+      <div class="live-rest-hero-value" id="live-rest-chrono">00:00</div>
+    </div>`;
+  }
+  return "";
 }
 
 function liveCategoryStepHTML() {
@@ -130,7 +167,7 @@ function liveCategoryStepHTML() {
 function liveTimelineHTML() {
   if (!liveSession.log || liveSession.log.length === 0) return "";
   // Ce drapeau n'est vrai que juste après un ajout réel (voir
-  // validateLiveSet) — on le consomme immédiatement pour qu'il ne rejoue
+  // startLiveSet) — on le consomme immédiatement pour qu'il ne rejoue
   // plus l'animation lors des rendus suivants déclenchés par d'autres
   // interactions (changement de catégorie, toggle, etc.), ce qui donnait
   // l'impression que la dernière puce "clignotait" à chaque clic.
@@ -144,7 +181,16 @@ function liveTimelineHTML() {
       if (!set) return "";
       const valueLabel = ex.exType === "cardio" ? `${set.weight}min${set.reps ? "/" + set.reps + "km" : ""}` : `${set.weight}kg×${set.reps}`;
       const confirming = idx === liveTimelineConfirmIndex;
+      // Repos affiché entre deux puces = uniquement le repos réellement
+      // MESURÉ manuellement ("Débuter la série" arrête le repos en cours et
+      // l'attache à cette série) — pas de calcul automatique. Absent si le
+      // repos n'a pas été chronométré pour cette série-là.
+      const restBadge =
+        set.restSec !== undefined && set.restSec !== null
+          ? `<div class="live-timeline-rest">${ICONS.stopwatch}<span>${formatLiveChrono(set.restSec)}</span></div>`
+          : "";
       return `
+        ${restBadge}
         <div class="live-timeline-chip ${confirming ? "confirm-delete" : ""} ${idx === enterIdx ? "live-timeline-chip-enter" : ""}" data-live-timeline-chip="${idx}">
           <span class="ex">${ex.name}</span>
           <span class="val">${valueLabel}</span>
@@ -161,7 +207,32 @@ function liveLogSetStepHTML() {
   return liveTimelineHTML() + form;
 }
 
+// Phase dans laquelle se trouve la série en cours de préparation :
+// - "in-progress" : "Débuter la série" a été tapé, on est en train de la
+//   faire physiquement — plus rien à saisir, juste "Finir la série" à
+//   taper une fois fait.
+// - "ready" (sinon, qu'on soit en repos ou non) : le poids/reps affichés
+//   sont modifiables, prêts à être lancés via "Débuter la série".
+function liveSetPhase() {
+  if (liveSession && liveSession.setInProgressStartedAt) return "in-progress";
+  return "ready";
+}
+
 function liveMuscuSetFormHTML(activeExercise) {
+  const phase = liveSetPhase();
+  const lastSet = activeExercise && activeExercise.sets.length ? activeExercise.sets[activeExercise.sets.length - 1] : null;
+
+  if (phase === "in-progress") {
+    return `
+      <div class="live-set-form">
+        <div class="live-exercise-name">${liveDraftName}</div>
+        <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}kg × ${lastSet.reps}` : ""}</div>
+        ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
+        <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
+        <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+      </div>`;
+  }
+
   const config = findExerciseConfig(liveDraftName);
   const hasIncrement = !!config && config.maxIncrement > 0;
   const increment = hasIncrement ? config.maxIncrement : 0;
@@ -179,7 +250,6 @@ function liveMuscuSetFormHTML(activeExercise) {
     ? weightList.map((w) => `<option value="${w}" ${liveDraftBaseWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
     : `<option value="">—</option>`;
   const finalWeight = liveDraftBaseWeight !== null ? liveDraftBaseWeight + (liveDraftWeightMode === "on" ? increment : 0) : null;
-  const lastSet = activeExercise && activeExercise.sets.length ? activeExercise.sets[activeExercise.sets.length - 1] : null;
 
   return `
     <div class="live-set-form">
@@ -202,15 +272,28 @@ function liveMuscuSetFormHTML(activeExercise) {
             : ""
         }
       </div>
-      <button type="button" class="live-validate-btn" data-live-validate-set ${finalWeight === null ? "disabled" : ""}>${ICONS.plus} Série suivante</button>
+      <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
       <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
     </div>`;
 }
 
 function liveCardioSetFormHTML(activeExercise) {
+  const phase = liveSetPhase();
+  const lastSet = activeExercise && activeExercise.sets.length ? activeExercise.sets[activeExercise.sets.length - 1] : null;
+
+  if (phase === "in-progress") {
+    return `
+      <div class="live-set-form">
+        <div class="live-exercise-name">${liveDraftName}</div>
+        <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}min${lastSet.reps ? "/" + lastSet.reps + "km" : ""}` : ""}</div>
+        ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
+        <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
+        <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+      </div>`;
+  }
+
   const duration = liveDraftDuration || 0;
   const distance = liveDraftDistance || 0;
-  const lastSet = activeExercise && activeExercise.sets.length ? activeExercise.sets[activeExercise.sets.length - 1] : null;
   return `
     <div class="live-set-form">
       <div class="live-exercise-name">${liveDraftName}</div>
@@ -231,7 +314,7 @@ function liveCardioSetFormHTML(activeExercise) {
           <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus">+</button>
         </div>
       </div>
-      <button type="button" class="live-validate-btn" data-live-validate-set ${duration === 0 ? "disabled" : ""}>${ICONS.plus} Passage suivant</button>
+      <button type="button" class="live-validate-btn" data-live-start-set ${duration === 0 ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
       <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
     </div>`;
 }
@@ -256,7 +339,32 @@ function computeNextLiveBaseWeight(name, currentBaseWeight) {
 function deleteLiveTimelineEntry(idx) {
   const entry = liveSession.log[idx];
   if (!entry) return;
+  // Ces informations doivent être capturées AVANT toute suppression,
+  // pendant qu'elles reflètent encore l'état réel de la série qu'on est en
+  // train de retirer.
+  const isLastEntry = idx === liveSession.log.length - 1;
+  const wasInProgress = isLastEntry && !!liveSession.setInProgressStartedAt;
+  const wasJustFinishedAndResting = isLastEntry && !wasInProgress && !!liveSession.restStartedAt;
   const exercise = liveSession.exercises.find((e) => e.id === entry.exerciseId);
+  const deletedSet = exercise ? exercise.sets.find((s) => s.id === entry.setId) || null : null;
+
+  // Si la série supprimée n'est PAS la dernière de la frise, le repos qui
+  // lui avait été attaché (mesuré avant elle) doit être reversé à la série
+  // suivante — sinon ce temps de repos disparaîtrait purement et
+  // simplement. Résultat : le repos affiché entre la série précédente et la
+  // série suivante redevient correct, comme si celle du milieu (avec son
+  // exercice, le cas échéant) n'avait jamais existé.
+  if (!isLastEntry && deletedSet && deletedSet.restSec) {
+    const nextEntry = liveSession.log[idx + 1];
+    if (nextEntry) {
+      const nextExercise = liveSession.exercises.find((e) => e.id === nextEntry.exerciseId);
+      const nextSet = nextExercise ? nextExercise.sets.find((s) => s.id === nextEntry.setId) : null;
+      if (nextSet) {
+        nextSet.restSec = (nextSet.restSec || 0) + deletedSet.restSec;
+      }
+    }
+  }
+
   if (exercise) {
     exercise.sets = exercise.sets.filter((s) => s.id !== entry.setId);
     // Si l'exercice n'a plus aucune série après cette suppression, on le
@@ -285,6 +393,32 @@ function deleteLiveTimelineEntry(idx) {
     // seule une série mal saisie a été retirée.
   }
   liveSession.log.splice(idx, 1);
+
+  // Cas 1 : on supprime la série qu'on est justement en train de faire
+  // ("Débuter la série" tapé, "Finir la série" pas encore) — la suppression
+  // vaut annulation de cette série : elle n'a jamais eu lieu. On renvoie
+  // alors en mode repos, comme si "Débuter la série" n'avait jamais été
+  // tapé — en reprenant le compteur là où il en était juste avant (le repos
+  // qui avait été mesuré et attaché à cette série, s'il y en avait un),
+  // plutôt que de simplement revenir à un état neutre sans repos.
+  if (wasInProgress) {
+    liveSession.setInProgressStartedAt = null;
+    const resumeRestSec = deletedSet && deletedSet.restSec ? deletedSet.restSec : 0;
+    liveSession.restStartedAt = Date.now() - resumeRestSec * 1000;
+  }
+  // Cas 2 : on supprime la toute dernière série (déjà terminée) alors qu'on
+  // est déjà en plein repos après elle — on considère qu'elle n'a en fait
+  // jamais été faite. Le repos qui avait été mesuré AVANT cette série (et
+  // lui avait été attaché) est alors "rendu" au repos actuellement en
+  // cours : on recule d'autant son horodatage de départ, pour qu'il se
+  // CUMULE avec le repos déjà écoulé plutôt que de repartir de zéro. Ainsi,
+  // quand on tapera vraiment "Débuter la série" pour la suivante, le repos
+  // total (avant + après la série supprimée) apparaîtra correctement dans
+  // la frise.
+  if (wasJustFinishedAndResting && deletedSet && deletedSet.restSec) {
+    liveSession.restStartedAt -= deletedSet.restSec * 1000;
+  }
+
   saveJSON(KEYS.liveSession, liveSession);
   liveTimelineConfirmIndex = null;
   clearTimeout(liveTimelineConfirmTimer);
@@ -333,6 +467,58 @@ function updateLiveChronoDisplay() {
   el.textContent = formatLiveChrono(elapsedSec);
 }
 
+// ---------- Chrono de repos (manuel) ----------
+// Le repos ne démarre JAMAIS tout seul : c'est "Finir la série" qui le
+// lance. Il ne s'arrête que via "Débuter la série" (la série suivante), qui
+// récupère au passage la durée mesurée pour l'attacher à cette série.
+// L'horodatage de départ est conservé sur liveSession (donc persistant si
+// l'app se ferme accidentellement en plein repos) ; la durée mesurée à
+// l'arrêt est stockée dans liveDraftRestSec en attendant d'être attachée à
+// la série qu'on démarre.
+let liveRestChronoInterval = null;
+
+// Démarre le repos. Appelée uniquement depuis applyFinishLiveSet() — jamais
+// directement par un bouton dédié.
+function startLiveRestManually() {
+  if (!liveSession || liveSession.restStartedAt) return;
+  liveSession.restStartedAt = Date.now();
+  saveJSON(KEYS.liveSession, liveSession);
+}
+
+// Arrête le repos en cours (s'il y en a un) et mémorise la durée mesurée
+// dans liveDraftRestSec, pour l'attacher à la série qu'on est en train de
+// démarrer (voir startLiveSet). Ne redessine pas l'écran elle-même.
+function stopLiveRestManually() {
+  if (!liveSession || !liveSession.restStartedAt) return;
+  const restSec = Math.max(0, Math.round((Date.now() - liveSession.restStartedAt) / 1000));
+  liveDraftRestSec = restSec;
+  liveSession.restStartedAt = null;
+  saveJSON(KEYS.liveSession, liveSession);
+}
+
+// (Re)démarre ou coupe le ticker du gros bloc de statut, selon qu'un repos
+// OU une série est actuellement en cours — appelée à chaque rendu de
+// l'écran Live (le bloc lui-même n'existe dans le DOM que dans ces deux cas,
+// voir liveStatusHeroHTML), pour ne jamais laisser tourner un intervalle
+// inutile.
+function ensureLiveRestTicking() {
+  clearInterval(liveRestChronoInterval);
+  if (!liveSession || (!liveSession.restStartedAt && !liveSession.setInProgressStartedAt)) return;
+  updateLiveRestChronoDisplay();
+  liveRestChronoInterval = setInterval(updateLiveRestChronoDisplay, 1000);
+}
+
+function updateLiveRestChronoDisplay() {
+  const el = document.getElementById("live-rest-chrono");
+  const startedAt = liveSession ? liveSession.restStartedAt || liveSession.setInProgressStartedAt : null;
+  if (!el || !startedAt) {
+    clearInterval(liveRestChronoInterval);
+    return;
+  }
+  const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+  el.textContent = formatLiveChrono(elapsedSec);
+}
+
 function formatLiveChrono(totalSeconds) {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
@@ -340,6 +526,7 @@ function formatLiveChrono(totalSeconds) {
   const pad = (n) => String(n).padStart(2, "0");
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
+
 
 // Suivi du temps réellement passé sur chaque exercice : à chaque fois qu'on
 // entre sur un exercice (nouveau ou repris), on ferme le segment en cours
@@ -399,8 +586,13 @@ function startOrResumeLiveExercise() {
   renderLiveApp();
 }
 
-function validateLiveSet() {
+// "Débuter la série" : enregistre la série (poids/reps actuellement
+// affichés) dans la frise ET compte comme le début de son exécution — puis,
+// si un repos était en cours, l'arrête et lui attache sa durée mesurée.
+function startLiveSet() {
   if (liveDraftType !== "cardio" && liveDraftBaseWeight === null) return;
+  if (liveSetPhase() === "in-progress") return; // déjà démarrée, rien à refaire
+  if (liveSession.restStartedAt) stopLiveRestManually();
   let exercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
   if (!exercise) {
     exercise = {
@@ -420,13 +612,34 @@ function validateLiveSet() {
   const finalWeight = liveDraftType === "cardio" ? null : liveDraftBaseWeight + (liveDraftWeightMode === "on" ? increment : 0);
   const newSet =
     liveDraftType === "cardio"
-      ? { id: uid(), weight: liveDraftDuration || 0, reps: liveDraftDistance || 0 }
-      : { id: uid(), weight: finalWeight, reps: liveDraftReps, weightMode: liveDraftWeightMode };
+      ? { id: uid(), weight: liveDraftDuration || 0, reps: liveDraftDistance || 0, timestamp: Date.now() }
+      : { id: uid(), weight: finalWeight, reps: liveDraftReps, weightMode: liveDraftWeightMode, timestamp: Date.now() };
+  // Le repos mesuré manuellement juste avant cette série (s'il y en a eu
+  // un) lui est attaché ici, puis consommé — il ne doit pas se réappliquer
+  // à la série suivante.
+  if (liveDraftRestSec !== null) {
+    newSet.restSec = liveDraftRestSec;
+    liveDraftRestSec = null;
+  }
   exercise.sets.push(newSet);
   if (!liveSession.log) liveSession.log = [];
   liveSession.log.push({ exerciseId: exercise.id, setId: newSet.id });
   liveJustAddedLogIndex = liveSession.log.length - 1;
+  liveSession.setInProgressStartedAt = Date.now();
   saveJSON(KEYS.liveSession, liveSession);
+  renderLiveStep();
+}
+
+// "Finir la série" : ne modifie plus les données de la série (déjà fixées
+// au moment de "Débuter la série") — passe juste en mode repos, et prépare
+// le palier de poids suggéré pour la prochaine série pendant qu'on récupère.
+// La logique elle-même ne redessine rien (voir applyFinishLiveSet) : c'est
+// finishLiveSet() (bouton) qui s'en charge, pour pouvoir aussi être
+// appliquée silencieusement depuis un contexte qui va de toute façon
+// redessiner juste après (voir autoFinishLiveSetIfInProgress).
+function applyFinishLiveSet() {
+  if (!liveSession.setInProgressStartedAt) return;
+  liveSession.setInProgressStartedAt = null;
   // Pour la prochaine série, on propose automatiquement le palier de base
   // disponible juste au-dessus (progression naturelle d'une série à
   // l'autre), sauf si on est déjà au maximum disponible. Les reps restent
@@ -435,11 +648,28 @@ function validateLiveSet() {
   if (liveDraftType !== "cardio") {
     liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, liveDraftBaseWeight);
   }
-  // On reste volontairement sur le même écran, prêt pour la série suivante
-  // (poids/reps conservés tels quels) — pas de reconstruction complète de la
-  // page. La confirmation visuelle vient désormais de la nouvelle puce qui
-  // apparaît dans la frise, plus besoin d'un message texte séparé.
+  startLiveRestManually();
+  saveJSON(KEYS.liveSession, liveSession);
+}
+
+function finishLiveSet() {
+  applyFinishLiveSet();
   renderLiveStep();
+}
+
+// Si on quitte l'exercice (changement d'exercice ou retour en arrière) alors
+// qu'une série est en cours ("Débuter" tapé mais pas encore "Finir"), on
+// considère implicitement qu'elle est terminée — on ne va pas laisser un
+// état "en cours" orphelin qui n'aurait plus aucun sens pour un autre
+// exercice. Ceci a pour effet, comme un "Finir la série" normal, de lancer
+// le repos. Ne redessine rien elle-même : appelée depuis des contextes qui
+// redessinent de toute façon juste après (y compris parfois avant que le
+// DOM de l'écran Live n'existe encore, ex. juste après avoir rouvert
+// l'écran depuis l'accueil).
+function autoFinishLiveSetIfInProgress() {
+  if (liveSession && liveSession.setInProgressStartedAt) {
+    applyFinishLiveSet();
+  }
 }
 
 function cancelLiveSession() {
@@ -447,6 +677,7 @@ function cancelLiveSession() {
     "Annuler cette séance en direct ? Toutes les séries déjà enregistrées seront définitivement perdues.",
     () => {
       clearInterval(liveChronoInterval);
+      clearInterval(liveRestChronoInterval);
       liveSession = null;
       saveJSON(KEYS.liveSession, null);
       liveStep = "category";
@@ -454,6 +685,7 @@ function cancelLiveSession() {
       liveDraftCategory = "";
       liveDraftName = "";
       liveActiveExerciseId = null;
+      liveDraftRestSec = null;
       goHome();
     },
     { confirmLabel: "Annuler la séance", danger: true }
@@ -466,8 +698,10 @@ function finishLiveSession() {
     // Rien d'enregistré cette fois-ci : on quitte simplement, sans créer de
     // séance vide.
     clearInterval(liveChronoInterval);
+    clearInterval(liveRestChronoInterval);
     liveSession = null;
     saveJSON(KEYS.liveSession, null);
+    liveDraftRestSec = null;
     goHome();
     return;
   }
@@ -499,6 +733,7 @@ function finishLiveSession() {
     saveJSON(KEYS.library, library);
 
     clearInterval(liveChronoInterval);
+    clearInterval(liveRestChronoInterval);
     liveSession = null;
     saveJSON(KEYS.liveSession, null);
     liveStep = "category";
@@ -506,6 +741,7 @@ function finishLiveSession() {
     liveDraftCategory = "";
     liveDraftName = "";
     liveActiveExerciseId = null;
+    liveDraftRestSec = null;
 
     goHome();
   });
@@ -640,12 +876,16 @@ function attachLiveStepListeners() {
   if (distMinus) distMinus.addEventListener("click", () => { liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) - 0.1) * 10) / 10); renderLiveApp(); });
   if (distPlus) distPlus.addEventListener("click", () => { liveDraftDistance = Math.round(((liveDraftDistance || 0) + 0.1) * 10) / 10; renderLiveApp(); });
 
-  const validateBtn = content.querySelector("[data-live-validate-set]");
-  if (validateBtn) validateBtn.addEventListener("click", validateLiveSet);
+  const startSetBtn = content.querySelector("[data-live-start-set]");
+  if (startSetBtn) startSetBtn.addEventListener("click", startLiveSet);
+
+  const finishSetBtn = content.querySelector("[data-live-finish-set]");
+  if (finishSetBtn) finishSetBtn.addEventListener("click", finishLiveSet);
 
   const changeExBtn = content.querySelector("[data-live-change-exercise]");
   if (changeExBtn) {
     changeExBtn.addEventListener("click", () => {
+      autoFinishLiveSetIfInProgress();
       closeCurrentLiveSegment();
       saveJSON(KEYS.liveSession, liveSession);
       liveActiveExerciseId = null;
