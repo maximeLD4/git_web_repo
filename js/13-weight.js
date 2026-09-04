@@ -84,7 +84,7 @@ function weightTabHTML() {
     ${chartHTML}
     <div class="field-row">
       <div class="field"><label>Date</label><input type="date" id="w-date" value="${todayISO()}"></div>
-      <div class="field"><label>Poids (kg)</label><input type="number" inputmode="decimal" id="w-value" placeholder="72.5"></div>
+      <div class="field"><label>Poids (kg)</label><input type="text" inputmode="decimal" id="w-value" placeholder="72.5"></div>
     </div>
     <button class="save-btn" id="save-weight-btn" style="margin-bottom:20px;">${ICONS.check} Enregistrer le poids</button>
     ${listHTML}

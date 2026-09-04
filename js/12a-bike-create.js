@@ -170,9 +170,9 @@ function bikeBlockCardHTML(b) {
       <button class="icon-btn" data-remove-block="${b.id}">${ICONS.x}</button>
     </div>
     <div class="block-fields-row">
-      <div class="field"><label>Durée (min)</label><input class="bike-block-duration" type="number" inputmode="decimal" placeholder="ex. 60" value="${b.duration}"></div>
-      <div class="field"><label>Distance (km)</label><input class="bike-block-distance" type="number" inputmode="decimal" placeholder="ex. 25" value="${b.distance}"></div>
-      <div class="field"><label>Vitesse (km/h)</label><input class="bike-block-speed" type="number" inputmode="decimal" placeholder="ex. 25" value="${b.speed}" disabled></div>
+      <div class="field"><label>Durée (min)</label><input class="bike-block-duration" type="text" inputmode="decimal" placeholder="ex. 60" value="${b.duration}"></div>
+      <div class="field"><label>Distance (km)</label><input class="bike-block-distance" type="text" inputmode="decimal" placeholder="ex. 25" value="${b.distance}"></div>
+      <div class="field"><label>Vitesse (km/h)</label><input class="bike-block-speed" type="text" inputmode="decimal" placeholder="ex. 25" value="${b.speed}" disabled></div>
     </div>
     <div class="block-mode-hint">Vitesse calculée automatiquement à partir de la durée et de la distance.</div>
   </div>`;

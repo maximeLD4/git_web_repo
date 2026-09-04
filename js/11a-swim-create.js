@@ -218,19 +218,19 @@ function swimBlockCardHTML(b) {
     }
     fieldsHTML = `
     <div class="block-fields-row">
-      <div class="field"><label>Taille du bassin (m)</label><input class="swim-block-poollength" type="number" inputmode="decimal" placeholder="ex. 25" value="${b.poolLength}"></div>
+      <div class="field"><label>Taille du bassin (m)</label><input class="swim-block-poollength" type="text" inputmode="decimal" placeholder="ex. 25" value="${b.poolLength}"></div>
       <div class="field"><label>Longueurs</label><input class="swim-block-lengths" type="number" inputmode="numeric" placeholder="ex. 20" value="${b.lengths}"></div>
     </div>
     <div class="block-fields-row">
       <div class="field"><label>Nage</label><input class="swim-block-stroke" type="text" list="swim-stroke-suggestions" placeholder="Crawl, dos, brasse…" value="${(b.stroke || "").replace(/"/g, "&quot;")}"></div>
-      <div class="field"><label>Durée (min, optionnel)</label><input class="swim-block-duration" type="number" inputmode="decimal" placeholder="ex. 25" value="${b.duration}"></div>
+      <div class="field"><label>Durée (min, optionnel)</label><input class="swim-block-duration" type="text" inputmode="decimal" placeholder="ex. 25" value="${b.duration}"></div>
     </div>
     <div class="block-total-hint" data-total-hint>${hintParts.length ? `Distance totale : ${hintParts.join(" · ")}` : ""}</div>`;
   } else {
     fieldsHTML = `
     <div class="block-fields-row">
-      <div class="field"><label>Durée (min)</label><input class="swim-block-duration" type="number" inputmode="decimal" placeholder="ex. 20" value="${b.duration}"></div>
-      <div class="field"><label>Distance (m)</label><input class="swim-block-distance" type="number" inputmode="decimal" placeholder="ex. 1000" value="${b.distance}"></div>
+      <div class="field"><label>Durée (min)</label><input class="swim-block-duration" type="text" inputmode="decimal" placeholder="ex. 20" value="${b.duration}"></div>
+      <div class="field"><label>Distance (m)</label><input class="swim-block-distance" type="text" inputmode="decimal" placeholder="ex. 1000" value="${b.distance}"></div>
       ${paceFieldHTML}
     </div>
     <div class="block-mode-hint">Allure calculée automatiquement à partir de la durée et de la distance.</div>`;

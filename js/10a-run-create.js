@@ -251,18 +251,18 @@ function blockCardHTML(b) {
     ? `
     <div class="block-fields-row">
       <div class="field"><label>Répétitions</label><input class="block-reps" type="number" inputmode="numeric" placeholder="ex. 8" value="${b.reps}"></div>
-      <div class="field"><label>Distance/rép (km)</label><input class="block-repdistance" type="number" inputmode="decimal" placeholder="ex. 0.4" value="${b.repDistance}"></div>
-      <div class="field"><label>Durée/rép (min)</label><input class="block-repduration" type="number" inputmode="decimal" placeholder="ex. 1.5" value="${b.repDuration}"></div>
+      <div class="field"><label>Distance/rép (km)</label><input class="block-repdistance" type="text" inputmode="decimal" placeholder="ex. 0.4" value="${b.repDistance}"></div>
+      <div class="field"><label>Durée/rép (min)</label><input class="block-repduration" type="text" inputmode="decimal" placeholder="ex. 1.5" value="${b.repDuration}"></div>
     </div>
     <div class="block-fields-row">
       ${paceFieldHTML}
-      <div class="field"><label>Récup. entre rép. (min)</label><input class="block-recovery" type="number" inputmode="decimal" placeholder="ex. 1" value="${b.recovery}"></div>
+      <div class="field"><label>Récup. entre rép. (min)</label><input class="block-recovery" type="text" inputmode="decimal" placeholder="ex. 1" value="${b.recovery}"></div>
     </div>
     <div class="block-total-hint" data-total-hint>${total !== null ? `Durée totale estimée : ≈ ${total} min` : ""}</div>`
     : `
     <div class="block-fields-row">
-      <div class="field"><label>Durée (min)</label><input class="block-duration" type="number" inputmode="decimal" placeholder="ex. 30" value="${b.duration}" ${mode === "distance" ? "disabled" : ""}></div>
-      <div class="field"><label>Distance (km)</label><input class="block-distance" type="number" inputmode="decimal" placeholder="ex. 5" value="${b.distance}" ${mode === "duration" ? "disabled" : ""}></div>
+      <div class="field"><label>Durée (min)</label><input class="block-duration" type="text" inputmode="decimal" placeholder="ex. 30" value="${b.duration}" ${mode === "distance" ? "disabled" : ""}></div>
+      <div class="field"><label>Distance (km)</label><input class="block-distance" type="text" inputmode="decimal" placeholder="ex. 5" value="${b.distance}" ${mode === "duration" ? "disabled" : ""}></div>
       ${paceFieldHTML}
     </div>
     <div class="block-mode-hint">${mode === "duration" ? "Distance calculée automatiquement à partir de la durée et de l'allure." : "Durée calculée automatiquement à partir de la distance et de l'allure."}</div>`;

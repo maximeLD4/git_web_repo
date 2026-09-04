@@ -145,7 +145,7 @@ function gymSettingsFormHTML() {
         <div class="weight-chip-row" id="config-base-weights-row">${chips}</div>
         <button type="button" class="backup-btn" id="config-scan-weights-btn" style="margin-top:8px;">${ICONS.camera} Scanner les poids depuis une photo</button>
         <div class="inline-add-row" style="margin-top:8px;">
-          <input type="number" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
+          <input type="text" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
           <button type="button" class="add-exercise-btn" id="config-add-base-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
         </div>
       </div>
@@ -160,7 +160,7 @@ function gymSettingsFormHTML() {
       </div>
       <div class="field" style="margin-bottom:6px;">
         <label>Incrément possible (kg)</label>
-        <input type="number" inputmode="decimal" min="0" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}">
+        <input type="text" inputmode="decimal" min="0" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}">
         <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Poids fixe qu'on peut ajouter manuellement sur cette machine (ex. 5). Sur chaque palier, le choix sera alors +0 ou +5kg — jamais une valeur intermédiaire. Mets 0 si la machine n'a pas cette option.</div>
       </div>
       <div id="config-form-error"></div>

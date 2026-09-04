@@ -396,7 +396,7 @@ function renderScannerExtractedList(rawText, focusAddInput) {
     <div class="weight-chip-label">Poids détectés (relis et corrige si besoin)</div>
     <div class="weight-chip-row" id="scanner-extracted-row">${chips}</div>
     <div class="inline-add-row" style="margin-top:8px;">
-      <input type="number" inputmode="decimal" id="scanner-add-weight" placeholder="Ajouter une valeur">
+      <input type="text" inputmode="decimal" id="scanner-add-weight" placeholder="Ajouter une valeur">
       <button type="button" class="add-exercise-btn" id="scanner-add-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
     </div>
     ${useButtonHTML}

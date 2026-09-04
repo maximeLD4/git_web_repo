@@ -140,7 +140,19 @@ document.addEventListener(
   "input",
   (e) => {
     const el = e.target;
-    if (el.tagName === "INPUT" && el.type === "number" && el.value.indexOf("-") !== -1) {
+    if (el.tagName !== "INPUT") return;
+    // Champs texte dédiés aux nombres à virgule (poids, distances, allure...)
+    // — volontairement en type="text" + inputmode="decimal" plutôt que
+    // type="number", car un input natif type="number" rejette la virgule
+    // avant même que ce script ne puisse intervenir, empêchant toute
+    // correction. Certains claviers (notamment en français) ne proposent
+    // que la virgule comme séparateur décimal, alors que le code interprète
+    // toujours un point — on la convertit ici à la volée, une bonne fois
+    // pour toutes, sans jamais avoir à y penser ailleurs dans le code.
+    if (el.inputMode === "decimal" && el.value.indexOf(",") !== -1) {
+      el.value = el.value.replace(/,/g, ".");
+    }
+    if ((el.type === "number" || el.inputMode === "decimal") && el.value.indexOf("-") !== -1) {
       el.value = el.value.replace(/-/g, "");
     }
   },

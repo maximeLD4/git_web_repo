@@ -7,6 +7,19 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.24.7 - 2026-09-04
+====================
+
+- **Virgule décimale corrigée sur tous les champs à virgule de l'app**
+  (poids, incrément, distances, durées, allure, taille de bassin,
+  vitesse...) : sur un clavier qui ne propose que la virgule comme
+  séparateur décimal (notamment en français), saisir "2,5" fonctionne
+  désormais comme "2.5" — converti automatiquement à la volée. Jusqu'ici,
+  ces champs empêchaient carrément la virgule d'être prise en compte (champ
+  numérique natif, qui la rejette avant même que l'app ne puisse
+  intervenir) ; ils acceptent maintenant le texte librement, avec le même
+  clavier numérique à l'écran.
+
 2.24.6 - 2026-09-04
 ====================
 

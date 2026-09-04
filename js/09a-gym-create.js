@@ -312,8 +312,8 @@ function exerciseCardHTML(ex) {
       .map((s, i) => {
         let cols;
         if (isCardio) {
-          const weightInput = `<input class="set-weight" type="number" inputmode="decimal" placeholder="min" value="${s.weight}">`;
-          const repsInput = `<input class="set-reps" type="number" inputmode="decimal" placeholder="km (optionnel)" value="${s.reps}">`;
+          const weightInput = `<input class="set-weight" type="text" inputmode="decimal" placeholder="min" value="${s.weight}">`;
+          const repsInput = `<input class="set-reps" type="text" inputmode="decimal" placeholder="km (optionnel)" value="${s.reps}">`;
           cols = weightInput + repsInput;
         } else {
           const currentWeight = s.weight === "" ? null : parseFloat(s.weight);
