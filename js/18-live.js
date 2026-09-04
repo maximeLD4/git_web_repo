@@ -240,6 +240,11 @@ function computeNextLiveBaseWeight(name, currentBaseWeight) {
   if (currentBaseWeight === null) return currentBaseWeight;
   const config = findExerciseConfig(name);
   if (!config) return currentBaseWeight;
+  // L'incrément automatique d'une série à l'autre est désormais optionnel,
+  // réglable par exercice dans Paramètres > Salle de sport (off par défaut) :
+  // certaines personnes préfèrent enchaîner plusieurs séries au même poids
+  // plutôt que de monter systématiquement d'un palier.
+  if (!config.autoIncrement) return currentBaseWeight;
   const baseList = [...computeBaseWeightsOnly(config)].sort((a, b) => a - b);
   const idx = baseList.indexOf(currentBaseWeight);
   // Si le poids actuel ne correspond à aucun palier connu, ou si on est déjà

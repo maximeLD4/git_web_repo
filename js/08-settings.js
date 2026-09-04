@@ -85,12 +85,13 @@ function gymSettingsListHTML() {
     .map((c) => {
       const bases = [...c.baseWeights].sort((a, b) => a - b).join(", ");
       const incLabel = c.maxIncrement > 0 ? ` · +0 ou +${c.maxIncrement}kg` : "";
+      const autoIncLabel = c.autoIncrement ? ` · Incrément auto` : "";
       return `
       <div class="history-card">
         <div class="history-head" data-edit-config="${c.id}" style="cursor:pointer;">
           <div class="history-head-left">
             <div class="exercise-config-name">${c.name}</div>
-            <div class="history-label">${bases ? bases + " kg" : "Aucun palier"}${incLabel}</div>
+            <div class="history-label">${bases ? bases + " kg" : "Aucun palier"}${incLabel}${autoIncLabel}</div>
           </div>
           <button type="button" class="icon-btn" data-duplicate-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
           <button type="button" class="icon-btn" data-delete-config="${c.id}" aria-label="Supprimer">${ICONS.trash}</button>
@@ -146,6 +147,15 @@ function gymSettingsFormHTML() {
         <div class="inline-add-row" style="margin-top:8px;">
           <input type="number" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
           <button type="button" class="add-exercise-btn" id="config-add-base-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Incrément automatique</label>
+        <div class="toggle-switch-row">
+          <span class="toggle-switch-label-text">Passe automatiquement au palier de poids supérieur d'une série à l'autre en Séance en direct. Laisse sur off si tu préfères refaire plusieurs séries au même poids.</span>
+          <button type="button" class="toggle-switch ${gymSettingsFormDraft.autoIncrement ? "on" : ""}" id="config-auto-increment-toggle" role="switch" aria-checked="${gymSettingsFormDraft.autoIncrement ? "true" : "false"}">
+            <span class="toggle-switch-knob"></span>
+          </button>
         </div>
       </div>
       <div class="field" style="margin-bottom:6px;">
@@ -205,7 +215,7 @@ function attachGymSettingsListeners() {
       gymSettingsFormOpen = true;
       gymSettingsEditingConfigId = null;
       const defaultCategory = gymSettingsActiveCategory === "other" || gymSettingsActiveCategory === "all" ? "pecs" : gymSettingsActiveCategory;
-      gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0 };
+      gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0, autoIncrement: false };
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
@@ -221,6 +231,7 @@ function attachGymSettingsListeners() {
         category: GYM_EXERCISE_CATEGORIES.some((c) => c.key === config.category) ? config.category : "pecs",
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
+        autoIncrement: config.autoIncrement || false,
       };
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
@@ -238,6 +249,7 @@ function attachGymSettingsListeners() {
         category: config.category || "pecs",
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
+        autoIncrement: config.autoIncrement || false,
       };
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
@@ -291,6 +303,11 @@ function attachGymSettingsListeners() {
     gymSettingsFocusTarget = "weight";
     renderGymSettingsContent();
   });
+  document.getElementById("config-auto-increment-toggle").addEventListener("click", () => {
+    syncFormFromInputs();
+    gymSettingsFormDraft.autoIncrement = !gymSettingsFormDraft.autoIncrement;
+    renderGymSettingsContent();
+  });
   document.getElementById("config-scan-weights-btn").addEventListener("click", () => {
     // On synchronise le formulaire (nom, incrément) avant de le quitter
     // temporairement, pour ne rien perdre au retour depuis le scanner.
@@ -336,6 +353,7 @@ function attachGymSettingsListeners() {
       category: gymSettingsFormDraft.category,
       baseWeights: Array.from(new Set(gymSettingsFormDraft.baseWeights)).sort((a, b) => a - b),
       maxIncrement: gymSettingsFormDraft.maxIncrement || 0,
+      autoIncrement: !!gymSettingsFormDraft.autoIncrement,
     };
     if (gymSettingsEditingConfigId) {
       gymExerciseConfigs = gymExerciseConfigs.map((c) => (c.id === gymSettingsEditingConfigId ? newConfig : c));

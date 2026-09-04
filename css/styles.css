@@ -84,6 +84,13 @@
   .set-weight-col { flex: 1 1 0; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .increment-switch-btn { border: none; border-radius: 8px; padding: 5px 6px; font-size: 10.5px; font-weight: 700; cursor: pointer; text-align: center; background: var(--surface-2); color: var(--text-dim); }
   .increment-switch-btn.active { background: var(--accent); color: #fff; }
+  /* ---------- Switch on/off générique (ex. Incrément automatique) ---------- */
+  .toggle-switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .toggle-switch-label-text { font-size: 12.5px; color: var(--text-dim); line-height: 1.4; flex: 1; min-width: 0; }
+  .toggle-switch { position: relative; flex-shrink: 0; width: 48px; height: 28px; padding: 0; border: none; border-radius: 14px; background: var(--surface-2); cursor: pointer; transition: background 0.2s ease; }
+  .toggle-switch.on { background: var(--accent); }
+  .toggle-switch-knob { position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: transform 0.2s ease; }
+  .toggle-switch.on .toggle-switch-knob { transform: translateX(20px); }
   .rep-step-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: var(--surface); color: var(--accent); font-size: 19px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: var(--shadow-sm); }
   .rep-step-btn:active { background: var(--accent); color: #fff; }
   .rep-value { font-size: 16.5px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; min-width: 26px; text-align: center; }

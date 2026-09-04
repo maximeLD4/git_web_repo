@@ -7,6 +7,19 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.23.0 - 2026-09-04
+====================
+
+- **Incrément automatique du poids en Séance en direct rendu optionnel**,
+  réglable exercice par exercice dans Paramètres > Salle de sport (nouveau
+  switch on/off « Incrément automatique », **off par défaut**) : jusqu'ici,
+  passer à la série suivante faisait toujours monter le poids proposé au
+  palier disponible juste au-dessus. Certaines personnes enchaînent plutôt
+  plusieurs séries au même poids — avec le switch désactivé, le palier
+  proposé reste identique d'une série à l'autre (y compris en reprenant un
+  exercice plus tard dans la séance) ; activé, le comportement d'avant est
+  conservé à l'identique.
+
 2.22.4 - 2026-08-26
 ====================
 
