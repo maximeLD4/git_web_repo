@@ -7,6 +7,17 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.24.8 - 2026-09-04
+====================
+
+- Séance en direct : les boutons "Débuter la série"/"Changer d'exercice" et
+  "Finir la série"/"Changer d'exercice" sont désormais **ancrés tout en bas
+  de l'écran**, à position fixe — ils ne bougent plus l'un par rapport à
+  l'autre selon ce qui s'affiche au-dessus (bandeau "Série en cours", ligne
+  de repos, toggle d'incrément...). Seule la zone de contenu au-dessus
+  d'eux (nom de l'exercice, steppers...) continue de se centrer dans
+  l'espace disponible.
+
 2.24.7 - 2026-09-04
 ====================
 

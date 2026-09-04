@@ -225,11 +225,15 @@ function liveMuscuSetFormHTML(activeExercise) {
   if (phase === "in-progress") {
     return `
       <div class="live-set-form">
-        <div class="live-exercise-name">${liveDraftName}</div>
-        <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}kg × ${lastSet.reps}` : ""}</div>
-        ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
-        <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
-        <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+        <div class="live-set-form-scroll">
+          <div class="live-exercise-name">${liveDraftName}</div>
+          <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}kg × ${lastSet.reps}` : ""}</div>
+          ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
+        </div>
+        <div class="live-set-form-actions">
+          <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
+          <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+        </div>
       </div>`;
   }
 
@@ -253,27 +257,31 @@ function liveMuscuSetFormHTML(activeExercise) {
 
   return `
     <div class="live-set-form">
-      <div class="live-exercise-name">${liveDraftName}</div>
-      ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}kg × ${lastSet.reps}</div>` : ""}
-      <div class="live-stepper-group">
-        <div class="live-stepper-label">Répétitions</div>
-        <div class="live-stepper">
-          <button type="button" class="live-stepper-btn" data-live-reps-minus aria-label="Moins">−</button>
-          <div class="live-stepper-value">${liveDraftReps}</div>
-          <button type="button" class="live-stepper-btn" data-live-reps-plus aria-label="Plus">+</button>
+      <div class="live-set-form-scroll">
+        <div class="live-exercise-name">${liveDraftName}</div>
+        ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}kg × ${lastSet.reps}</div>` : ""}
+        <div class="live-stepper-group">
+          <div class="live-stepper-label">Répétitions</div>
+          <div class="live-stepper">
+            <button type="button" class="live-stepper-btn" data-live-reps-minus aria-label="Moins">−</button>
+            <div class="live-stepper-value">${liveDraftReps}</div>
+            <button type="button" class="live-stepper-btn" data-live-reps-plus aria-label="Plus">+</button>
+          </div>
+        </div>
+        <div class="live-stepper-group">
+          <div class="live-stepper-label">Poids</div>
+          <select class="live-weight-select" id="live-weight-select" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
+          ${
+            hasIncrement
+              ? `<button type="button" class="increment-switch-btn live-increment-btn ${liveDraftWeightMode === "on" ? "active" : ""}" data-live-toggle-increment>${liveDraftWeightMode === "on" ? "+" + increment + "kg" : "Standard"}</button>`
+              : ""
+          }
         </div>
       </div>
-      <div class="live-stepper-group">
-        <div class="live-stepper-label">Poids</div>
-        <select class="live-weight-select" id="live-weight-select" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
-        ${
-          hasIncrement
-            ? `<button type="button" class="increment-switch-btn live-increment-btn ${liveDraftWeightMode === "on" ? "active" : ""}" data-live-toggle-increment>${liveDraftWeightMode === "on" ? "+" + increment + "kg" : "Standard"}</button>`
-            : ""
-        }
+      <div class="live-set-form-actions">
+        <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
+        <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
-      <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
-      <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
     </div>`;
 }
 
@@ -284,11 +292,15 @@ function liveCardioSetFormHTML(activeExercise) {
   if (phase === "in-progress") {
     return `
       <div class="live-set-form">
-        <div class="live-exercise-name">${liveDraftName}</div>
-        <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}min${lastSet.reps ? "/" + lastSet.reps + "km" : ""}` : ""}</div>
-        ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
-        <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
-        <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+        <div class="live-set-form-scroll">
+          <div class="live-exercise-name">${liveDraftName}</div>
+          <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}min${lastSet.reps ? "/" + lastSet.reps + "km" : ""}` : ""}</div>
+          ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
+        </div>
+        <div class="live-set-form-actions">
+          <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
+          <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+        </div>
       </div>`;
   }
 
@@ -296,26 +308,30 @@ function liveCardioSetFormHTML(activeExercise) {
   const distance = liveDraftDistance || 0;
   return `
     <div class="live-set-form">
-      <div class="live-exercise-name">${liveDraftName}</div>
-      ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}min${lastSet.reps ? " · " + lastSet.reps + "km" : ""}</div>` : ""}
-      <div class="live-stepper-group">
-        <div class="live-stepper-label">Durée (minutes)</div>
-        <div class="live-stepper">
-          <button type="button" class="live-stepper-btn" data-live-duration-minus aria-label="Moins">−</button>
-          <div class="live-stepper-value">${duration} min</div>
-          <button type="button" class="live-stepper-btn" data-live-duration-plus aria-label="Plus">+</button>
+      <div class="live-set-form-scroll">
+        <div class="live-exercise-name">${liveDraftName}</div>
+        ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}min${lastSet.reps ? " · " + lastSet.reps + "km" : ""}</div>` : ""}
+        <div class="live-stepper-group">
+          <div class="live-stepper-label">Durée (minutes)</div>
+          <div class="live-stepper">
+            <button type="button" class="live-stepper-btn" data-live-duration-minus aria-label="Moins">−</button>
+            <div class="live-stepper-value">${duration} min</div>
+            <button type="button" class="live-stepper-btn" data-live-duration-plus aria-label="Plus">+</button>
+          </div>
+        </div>
+        <div class="live-stepper-group">
+          <div class="live-stepper-label">Distance (km, optionnel)</div>
+          <div class="live-stepper">
+            <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins">−</button>
+            <div class="live-stepper-value">${distance.toFixed(1)} km</div>
+            <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus">+</button>
+          </div>
         </div>
       </div>
-      <div class="live-stepper-group">
-        <div class="live-stepper-label">Distance (km, optionnel)</div>
-        <div class="live-stepper">
-          <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins">−</button>
-          <div class="live-stepper-value">${distance.toFixed(1)} km</div>
-          <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus">+</button>
-        </div>
+      <div class="live-set-form-actions">
+        <button type="button" class="live-validate-btn" data-live-start-set ${duration === 0 ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
+        <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
-      <button type="button" class="live-validate-btn" data-live-start-set ${duration === 0 ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
-      <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
     </div>`;
 }
 
