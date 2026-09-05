@@ -694,7 +694,7 @@ function autoFinishLiveSetIfInProgress() {
 
 function cancelLiveSession() {
   showConfirm(
-    "Annuler cette séance en direct ? Toutes les séries déjà enregistrées seront définitivement perdues.",
+    "Annuler ? La séance sera définitivement perdues.",
     () => {
       clearInterval(liveChronoInterval);
       clearInterval(liveRestChronoInterval);

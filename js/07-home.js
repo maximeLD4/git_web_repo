@@ -13,7 +13,6 @@ function renderHome() {
     <div class="header" style="text-align:center;">
       <button type="button" class="logout-btn" data-logout aria-label="Se déconnecter">${ICONS.logout}</button>
       <div class="home-wordmark">GYMLOG</div>
-      <div class="header-sub" style="padding-left:0;">Choisis ton activité</div>
     </div>
     <div class="content" id="content">
       <div class="home-fluid-block">

@@ -36,7 +36,7 @@ function renderSettingsApp() {
   `;
   document.querySelector("[data-go-home]").addEventListener("click", goHome);
   document.getElementById("logout-btn").addEventListener("click", () => {
-    showConfirm("Te déconnecter ? Tu devras ressaisir tes identifiants pour retrouver ce profil.", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
+    showConfirm("Te déconnecter ?", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
   });
   renderSettingsContent();
 }
