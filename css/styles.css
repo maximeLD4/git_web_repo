@@ -509,8 +509,11 @@ select.ex-name-pill:focus { outline: none; }
 .home-tile.home-tile-wide[data-open-app="live"]::after {
   content: ""; position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
   width: 52px; height: 52px; border-radius: 50%; background: #E8A33C;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2316150F'%3E%3Cpolygon points='8 5 19 12 8 19'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: 55% center; background-size: 20px;
+  /* Tracé de ICONS.play (01-config.js), simplement recentré sur sa propre
+     boîte : elle était d'une unité à droite du centre du viewBox. Les 52 %
+     ne servent plus qu'au léger rattrapage optique dû à la masse de l'apex. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2316150F'%3E%3Cpolygon points='5 4 19 12 5 20 5 4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 52% center; background-size: 20px;
 }
 .home-tile.home-tile-wide[data-open-app="live"] .home-tile-wide-text { padding-right: 62px; }
 .home-tile.home-tile-wide .home-tile-title { color: var(--on-ink); font-size: 24px; font-weight: 800; letter-spacing: -0.9px; }
