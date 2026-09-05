@@ -153,8 +153,12 @@ function liveCategoryStepHTML() {
               .sort((a, b) => a.name.localeCompare(b.name))
               .map((c) => {
                 const already = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === c.name.trim().toLowerCase());
-                const badge = already ? ` (${already.sets.length})` : "";
-                return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}">${c.name}${badge}</button>`;
+                // Nom et badge de comptage dans deux éléments distincts
+                // (plutôt qu'une seule chaîne concaténée) pour que le CSS
+                // puisse styler le badge indépendamment (petite pastille),
+                // sans jamais toucher au texte du nom lui-même.
+                const badgeHTML = already ? `<span class="live-exercise-btn-badge">${already.sets.length}</span>` : "";
+                return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}"><span class="live-exercise-btn-name">${c.name}</span>${badgeHTML}</button>`;
               })
               .join("")}
           </div>`;

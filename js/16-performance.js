@@ -89,15 +89,19 @@ function performanceRowHTML(config) {
   }
   const last = history[history.length - 1];
   const prev = history.length > 1 ? history[history.length - 2] : null;
+  // Classe sémantique plutôt qu'une couleur posée en inline — n'importe
+  // quelle charte graphique peut ainsi la styler directement (voir
+  // .trend-up/.trend-down/.trend-flat dans styles.css), sans avoir à
+  // rattraper une valeur inline via un sélecteur.
   let trendIcon = "→";
-  let trendColor = "var(--text-dim)";
+  let trendClass = "trend-flat";
   if (prev) {
     if (last.index > prev.index) {
       trendIcon = "↑";
-      trendColor = "#34C759";
+      trendClass = "trend-up";
     } else if (last.index < prev.index) {
       trendIcon = "↓";
-      trendColor = "#FF3B30";
+      trendClass = "trend-down";
     }
   }
   return `
@@ -105,7 +109,7 @@ function performanceRowHTML(config) {
     <div class="history-head">
       <div class="history-head-left">
         <div class="exercise-config-name">${config.name}</div>
-        <div class="history-label">Indice : ${last.index} <span style="color:${trendColor}; font-weight:700;">${trendIcon}</span></div>
+        <div class="history-label">Indice : ${last.index} <span class="trend-icon ${trendClass}">${trendIcon}</span></div>
       </div>
       <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>

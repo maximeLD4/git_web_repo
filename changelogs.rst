@@ -7,6 +7,34 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.25.1 - 2026-09-04
+====================
+
+- Nettoyage structurel (module Performance) : la flèche de tendance
+  (indice en hausse/baisse/stable) n'utilise plus de couleur posée en
+  inline par `js/16-performance.js` — elle porte maintenant une classe
+  sémantique (`trend-up`/`trend-down`/`trend-flat`), stylée en CSS avec les
+  jetons de couleur de la charte (`--green`/`--rust`/`--text-dim`). Plus
+  propre qu'un sélecteur CSS allant rattraper une valeur inline.
+
+2.25.0 - 2026-09-04
+====================
+
+- **Refonte visuelle complète** (fond crème, filets encre à la place des
+  bordures grises, typographies Archivo + IBM Plex Mono, accents de module
+  recalculés à luminosité et chroma constants). Aucun changement de
+  fonctionnement, uniquement `css/styles.css`.
+- Deux petits patchs de structure nécessaires pour finir la refonte, la
+  mise en page seule ne pouvant pas les réaliser :
+  - Les tuiles de sport de l'accueil séparent maintenant le chiffre et son
+    unité dans deux éléments distincts (`js/07-home.js`), pour que le
+    chiffre puisse être hiérarchisé en grand format indépendamment du
+    libellé.
+  - Les boutons d'exercice de la Séance en direct séparent le nom et le
+    badge de comptage des séries déjà faites (`js/18-live.js`), affiché
+    maintenant comme une petite pastille plutôt qu'un texte "(3)" soudé au
+    nom.
+
 2.24.8 - 2026-09-04
 ====================
 

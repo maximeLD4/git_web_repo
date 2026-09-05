@@ -1,6 +1,14 @@
 
+// Sépare le grand chiffre et son unité en deux éléments distincts (plutôt
+// qu'une seule chaîne concaténée) pour que le CSS puisse les hiérarchiser
+// indépendamment — chiffre grand format, unité en petit libellé capitales.
+function tileStatHTML(n, word, suffix) {
+  return `<span class="tile-count">${n}</span> <span class="tile-unit">${word}${n !== 1 ? "s" : ""}${suffix || ""}</span>`;
+}
+
 function renderHome() {
   app.className = "theme-home";
+  const totalSessions = sessions.length + runSessions.length + swimSessions.length + bikeSessions.length;
   app.innerHTML = `
     <div class="header" style="text-align:center;">
       <button type="button" class="logout-btn" data-logout aria-label="Se déconnecter">${ICONS.logout}</button>
@@ -28,22 +36,22 @@ function renderHome() {
           <div class="home-tile home-tile-hscroll" data-open-app="gym">
             <div class="home-tile-icon" style="background: rgba(95,191,160,0.14); color: #5FBFA0;">${ICONS.dumbbell}</div>
             <div class="home-tile-title">Salle de sport</div>
-            <div class="home-tile-sub">${sessions.length} séance${sessions.length !== 1 ? "s" : ""}</div>
+            <div class="home-tile-sub">${tileStatHTML(sessions.length, "séance")}</div>
           </div>
           <div class="home-tile home-tile-hscroll" data-open-app="run">
             <div class="home-tile-icon" style="background: rgba(108,123,255,0.14); color: #6C7BFF;">${ICONS.stopwatch}</div>
             <div class="home-tile-title">Course à pied</div>
-            <div class="home-tile-sub">${runSessions.length} séance${runSessions.length !== 1 ? "s" : ""}</div>
+            <div class="home-tile-sub">${tileStatHTML(runSessions.length, "séance")}</div>
           </div>
           <div class="home-tile home-tile-hscroll" data-open-app="swim">
             <div class="home-tile-icon" style="background: rgba(79,195,217,0.14); color: #4FC3D9;">${ICONS.swim}</div>
             <div class="home-tile-title">Natation</div>
-            <div class="home-tile-sub">${swimSessions.length} séance${swimSessions.length !== 1 ? "s" : ""}</div>
+            <div class="home-tile-sub">${tileStatHTML(swimSessions.length, "séance")}</div>
           </div>
           <div class="home-tile home-tile-hscroll" data-open-app="bike">
             <div class="home-tile-icon" style="background: rgba(196,143,224,0.14); color: #C48FE0;">${ICONS.bike}</div>
             <div class="home-tile-title">Vélo</div>
-            <div class="home-tile-sub">${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""}</div>
+            <div class="home-tile-sub">${tileStatHTML(bikeSessions.length, "séance")}</div>
           </div>
         </div>
       </div>
@@ -59,7 +67,7 @@ function renderHome() {
           <div class="home-tile home-tile-hscroll" data-open-app="weight">
             <div class="home-tile-icon" style="background: rgba(167,139,250,0.14); color: #A78BFA;">${ICONS.scale}</div>
             <div class="home-tile-title">Poids</div>
-            <div class="home-tile-sub">${weights.length} pesée${weights.length !== 1 ? "s" : ""}</div>
+            <div class="home-tile-sub">${tileStatHTML(weights.length, "pesée")}</div>
           </div>
         </div>
       </div>
@@ -69,7 +77,7 @@ function renderHome() {
           <div class="home-tile-icon home-tile-icon-wide" style="background: rgba(184,196,217,0.18); color: #8296B8;">${ICONS.calendarBig}</div>
           <div class="home-tile-wide-text">
             <div class="home-tile-title">Calendrier</div>
-            <div class="home-tile-sub">${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length} séance${sessions.length + runSessions.length + swimSessions.length + bikeSessions.length !== 1 ? "s" : ""} au total</div>
+            <div class="home-tile-sub">${tileStatHTML(totalSessions, "séance", " au total")}</div>
           </div>
         </div>
       </div>

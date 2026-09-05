@@ -107,32 +107,40 @@ function pullFromFirebase() {
 }
 
 function renderAuthLoadingScreen(message) {
-  app.className = "";
+  app.className = "theme-auth";
   app.innerHTML = `
-    <div style="position:fixed; inset:0; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#F7F1E3; color:#8A7F6C; font-family:-apple-system,system-ui,sans-serif; font-size:14px; text-align:center; padding:24px;">
-      ${message || "Chargement..."}
+    <div class="auth-loading">
+      <div class="auth-mark">${ICONS.dumbbell}</div>
+      <div class="auth-loading-label">${message || "Chargement..."}</div>
     </div>
   `;
 }
 
 function renderLoginScreen() {
-  app.className = "";
+  app.className = "theme-auth";
   app.innerHTML = `
-    <div style="position:fixed; inset:0; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:22px; background:#F7F1E3;">
-      <div style="width:64px; height:64px; border-radius:20px; background:#00B899; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(0,184,153,0.25);">${ICONS.dumbbell}</div>
-      <div style="text-align:center;">
-        <div style="font-family:-apple-system,system-ui,sans-serif; font-weight:800; font-size:24px; letter-spacing:-0.3px; color:#3A3229;">GymLog</div>
-        <div style="font-family:-apple-system,system-ui,sans-serif; font-size:13px; color:#8A7F6C; margin-top:2px;">Connecte-toi à ton profil</div>
+    <div class="auth-screen">
+      <div class="auth-brand">
+        <div class="auth-mark">${ICONS.dumbbell}</div>
+        <div>
+          <div class="auth-wordmark">GYMLOG</div>
+          <div class="auth-tagline">Connecte-toi à ton profil</div>
+        </div>
       </div>
-      <form id="login-form" style="display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px;">
-        <input type="email" id="login-email" placeholder="Email" autocomplete="username"
-          style="padding:14px 16px; border-radius:12px; border:1px solid #E7DCC3; background:#FFFDF8; color:#3A3229; font-size:16px; width:100%; box-sizing:border-box;">
-        <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password"
-          style="padding:14px 16px; border-radius:12px; border:1px solid #E7DCC3; background:#FFFDF8; color:#3A3229; font-size:16px; width:100%; box-sizing:border-box;">
-        <button type="submit" style="width:100%; background:#00B899; color:#fff; border:none; border-radius:999px; padding:15px; font-size:15.5px; font-weight:700; font-family:-apple-system,system-ui,sans-serif; cursor:pointer; box-shadow:0 4px 14px rgba(0,184,153,0.3);">Se connecter</button>
-        <div id="login-error" style="color:#C1443C; font-size:13px; text-align:center; min-height:16px; font-family:-apple-system,system-ui,sans-serif;"></div>
+      <div class="auth-rule"></div>
+      <form id="login-form" class="auth-form">
+        <div class="auth-field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="toi@exemple.com" autocomplete="username">
+        </div>
+        <div class="auth-field">
+          <label for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" placeholder="••••••••••" autocomplete="current-password">
+        </div>
+        <button type="submit" class="auth-submit">Se connecter</button>
+        <div id="login-error" class="auth-error"></div>
       </form>
-      <div id="app-version-label" style="position:absolute; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:#B5AA97; font-family:-apple-system,system-ui,sans-serif;">${appVersion ? "v" + appVersion : ""}</div>
+      <div id="app-version-label" class="auth-version">${appVersion ? "v" + appVersion : ""}</div>
     </div>
   `;
   const form = document.getElementById("login-form");
@@ -152,8 +160,8 @@ function renderLoginScreen() {
         passwordInput.focus();
       });
     // La suite (récupération des données puis affichage de l'app) est gérée
-    // par onAuthStateChanged ci-dessous, déclenché automatiquement par
-    // Firebase dès que la connexion réussit — pas besoin de la gérer ici.
+    // par onAuthStateChanged, déclenché automatiquement par Firebase dès que
+    // la connexion réussit — pas besoin de la gérer ici.
   });
 }
 
