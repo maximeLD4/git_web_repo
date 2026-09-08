@@ -289,13 +289,13 @@ firebase.auth().onAuthStateChanged((user) => {
     // cette séance pas encore renvoyée avec une version plus ancienne du
     // cloud — elle aurait alors disparu, comme observé en pratique.
     const flushPending = firebaseDirtyKeys.size > 0
-      ? withTimeout(pushToFirebase(), 5000, () => {
+      ? withTimeout(pushToFirebase(), 3000, () => {
           console.warn("Envoi des données en attente trop long (probablement hors-ligne) — le rapatriement se fait quand même, on retentera l'envoi plus tard.");
         })
       : Promise.resolve();
     flushPending
       .then(() =>
-        withTimeout(pullFromFirebase(), 5000, () => {
+        withTimeout(pullFromFirebase(), 3000, () => {
           console.warn("Récupération des données Firebase trop longue (probablement hors-ligne) — on continue avec les données locales de cet appareil.");
         })
       )

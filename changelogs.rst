@@ -28,6 +28,13 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.29.5 - 2026-09-04
+====================
+
+- Délais d'attente de Firebase au démarrage (envoi des données en attente,
+  puis rapatriement) réduits de 5 à 3 secondes chacun, pour un lancement
+  plus fluide hors-ligne.
+
 2.29.4 - 2026-09-04
 ====================
 
