@@ -28,6 +28,24 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.29.2 - 2026-09-04
+====================
+
+- **Corrigé un vrai risque de perte de synchro hors-ligne.** En vérifiant ta
+  question, j'ai trouvé que la liste des données "à synchroniser" n'était
+  gardée qu'en mémoire, et surtout marquée "faite" par avance, avant même de
+  savoir si l'envoi à Firebase avait réussi. Concrètement : enregistrer une
+  séance hors-ligne, puis fermer complètement l'app avant le retour du
+  réseau, pouvait faire disparaître silencieusement cette séance du suivi
+  "à synchroniser" — elle restait bien en sécurité en local, mais ne
+  remontait jamais dans le cloud. Corrigé : cette liste est maintenant
+  persistée (survit à une fermeture complète de l'app) et un domaine n'en
+  est retiré qu'une fois son envoi réellement confirmé par Firebase. L'app
+  retente aussi automatiquement à chaque ouverture et dès que la connexion
+  réseau revient, sans attendre une nouvelle modification quelconque.
+- Délai d'attente de Firebase au démarrage réduit de 7 à 5 secondes avant
+  de basculer sur les données locales.
+
 2.29.1 - 2026-09-04
 ====================
 

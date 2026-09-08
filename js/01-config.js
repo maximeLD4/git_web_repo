@@ -17,6 +17,7 @@ const KEYS = {
   bikeDraft: "gymlog:bike-draft",
   gymExerciseConfigs: "gymlog:gym-exercise-configs",
   gainageExerciseConfigs: "gymlog:gainage-exercise-configs",
+  firebaseDirtyKeys: "gymlog:firebase-dirty-keys",
   liveSession: "gymlog:live-session",
 };
 

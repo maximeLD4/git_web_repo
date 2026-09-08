@@ -24,11 +24,24 @@ const FIREBASE_SYNC_MAP = {
 };
 
 let firebaseSyncTimer = null;
-let firebaseDirtyKeys = new Set();
+// Persisté (pas seulement en mémoire) : si l'app se ferme ou se fait tuer
+// pendant qu'on est hors-ligne, la mémoire vive est perdue, mais cette liste
+// doit survivre pour qu'on sache, à la prochaine ouverture, qu'il reste des
+// données à envoyer au cloud — sans ça, une séance enregistrée hors-ligne
+// puis jamais rouverte en étant en ligne resterait silencieusement absente
+// du cloud (toujours en sécurité en local, mais jamais synchronisée).
+let firebaseDirtyKeys = new Set(loadJSON(KEYS.firebaseDirtyKeys, []));
+
+function persistFirebaseDirtyKeys() {
+  saveJSON(KEYS.firebaseDirtyKeys, Array.from(firebaseDirtyKeys));
+}
 
 function scheduleFirebaseSync(key) {
   if (!currentUser) return;
-  if (key && FIREBASE_SYNC_MAP[key]) firebaseDirtyKeys.add(key);
+  if (key && FIREBASE_SYNC_MAP[key]) {
+    firebaseDirtyKeys.add(key);
+    persistFirebaseDirtyKeys();
+  }
   clearTimeout(firebaseSyncTimer);
   firebaseSyncTimer = setTimeout(pushToFirebase, 1500);
 }
@@ -36,10 +49,14 @@ function scheduleFirebaseSync(key) {
 function pushToFirebase() {
   if (!currentUser) return;
   // On ne pousse que les domaines réellement modifiés depuis la dernière
-  // synchro — c'est précisément ce qui évite d'écraser à tort un domaine
-  // non concerné par la modification en cours.
+  // synchro confirmée — c'est précisément ce qui évite d'écraser à tort un
+  // domaine non concerné par la modification en cours. Un domaine n'est
+  // retiré de cette liste (et de son enregistrement persistant) qu'une fois
+  // son envoi RÉELLEMENT confirmé par Firebase — jamais par avance : hors
+  // ligne, l'envoi peut échouer (ou rester en attente) et le domaine doit
+  // rester marqué à synchroniser pour qu'on retente plus tard, y compris
+  // après une fermeture complète de l'app entre-temps.
   const keysToSync = Array.from(firebaseDirtyKeys);
-  firebaseDirtyKeys.clear();
   keysToSync.forEach((key) => {
     const mapping = FIREBASE_SYNC_MAP[key];
     if (!mapping) return;
@@ -47,11 +64,23 @@ function pushToFirebase() {
       .database()
       .ref("users/" + currentUser.uid + "/" + mapping.path)
       .set(mapping.getValue())
+      .then(() => {
+        firebaseDirtyKeys.delete(key);
+        persistFirebaseDirtyKeys();
+      })
       .catch((err) => {
-        console.error("Synchronisation cloud impossible pour " + mapping.path + " (les données restent sauvegardées localement) :", err);
+        console.error("Synchronisation cloud impossible pour " + mapping.path + " (les données restent sauvegardées localement, on retentera plus tard) :", err);
       });
   });
 }
+
+// Retente les synchros restées en attente (voir pushToFirebase) — à chaque
+// ouverture de l'app une fois connecté, et dès que la connexion réseau
+// revient, pour ne pas attendre une prochaine modification quelconque avant
+// de rattraper ce qui n'avait pas pu partir hors-ligne.
+window.addEventListener("online", () => {
+  if (currentUser && firebaseDirtyKeys.size > 0) pushToFirebase();
+});
 
 // Délai limite volontaire : contrairement à une requête réseau classique
 // (fetch), un appel .once("value") de Firebase Realtime Database peut
@@ -224,11 +253,17 @@ firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
     renderAuthLoadingScreen("Récupération de tes données...");
-    withTimeout(pullFromFirebase(), 7000, () => {
+    withTimeout(pullFromFirebase(), 5000, () => {
       console.warn("Récupération des données Firebase trop longue (probablement hors-ligne) — on continue avec les données locales de cet appareil.");
     }).finally(() => {
       currentApp = "home";
       render();
+      // Rattrape toute synchro restée en attente d'une session précédente
+      // (voir persistFirebaseDirtyKeys) — par exemple une séance enregistrée
+      // hors-ligne puis l'app fermée avant le retour du réseau. Un simple
+      // "on est de retour, connecté" suffit à retenter, pas besoin d'attendre
+      // une nouvelle modification.
+      if (firebaseDirtyKeys.size > 0) pushToFirebase();
     });
   } else {
     currentUser = null;
