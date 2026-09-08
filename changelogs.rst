@@ -28,6 +28,18 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.29.6 - 2026-09-04
+====================
+
+- **Bips sonores + vibration aux transitions de la boucle Gainage** (juste
+  pour le plaisir) : un bip grave à la fin du travail (passage au repos),
+  un bip aigu à la fin du repos (relance du tour suivant), et un petit
+  arpège ascendant à la fin complète de la boucle. Web Audio API, aucune
+  permission requise, fonctionne partout. La vibration qui accompagne
+  chaque bip, en revanche, ne fonctionne que sur Android/Chrome — Safari
+  iOS n'a jamais implémenté l'API de vibration web (PWA "Sur l'écran
+  d'accueil" comprise) : sans effet, silencieusement, sur iPhone.
+
 2.29.5 - 2026-09-04
 ====================
 

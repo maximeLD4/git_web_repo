@@ -686,12 +686,75 @@ function updateLiveRestChronoDisplay() {
 // repos vers le tour suivant une fois la durée de repos écoulée — jusqu'au
 // nombre de tours prévu, où la boucle s'arrête d'elle-même. Ne fait rien si
 // aucune boucle n'est en cours (voir startLiveLoop/stopLiveLoop).
+// ---------- Retour sonore + vibration (transitions de la boucle Gainage) ----------
+// Le son fonctionne partout (Web Audio API, aucune permission nécessaire).
+// La vibration, elle, ne fonctionne que sur Android/Chrome — Safari iOS n'a
+// jamais implémenté l'API de vibration web, même pour les apps "Sur l'écran
+// d'accueil" : navigator.vibrate y est simplement absent, l'appel ci-dessous
+// ne fait donc rien du tout, silencieusement, sur iPhone.
+let liveAudioCtx = null;
+function getLiveAudioContext() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!liveAudioCtx) liveAudioCtx = new AudioCtx();
+  // Certains navigateurs (notamment iOS) démarrent le contexte "suspendu"
+  // tant qu'il n'a pas été relancé depuis un vrai geste utilisateur — sans
+  // effet s'il tournait déjà, donc sans risque de le rappeler à chaque bip.
+  if (liveAudioCtx.state === "suspended") liveAudioCtx.resume().catch(() => {});
+  return liveAudioCtx;
+}
+
+function playLiveBeep(frequency, durationMs) {
+  const ctx = getLiveAudioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = frequency;
+  // Petite enveloppe (montée/descente en volume) plutôt qu'un aplat brut —
+  // évite le "clic" désagréable d'un son qui démarre/s'arrête à volume plein.
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + durationMs / 1000 + 0.03);
+}
+
+function hapticPulse(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+// Signal de fin de "travail" (on passe au repos) : un seul bip grave, plutôt
+// posé — pas la peine d'être alarmant, on vient de finir un effort.
+function playLiveRestSignal() {
+  playLiveBeep(440, 160);
+  hapticPulse(120);
+}
+// Signal de fin de "repos" (on relance un tour) : un bip plus aigu, un peu
+// plus insistant — c'est le signal "c'est reparti".
+function playLiveWorkSignal() {
+  playLiveBeep(880, 160);
+  hapticPulse([80, 60, 80]);
+}
+// Signal de fin de boucle complète : petit arpège ascendant, façon "bravo".
+function playLiveLoopDoneSignal() {
+  const ctx = getLiveAudioContext();
+  if (!ctx) return;
+  [523, 659, 784].forEach((freq, i) => setTimeout(() => playLiveBeep(freq, 180), i * 130));
+  hapticPulse([100, 60, 100, 60, 160]);
+}
+
 function checkLiveLoopAutoAdvance() {
   const loop = liveSession ? liveSession.loop : null;
   if (!loop) return;
   if (liveSession.setInProgressStartedAt) {
     const elapsed = (Date.now() - liveSession.setInProgressStartedAt) / 1000;
-    if (elapsed >= loop.workSec) finishLiveSet();
+    if (elapsed >= loop.workSec) {
+      playLiveRestSignal();
+      finishLiveSet();
+    }
   } else if (liveSession.restStartedAt) {
     const elapsed = (Date.now() - liveSession.restStartedAt) / 1000;
     if (elapsed >= loop.restSec) {
@@ -700,11 +763,13 @@ function checkLiveLoopAutoAdvance() {
         // en mode manuel normal (le repos qui vient de s'écouler reste
         // disponible pour être attaché à la prochaine série, comme
         // d'habitude — voir stopLiveRestManually).
+        playLiveLoopDoneSignal();
         liveSession.loop = null;
         stopLiveRestManually();
         saveJSON(KEYS.liveSession, liveSession);
         renderLiveApp();
       } else {
+        playLiveWorkSignal();
         loop.currentRound += 1;
         startLiveSet();
       }
@@ -720,6 +785,7 @@ function startLiveLoop(rounds, workSec, restSec) {
   liveSession.loop = { rounds, workSec, restSec, currentRound: 1 };
   liveLoopFormOpen = false;
   saveJSON(KEYS.liveSession, liveSession);
+  playLiveWorkSignal();
   startLiveSet();
 }
 
