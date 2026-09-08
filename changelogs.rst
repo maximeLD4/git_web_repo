@@ -28,6 +28,52 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.28.3 - 2026-09-04
+====================
+
+- **Ajusté : "Arrêter la boucle" (Gainage) relance bien le repos** — le
+  correctif précédent (2.28.2) allait trop loin en coupant aussi le repos
+  qui suit immédiatement ; arrêter la boucle ne coupe maintenant que
+  l'automatisation, le repos qui enchaîne naturellement après le dernier
+  tour continue bel et bien de tourner (ou continue tel quel si on arrête
+  pendant qu'on se reposait déjà) — plus de tour suivant relancé tout seul,
+  c'est tout.
+
+2.28.2 - 2026-09-04
+====================
+
+- **Corrigé : "Arrêter la boucle" (Gainage) s'arrêtait en deux temps** — le
+  bouton ne coupait que l'automatisation, laissant le tour en cours tourner
+  tout seul (il fallait ensuite le finir ou l'annuler séparément). Il arrête
+  maintenant tout d'un seul geste : le tour en cours est finalisé avec le
+  temps réellement écoulé (rien n'est perdu), et le repos qui suit est
+  aussitôt coupé — retour direct à l'écran prêt, sans second geste.
+
+2.28.1 - 2026-09-04
+====================
+
+- Ajustement de l'écran de réglage du minuteur en boucle (Gainage) :
+  "Démarrer la boucle" et "Annuler" prennent maintenant la place de
+  "Débuter la série"/"Changer d'exercice", dans la zone fixe du bas, avec
+  les mêmes styles de bouton — plutôt que d'être mêlés au contenu
+  défilant. L'écran ne défile plus du tout à cette étape (contenu réduit
+  aux trois réglages), il reste fixe.
+
+2.28.0 - 2026-09-04
+====================
+
+- **Minuteur en boucle pour le Gainage, en Séance en direct** : sur un
+  exercice de gainage (ex. "Gainage abdos"), un bouton "Lancer en boucle"
+  permet de régler un nombre de tours, une durée de travail et une durée de
+  repos (saisis à chaque lancement, rien n'est enregistré), puis de
+  démarrer : le chrono de travail décompte automatiquement, bascule tout
+  seul en décompte de repos une fois écoulé, puis relance le tour suivant —
+  jusqu'au nombre de tours prévu. Le numéro de tour ("Tour 3/10") s'affiche
+  en continu, et "Arrêter la boucle" permet de repasser en contrôle manuel
+  à tout moment. Chaque tour s'enregistre dans la frise comme une série
+  normale (avec son repos), donc l'historique/les stats fonctionnent sans
+  rien changer.
+
 2.27.7 - 2026-09-04
 ====================
 

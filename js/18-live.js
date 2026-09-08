@@ -13,6 +13,7 @@ function renderLiveApp(freshEntry) {
   // on se trouvait avant une fermeture accidentelle — les séries déjà
   // validées, elles, restent intactes dans liveSession.
   if (freshEntry) {
+    if (liveSession) liveSession.loop = null;
     autoFinishLiveSetIfInProgress();
     liveStep = "category";
     liveDraftType = "muscu";
@@ -41,6 +42,7 @@ function renderLiveApp(freshEntry) {
       return;
     }
     if (liveStep === "log-set") {
+      liveSession.loop = null;
       autoFinishLiveSetIfInProgress();
       closeCurrentLiveSegment();
       saveJSON(KEYS.liveSession, liveSession);
@@ -92,17 +94,20 @@ function renderLiveStep() {
 // avant la toute première série par exemple).
 function liveStatusHeroHTML() {
   if (!liveSession) return "";
+  const loop = liveSession.loop;
   if (liveSession.restStartedAt) {
+    const label = loop ? `${ICONS.stopwatch} Repos — Tour ${loop.currentRound}/${loop.rounds}` : `${ICONS.stopwatch} Repos`;
     return `
     <div class="live-rest-hero" id="live-rest-hero">
-      <div class="live-rest-hero-label">${ICONS.stopwatch} Repos</div>
+      <div class="live-rest-hero-label">${label}</div>
       <div class="live-rest-hero-value" id="live-rest-chrono">00:00</div>
     </div>`;
   }
   if (liveSession.setInProgressStartedAt) {
+    const label = loop ? `${ICONS.play} Travail — Tour ${loop.currentRound}/${loop.rounds}` : `${ICONS.play} ${liveDraftName || "Série en cours"}`;
     return `
     <div class="live-rest-hero live-rest-hero-active" id="live-rest-hero">
-      <div class="live-rest-hero-label">${ICONS.play} ${liveDraftName || "Série en cours"}</div>
+      <div class="live-rest-hero-label">${label}</div>
       <div class="live-rest-hero-value" id="live-rest-chrono">00:00</div>
     </div>`;
   }
@@ -326,14 +331,35 @@ function liveCardioSetFormHTML(activeExercise) {
   const phase = liveSetPhase();
   const sets = activeExercise ? activeExercise.sets : [];
   // Le gainage se travaille uniquement au temps — pas de distance à
-  // proposer (contrairement à Rameur/Vélo/Course).
+  // proposer (contrairement à Rameur/Vélo/Course), et c'est le seul type
+  // d'exercice où le minuteur en boucle a du sens (voir plus bas).
   const isGainage = liveDraftCategory === GAINAGE_CATEGORY.key;
+  const loop = liveSession.loop;
   // En cours, la dernière entrée est le PLACEHOLDER de la série en train de
   // se faire (durée/distance pas encore connues, voir startLiveSet) — pas
   // une vraie série précédente. Le "Précédent" affiché doit donc pointer
   // juste avant lui dans ce cas, jamais sur lui-même.
   const inProgressSet = phase === "in-progress" && sets.length ? sets[sets.length - 1] : null;
   const lastSet = phase === "in-progress" ? (sets.length > 1 ? sets[sets.length - 2] : null) : sets.length ? sets[sets.length - 1] : null;
+
+  // Boucle active (travail OU repos) : plus aucun bouton manuel — le chrono
+  // (décompte) et le numéro de tour sont déjà affichés en haut par
+  // liveStatusHeroHTML, ici on ne montre que la progression et un moyen
+  // d'arrêter proprement.
+  if (loop) {
+    const workingNow = !!liveSession.setInProgressStartedAt;
+    return `
+      <div class="live-set-form">
+        <div class="live-set-form-scroll">
+          <div class="live-exercise-name">${liveDraftName}</div>
+          <div class="live-in-progress-banner">${workingNow ? "Travail" : "Repos"} — Tour ${loop.currentRound}/${loop.rounds}</div>
+        </div>
+        <div class="live-set-form-actions">
+          <button type="button" class="live-validate-btn live-finish-btn" data-live-stop-loop>${ICONS.stop} Arrêter la boucle</button>
+          <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+        </div>
+      </div>`;
+  }
 
   if (phase === "in-progress") {
     const distance = liveDraftDistance || 0;
@@ -363,6 +389,26 @@ function liveCardioSetFormHTML(activeExercise) {
       </div>`;
   }
 
+  // Formulaire de réglage du minuteur en boucle (Gainage) : remplace
+  // entièrement l'écran "prêt" tant qu'il est ouvert — Démarrer/Annuler
+  // prennent la place de Débuter la série/Changer d'exercice, mêmes styles
+  // de bouton, dans la zone fixe du bas. Contenu volontairement minimal
+  // (pas de "Précédent" ni de texte d'aide) et défilement désactivé, pour
+  // que l'écran tienne sans bouger.
+  if (isGainage && liveLoopFormOpen) {
+    return `
+      <div class="live-set-form">
+        <div class="live-set-form-scroll live-set-form-scroll-fixed">
+          <div class="live-exercise-name">${liveDraftName}</div>
+          ${liveLoopStepperHTML()}
+        </div>
+        <div class="live-set-form-actions">
+          <button type="button" class="live-validate-btn" data-live-start-loop>${ICONS.play} Démarrer la boucle</button>
+          <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-cancel-loop-form>Annuler</button>
+        </div>
+      </div>`;
+  }
+
   return `
     <div class="live-set-form">
       <div class="live-set-form-scroll">
@@ -372,7 +418,44 @@ function liveCardioSetFormHTML(activeExercise) {
       </div>
       <div class="live-set-form-actions">
         <button type="button" class="live-validate-btn" data-live-start-set>${ICONS.play} Débuter la série</button>
+        ${isGainage ? `<button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-open-loop-form>${ICONS.stopwatch} Lancer en boucle</button>` : ""}
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
+      </div>
+    </div>`;
+}
+
+// Les trois réglages du minuteur en boucle (Gainage) — tours, durée de
+// travail, durée de repos. Saisis à chaque lancement, jamais enregistrés
+// (voir conversation) : les valeurs par défaut/précédentes servent juste à
+// ne pas repartir de zéro d'une fois sur l'autre dans la même session de
+// l'app. Les boutons Démarrer/Annuler vivent dans la zone fixe du bas, pas
+// ici (voir liveCardioSetFormHTML).
+function liveLoopStepperHTML() {
+  return `
+    <div class="live-loop-config">
+      <div class="live-stepper-group">
+        <div class="live-stepper-label">Tours</div>
+        <div class="live-stepper">
+          <button type="button" class="live-stepper-btn" data-live-loop-rounds-minus aria-label="Moins">−</button>
+          <div class="live-stepper-value">${liveLoopDraftRounds}</div>
+          <button type="button" class="live-stepper-btn" data-live-loop-rounds-plus aria-label="Plus">+</button>
+        </div>
+      </div>
+      <div class="live-stepper-group">
+        <div class="live-stepper-label">Travail (secondes)</div>
+        <div class="live-stepper">
+          <button type="button" class="live-stepper-btn" data-live-loop-work-minus aria-label="Moins">−</button>
+          <div class="live-stepper-value">${liveLoopDraftWork}s</div>
+          <button type="button" class="live-stepper-btn" data-live-loop-work-plus aria-label="Plus">+</button>
+        </div>
+      </div>
+      <div class="live-stepper-group">
+        <div class="live-stepper-label">Repos (secondes)</div>
+        <div class="live-stepper">
+          <button type="button" class="live-stepper-btn" data-live-loop-rest-minus aria-label="Moins">−</button>
+          <div class="live-stepper-value">${liveLoopDraftRest}s</div>
+          <button type="button" class="live-stepper-btn" data-live-loop-rest-plus aria-label="Plus">+</button>
+        </div>
       </div>
     </div>`;
 }
@@ -463,6 +546,10 @@ function deleteLiveTimelineEntry(idx) {
     liveSession.setInProgressStartedAt = null;
     const resumeRestSec = deletedSet && deletedSet.restSec ? deletedSet.restSec : 0;
     liveSession.restStartedAt = Date.now() - resumeRestSec * 1000;
+    // Annuler la série en cours pendant une boucle (Gainage) arrête aussi la
+    // boucle — reprendre l'automatisation après une annulation manuelle
+    // serait ambigu (retenter le même tour ? passer au suivant ?).
+    liveSession.loop = null;
   }
   // Cas 2 : on supprime la toute dernière série (déjà terminée) alors qu'on
   // est déjà en plein repos après elle — on considère qu'elle n'a en fait
@@ -558,14 +645,25 @@ function stopLiveRestManually() {
 // OU une série est actuellement en cours — appelée à chaque rendu de
 // l'écran Live (le bloc lui-même n'existe dans le DOM que dans ces deux cas,
 // voir liveStatusHeroHTML), pour ne jamais laisser tourner un intervalle
-// inutile.
+// inutile. Fait aussi avancer le minuteur en boucle (Gainage) le cas
+// échéant — voir liveTick.
 function ensureLiveRestTicking() {
   clearInterval(liveRestChronoInterval);
   if (!liveSession || (!liveSession.restStartedAt && !liveSession.setInProgressStartedAt)) return;
-  updateLiveRestChronoDisplay();
-  liveRestChronoInterval = setInterval(updateLiveRestChronoDisplay, 1000);
+  liveTick();
+  liveRestChronoInterval = setInterval(liveTick, 1000);
 }
 
+function liveTick() {
+  checkLiveLoopAutoAdvance();
+  updateLiveRestChronoDisplay();
+}
+
+// Le chrono de repos/travail habituel (manuel) compte le temps ÉCOULÉ,
+// puisqu'il n'y a pas de durée connue à l'avance. En boucle (Gainage), en
+// revanche, la durée de chaque phase est fixée d'avance (voir
+// startLiveLoop) — on affiche donc un DÉCOMPTE (temps restant), plus lisible
+// pour savoir combien de temps il reste avant le prochain changement.
 function updateLiveRestChronoDisplay() {
   const el = document.getElementById("live-rest-chrono");
   const startedAt = liveSession ? liveSession.restStartedAt || liveSession.setInProgressStartedAt : null;
@@ -574,7 +672,85 @@ function updateLiveRestChronoDisplay() {
     return;
   }
   const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+  const loop = liveSession.loop;
+  if (loop) {
+    const totalSec = liveSession.setInProgressStartedAt ? loop.workSec : loop.restSec;
+    el.textContent = formatLiveChrono(Math.max(0, totalSec - elapsedSec));
+    return;
+  }
   el.textContent = formatLiveChrono(elapsedSec);
+}
+
+// Fait avancer automatiquement le minuteur en boucle (Gainage) : bascule
+// du travail vers le repos une fois la durée de travail écoulée, puis du
+// repos vers le tour suivant une fois la durée de repos écoulée — jusqu'au
+// nombre de tours prévu, où la boucle s'arrête d'elle-même. Ne fait rien si
+// aucune boucle n'est en cours (voir startLiveLoop/stopLiveLoop).
+function checkLiveLoopAutoAdvance() {
+  const loop = liveSession ? liveSession.loop : null;
+  if (!loop) return;
+  if (liveSession.setInProgressStartedAt) {
+    const elapsed = (Date.now() - liveSession.setInProgressStartedAt) / 1000;
+    if (elapsed >= loop.workSec) finishLiveSet();
+  } else if (liveSession.restStartedAt) {
+    const elapsed = (Date.now() - liveSession.restStartedAt) / 1000;
+    if (elapsed >= loop.restSec) {
+      if (loop.currentRound >= loop.rounds) {
+        // Dernier tour terminé : la boucle s'arrête d'elle-même, on repasse
+        // en mode manuel normal (le repos qui vient de s'écouler reste
+        // disponible pour être attaché à la prochaine série, comme
+        // d'habitude — voir stopLiveRestManually).
+        liveSession.loop = null;
+        stopLiveRestManually();
+        saveJSON(KEYS.liveSession, liveSession);
+        renderLiveApp();
+      } else {
+        loop.currentRound += 1;
+        startLiveSet();
+      }
+    }
+  }
+}
+
+// Lance un minuteur en boucle pour l'exercice de gainage actuel : démarre
+// immédiatement le premier tour de travail, puis bascule tout seul
+// travail/repos jusqu'au nombre de tours prévu (voir checkLiveLoopAutoAdvance).
+function startLiveLoop(rounds, workSec, restSec) {
+  if (liveSetPhase() === "in-progress") return; // déjà en cours, rien à faire
+  liveSession.loop = { rounds, workSec, restSec, currentRound: 1 };
+  liveLoopFormOpen = false;
+  saveJSON(KEYS.liveSession, liveSession);
+  startLiveSet();
+}
+
+// Arrête la boucle en cours à tout moment — se contente de retirer
+// l'automatisation : la série ou le repos en cours au moment de l'arrêt
+// n'est pas annulé, on repasse juste en contrôle manuel normal à partir de
+// là (la série en cours, si il y en a une, devra être finie à la main).
+// Arrête la boucle en cours à tout moment — et arrête vraiment TOUT d'un
+// seul geste (pas juste l'automatisation) : si un tour est en train de se
+// faire, on le finalise avec le temps réellement écoulé jusqu'ici (comme un
+// "Finir la série" normal, pour ne pas perdre le travail déjà fait), puis on
+// coupe aussitôt le repos qui vient de démarrer — pas de chrono qui continue
+// tout seul en arrière-plan, pas de second geste à faire ensuite pour
+// vraiment sortir.
+// Arrête la boucle en cours à tout moment — ne coupe que l'automatisation,
+// pas l'effort naturel qui suit : si un tour était en train de se faire, on
+// le finalise avec le temps réellement écoulé (comme un "Finir la série"
+// normal, rien n'est perdu), ce qui enchaîne comme d'habitude sur un repos
+// — qui, lui, continue bel et bien de tourner (arrêter la boucle ne veut
+// pas dire arrêter de se reposer). Si on était déjà en repos au moment
+// d'arrêter, il continue simplement tel quel, sans relancer de tour
+// suivant.
+function stopLiveLoop() {
+  if (!liveSession || !liveSession.loop) return;
+  liveSession.loop = null;
+  if (liveSession.setInProgressStartedAt) {
+    finishLiveSet();
+  } else {
+    saveJSON(KEYS.liveSession, liveSession);
+    renderLiveApp();
+  }
 }
 
 function formatLiveChrono(totalSeconds) {
@@ -782,6 +958,7 @@ function finishLiveSession() {
   // encore en cours ("Débuter" tapé, "Finir" pas encore), on la finalise
   // d'abord — sinon, pour le cardio notamment, elle serait enregistrée avec
   // sa durée à 0 (placeholder jamais complété, voir applyFinishLiveSet).
+  liveSession.loop = null;
   autoFinishLiveSetIfInProgress();
   const cleaned = (liveSession.exercises || []).filter((e) => e.sets.length > 0);
   if (cleaned.length === 0) {
@@ -977,9 +1154,41 @@ function attachLiveStepListeners() {
   const finishSetBtn = content.querySelector("[data-live-finish-set]");
   if (finishSetBtn) finishSetBtn.addEventListener("click", finishLiveSet);
 
+  // ---------- Minuteur en boucle (Gainage) ----------
+  const openLoopBtn = content.querySelector("[data-live-open-loop-form]");
+  if (openLoopBtn) openLoopBtn.addEventListener("click", () => { liveLoopFormOpen = true; renderLiveApp(); });
+
+  const cancelLoopFormBtn = content.querySelector("[data-live-cancel-loop-form]");
+  if (cancelLoopFormBtn) cancelLoopFormBtn.addEventListener("click", () => { liveLoopFormOpen = false; renderLiveApp(); });
+
+  const loopRoundsMinus = content.querySelector("[data-live-loop-rounds-minus]");
+  const loopRoundsPlus = content.querySelector("[data-live-loop-rounds-plus]");
+  if (loopRoundsMinus) loopRoundsMinus.addEventListener("click", () => { liveLoopDraftRounds = Math.max(1, liveLoopDraftRounds - 1); renderLiveApp(); });
+  if (loopRoundsPlus) loopRoundsPlus.addEventListener("click", () => { liveLoopDraftRounds = Math.min(50, liveLoopDraftRounds + 1); renderLiveApp(); });
+
+  const loopWorkMinus = content.querySelector("[data-live-loop-work-minus]");
+  const loopWorkPlus = content.querySelector("[data-live-loop-work-plus]");
+  if (loopWorkMinus) loopWorkMinus.addEventListener("click", () => { liveLoopDraftWork = Math.max(5, liveLoopDraftWork - 5); renderLiveApp(); });
+  if (loopWorkPlus) loopWorkPlus.addEventListener("click", () => { liveLoopDraftWork = Math.min(600, liveLoopDraftWork + 5); renderLiveApp(); });
+
+  const loopRestMinus = content.querySelector("[data-live-loop-rest-minus]");
+  const loopRestPlus = content.querySelector("[data-live-loop-rest-plus]");
+  if (loopRestMinus) loopRestMinus.addEventListener("click", () => { liveLoopDraftRest = Math.max(0, liveLoopDraftRest - 5); renderLiveApp(); });
+  if (loopRestPlus) loopRestPlus.addEventListener("click", () => { liveLoopDraftRest = Math.min(600, liveLoopDraftRest + 5); renderLiveApp(); });
+
+  const startLoopBtn = content.querySelector("[data-live-start-loop]");
+  if (startLoopBtn) startLoopBtn.addEventListener("click", () => startLiveLoop(liveLoopDraftRounds, liveLoopDraftWork, liveLoopDraftRest));
+
+  const stopLoopBtn = content.querySelector("[data-live-stop-loop]");
+  if (stopLoopBtn) stopLoopBtn.addEventListener("click", stopLiveLoop);
+
   const changeExBtn = content.querySelector("[data-live-change-exercise]");
   if (changeExBtn) {
     changeExBtn.addEventListener("click", () => {
+      // Changer d'exercice arrête toute boucle en cours — continuer à
+      // avancer automatiquement pour un exercice qu'on a quitté n'aurait
+      // pas de sens.
+      liveSession.loop = null;
       autoFinishLiveSetIfInProgress();
       closeCurrentLiveSegment();
       saveJSON(KEYS.liveSession, liveSession);

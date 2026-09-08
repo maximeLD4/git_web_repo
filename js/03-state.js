@@ -123,6 +123,15 @@ let liveDraftBaseWeight = null; // poids réellement sélectionné dans le menu 
 let liveDraftReps = 10;
 let liveDraftWeightMode = "off";
 let liveDraftDistance = null;
+// ---------- Minuteur en boucle (Gainage) ----------
+// Saisi à chaque lancement en Live, jamais enregistré (voir conversation) —
+// ces valeurs ne sont que le brouillon du petit formulaire de réglage,
+// repris comme valeurs de départ la prochaine fois pour éviter d'avoir à
+// tout retaper, mais rien n'est jamais persistant côté stockage.
+let liveLoopFormOpen = false;
+let liveLoopDraftRounds = 10;
+let liveLoopDraftWork = 30;
+let liveLoopDraftRest = 30;
 // Dernier temps de repos mesuré MANUELLEMENT (bouton "Démarrer le repos" puis
 // arrêt automatique dès qu'on touche au poids/reps de la série suivante) —
 // conservé ici jusqu'à la validation de cette prochaine série, à laquelle il
