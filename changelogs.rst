@@ -28,6 +28,24 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.29.0 - 2026-09-04
+====================
+
+- **Fonctionnement hors-ligne** (nouveau `sw.js`, Service Worker) : l'app
+  se lance et s'utilise maintenant même sans réseau — utile pour l'usage
+  "Sur l'écran d'accueil" (Safari) ou un raccourci équivalent. Les données
+  (séances, poids, réglages...) vivaient déjà dans le stockage local de
+  l'appareil et fonctionnaient donc déjà hors-ligne ; ce qui manquait,
+  c'était que l'app elle-même (le code : HTML/CSS/JS/icônes) ne pouvait pas
+  se charger sans réseau la toute première fois — désormais mis en cache.
+  Le SDK Firebase est mis en cache en bonus (sans faire échouer le reste si
+  indisponible) ; la connexion/synchro Firebase, elle, continue d'échouer
+  proprement sans réseau comme avant, en retombant sur les données locales.
+  Nouveau fichier `manifest.json` au passage, pour une installation plus
+  standard sur les navigateurs qui le prennent en charge.
+  Limite connue : le Scanner (OCR) charge sa bibliothèque à la demande
+  depuis un CDN et reste donc dépendant du réseau au moment de l'utiliser.
+
 2.28.4 - 2026-09-04
 ====================
 

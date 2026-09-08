@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" sizes="152x152" href="./icons/apple-touch-icon-152.png" />
 <link rel="apple-touch-icon" sizes="167x167" href="./icons/apple-touch-icon-167.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
+<link rel="manifest" href="./manifest.json" />
 <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
@@ -55,5 +56,17 @@
 <script src="./js/16-performance.js"></script>
 <script src="./js/18-live.js"></script>
 <script src="./js/17-main.js"></script>
+<script>
+  // Enregistre le Service Worker qui permet à l'app de fonctionner
+  // hors-ligne (voir sw.js) — silencieusement sans effet si indisponible
+  // (contexte non sécurisé, ex. file:// via Scriptable, ou navigateur trop
+  // ancien) : l'app continue de fonctionner normalement dans ce cas, juste
+  // sans mise en cache pour un usage hors-ligne.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>
