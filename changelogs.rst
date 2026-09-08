@@ -7,6 +7,83 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.27.1 - 2026-09-04
+====================
+
+- **Refonte couleurs + typographie, appliquée à tout `css/styles.css`**
+  (aucun changement de fonctionnalité ni d'animation) :
+  - Police Jost + IBM Plex Mono → **Sora** partout (titres, chiffres,
+    libellés en capitales compris).
+  - Encre noire (#16150F) → **brun chaud** (#3D3230), moutarde saturée
+    (#F0BC2C) → **ambre doux** (#E2A66B), fond crème légèrement réchauffé.
+    Les ~30 nuances de gris/texte dérivées de l'encre (bordures, texte
+    atténué, fonds de survol...) suivent automatiquement.
+  - Graisses plafonnées à 700 (fini les 800/900 "affiche de compétition"),
+    et resserrement des espacements de lettres négatifs assoupli d'environ
+    moitié partout où il était présent.
+  - Corrigé au passage : le titre de la tuile "Séance en direct" (accueil)
+    repassait à la ligne avec la police plus large — taille réduite pour
+    tenir sur une ligne comme avant.
+  - Les teintes propres à chaque sport/module (vert salle de sport, bleu
+    course, cyan natation, violet vélo/poids, rose performance) n'ont pas
+    été touchées.
+
+2.27.7 - 2026-09-04
+====================
+
+- **Retour à Jost + IBM Plex Mono** (polices d'origine) — après plusieurs
+  essais (Sora, Manrope, Familjen Grotesk + Baloo 2/M PLUS Rounded 1c), il
+  s'est avéré que la police n'était pas le vrai problème. La palette de
+  couleurs brun/ambre + automne par module, elle, est conservée.
+- **Bandeau de l'accueil éclairci** : l'en-tête de l'écran d'accueil (celui
+  qui portait "GYMLOG") passe du bloc encre plein noir à un bandeau plus
+  clair teinté ambre doux, texte sombre plutôt que blanc sur noir — c'était
+  la vraie gêne. Les en-têtes des autres écrans (Salle de sport, Réglages,
+  etc.) restent inchangés, cette demande ne concernait que l'accueil.
+
+2.27.6 - 2026-09-04
+====================
+
+- **Mot-symbole "GYMLOG" : Baloo 2 → M PLUS Rounded 1c** — toujours rond et
+  un peu mignon, mais plus posé/mature, pour mieux s'accorder avec
+  Familjen Grotesk (Baloo 2 faisait trop "cartoon enfantin" à côté).
+
+2.27.5 - 2026-09-04
+====================
+
+- **Système à deux polices** (après comparaison de 9 pistes au total) :
+  **Familjen Grotesk** partout (titres, chiffres, libellés en capitales) —
+  plus de caractère que Manrope sans retomber dans le "geek/masculin" —
+  et **Baloo 2** réservé au seul mot-symbole "GYMLOG" (accueil + écran de
+  connexion), gros/rond/un peu mignon.
+
+2.27.4 - 2026-09-04
+====================
+
+- **Police finale : Sora → Manrope**, partout (titres, chiffres, libellés en
+  capitales), après comparaison de 5 pistes sur l'écran d'accueil réel.
+  Rendu plus doux et humaniste, moins "affiche de compétition".
+
+2.27.3 - 2026-09-04
+====================
+
+- **Palette de couleurs par module/sport réharmonisée sur la teinte
+  brun/automne** (aucun changement de fonctionnalité) : Salle de sport
+  (vert menthe → sauge/olive), Course à pied (bleu-violet → terracotta),
+  Natation (cyan → teal éteint), Vélo (violet orchidée → ocre doré),
+  Performance (rose-rouge → terracotta rosé), Poids (lavande → mauve
+  poussiéreux), Calendrier (bleu ardoise → gris-brun chaud). Mis à jour
+  partout où la teinte apparaît : variables de thème CSS, icônes de tuiles
+  d'accueil, points/légende du calendrier partagé.
+
+2.27.2 - 2026-09-04
+====================
+  moutarde saturée**, oublié par le passage à l'ambre — sa couleur était
+  encodée en dur à l'intérieur d'un SVG en data-URI (`background-image`),
+  invisible à une recherche sur la couleur en clair puisqu'écrite au format
+  URL-encodé. Repéré en le voyant à l'écran, corrigé aux 2 endroits
+  concernés (état normal et état pressé).
+
 2.27.0 - 2026-09-04
 ====================
 

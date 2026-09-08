@@ -110,8 +110,8 @@ const EXERCISE_SUGGESTIONS = {
 };
 
 const ACTIVITY_META = [
-  { key: "gym", color: "#5FBFA0", rgb: "95,191,160", label: "Muscu" },
-  { key: "run", color: "#6C7BFF", rgb: "108,123,255", label: "Course" },
-  { key: "swim", color: "#4FC3D9", rgb: "79,195,217", label: "Natation" },
-  { key: "bike", color: "#C48FE0", rgb: "196,143,224", label: "Vélo" },
+  { key: "gym", color: "#8FA06B", rgb: "143,160,107", label: "Muscu" },
+  { key: "run", color: "#D08A62", rgb: "208,138,98", label: "Course" },
+  { key: "swim", color: "#6FA3A0", rgb: "111,163,160", label: "Natation" },
+  { key: "bike", color: "#D9AD5D", rgb: "217,173,93", label: "Vélo" },
 ];
