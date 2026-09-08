@@ -16,6 +16,7 @@ const KEYS = {
   bikeLibrary: "gymlog:bike-library",
   bikeDraft: "gymlog:bike-draft",
   gymExerciseConfigs: "gymlog:gym-exercise-configs",
+  gainageExerciseConfigs: "gymlog:gainage-exercise-configs",
   liveSession: "gymlog:live-session",
 };
 
@@ -63,14 +64,18 @@ const GYM_EXERCISE_CATEGORIES = [
   { key: "abdos", label: "Abdos" },
 ];
 
-// Catégories du type Cardio (Salle de sport). Toutes ont le même comportement
-// pour l'instant — elles servent uniquement à préremplir le titre par défaut
-// de l'exercice — mais permettront de différencier plus tard si besoin.
+// Catégories du type Cardio/Gainage (Salle de sport). Rameur/Vélo/Course
+// sont des catégories "simples" : leur nom EST déjà l'exercice, pas besoin
+// d'aller plus loin (voir liveCategoryStepHTML). Gainage fonctionne
+// différemment — comme la Muscu — puisqu'on veut pouvoir distinguer
+// plusieurs exercices de gainage entre eux (planche, gainage latéral...) ;
+// voir gainageExerciseConfigs.
 const CARDIO_CATEGORIES = [
   { key: "rameur", label: "Rameur" },
   { key: "velo", label: "Vélo" },
   { key: "course", label: "Course à pied" },
 ];
+const GAINAGE_CATEGORY = { key: "gainage", label: "Gainage" };
 
 const EXERCISE_SUGGESTIONS = {
   pecs: [
@@ -98,6 +103,9 @@ const EXERCISE_SUGGESTIONS = {
   ],
   abdos: [
     "Crunch", "Gainage", "Relevé de jambes", "Russian twist", "Crunch poulie",
+  ],
+  gainage: [
+    "Planche", "Planche latérale", "Superman", "Gainage dynamique", "Pont fessier isométrique", "Mountain climbers",
   ],
 };
 

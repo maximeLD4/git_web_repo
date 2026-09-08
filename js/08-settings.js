@@ -47,7 +47,7 @@ function renderSettingsContent() {
       <div class="home-card-icon" style="background: rgba(0,184,153,0.14); color: #00B899;">${ICONS.dumbbell}</div>
       <div class="home-card-text">
         <div class="home-card-title">Salle de sport</div>
-        <div class="home-card-sub">${gymExerciseConfigs.length} exercice${gymExerciseConfigs.length !== 1 ? "s" : ""} configuré${gymExerciseConfigs.length !== 1 ? "s" : ""}</div>
+        <div class="home-card-sub">${gymExerciseConfigs.length + gainageExerciseConfigs.length} exercice${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""} configuré${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""}</div>
       </div>
       <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
@@ -176,18 +176,20 @@ function renderGymSettingsApp() {
     <div class="header">
       <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
       <div class="header-icon-only">${ICONS.dumbbell}</div>
-      <div class="header-sub">Exercices et poids préconfigurés</div>
+      <div class="header-sub">Exercices préconfigurés</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
-    if (gymSettingsFormOpen) {
+    const formOpen = gymSettingsMode === "gainage" ? gainageSettingsFormOpen : gymSettingsFormOpen;
+    if (formOpen) {
       // On était en train d'éditer/ajouter un exercice : le bouton retour se
       // comporte comme "Annuler", il ferme juste le formulaire et reste sur
       // la liste — il ne sort de la section Salle de sport que si on y est
       // déjà (sinon, avant ce correctif, on ressortait directement vers
       // Paramètres même sans avoir voulu quitter la liste).
-      gymSettingsFormOpen = false;
+      if (gymSettingsMode === "gainage") gainageSettingsFormOpen = false;
+      else gymSettingsFormOpen = false;
       renderGymSettingsContent();
     } else {
       currentApp = "settings";
@@ -198,11 +200,90 @@ function renderGymSettingsApp() {
 }
 
 function renderGymSettingsContent() {
-  document.getElementById("content").innerHTML = gymSettingsFormOpen ? gymSettingsFormHTML() : gymSettingsListHTML();
+  const formOpen = gymSettingsMode === "gainage" ? gainageSettingsFormOpen : gymSettingsFormOpen;
+  const body =
+    gymSettingsMode === "gainage"
+      ? gainageSettingsFormOpen
+        ? gainageSettingsFormHTML()
+        : gainageSettingsListHTML()
+      : gymSettingsFormOpen
+        ? gymSettingsFormHTML()
+        : gymSettingsListHTML();
+  // La bascule Muscu/Gainage ne s'affiche que sur les listes — pas pendant
+  // l'édition d'un exercice, où elle n'aurait pas de sens.
+  document.getElementById("content").innerHTML = (formOpen ? "" : gymSettingsModeToggleHTML()) + body;
   attachGymSettingsListeners();
 }
 
+// Bascule entre les deux listes gérées séparément (Salle de sport regroupe
+// désormais les exercices Muscu ET les exercices de Gainage — voir
+// CARDIO_CATEGORIES/GAINAGE_CATEGORY).
+function gymSettingsModeToggleHTML() {
+  return `
+    <div class="ex-type-toggle" style="margin-bottom:16px;">
+      <button type="button" class="ex-type-btn ${gymSettingsMode === "muscu" ? "active" : ""}" data-gym-settings-mode="muscu">${ICONS.dumbbell} Muscu</button>
+      <button type="button" class="ex-type-btn ${gymSettingsMode === "gainage" ? "active" : ""}" data-gym-settings-mode="gainage">${ICONS.stopwatch} Gainage</button>
+    </div>`;
+}
+
+// ---------- Gainage : liste et formulaire, volontairement minimalistes ----------
+// (juste un nom — le gainage se travaille au temps, jamais au poids).
+function gainageSettingsListHTML() {
+  const emptyState = `<div class="empty-state">Aucun exercice de gainage configuré pour l'instant.<br>Ajoute tes mouvements habituels (planche, gainage latéral...) pour les retrouver directement en Séance en direct.</div>`;
+  const items = [...gainageExerciseConfigs]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(
+      (c) => `
+      <div class="history-card">
+        <div class="history-head" data-edit-gainage-config="${c.id}" style="cursor:pointer;">
+          <div class="history-head-left">
+            <div class="exercise-config-name">${c.name}</div>
+          </div>
+          <button type="button" class="icon-btn" data-duplicate-gainage-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
+          <button type="button" class="icon-btn" data-delete-gainage-config="${c.id}" aria-label="Supprimer">${ICONS.trash}</button>
+        </div>
+      </div>`
+    )
+    .join("");
+  return `${gainageExerciseConfigs.length === 0 ? emptyState : items}<button class="add-exercise-btn" id="add-gainage-config-btn">${ICONS.plus} Ajouter un exercice de gainage</button>`;
+}
+
+function gainageSettingsFormHTML() {
+  const usedNamesLower = new Set(
+    gainageExerciseConfigs.filter((c) => c.id !== gainageSettingsEditingConfigId).map((c) => c.name.trim().toLowerCase())
+  );
+  const suggestions = (EXERCISE_SUGGESTIONS.gainage || []).filter((n) => !usedNamesLower.has(n.trim().toLowerCase()));
+  const suggestionsHTML = suggestions
+    .map((n) => `<button type="button" class="weight-chip" data-suggest-gainage-name="${n.replace(/"/g, "&quot;")}">${n}</button>`)
+    .join("");
+  return `
+    <div class="exercise-card" style="padding: 16px 14px 16px 19px;">
+      <div class="field" style="margin-bottom:14px;">
+        <label>Suggestions (tape sur un nom pour le préremplir)</label>
+        <div class="weight-chip-row" id="gainage-suggestions-row">${suggestionsHTML}</div>
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Nom de l'exercice de gainage</label>
+        <input type="text" id="gainage-config-name-input" placeholder="Ex. Planche, Gainage latéral…" value="${(gainageSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
+      </div>
+      <div id="gainage-config-form-error"></div>
+      <button class="save-btn" id="save-gainage-config-btn">${ICONS.check} Enregistrer</button>
+      <button class="backup-btn" id="cancel-gainage-config-btn" style="margin-top:10px;">Annuler</button>
+    </div>
+  `;
+}
+
 function attachGymSettingsListeners() {
+  document.querySelectorAll("[data-gym-settings-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      gymSettingsMode = btn.dataset.gymSettingsMode;
+      renderGymSettingsContent();
+    });
+  });
+  // Toujours câblée, quel que soit le mode affiché : les sélecteurs qu'elle
+  // cible sont simplement absents du DOM (donc no-op) quand on est côté
+  // Muscu — pas besoin de la conditionner.
+  attachGainageSettingsListeners();
   document.querySelectorAll("[data-settings-category]").forEach((btn) => {
     btn.addEventListener("click", () => {
       gymSettingsActiveCategory = btn.dataset.settingsCategory;
@@ -373,4 +454,92 @@ function attachGymSettingsListeners() {
   // On retombe sur "name" par défaut pour le prochain rendu, sauf si une
   // action explicite redemande "weight" avant le prochain appel.
   gymSettingsFocusTarget = "name";
+}
+
+// ---------- Gainage : écouteurs (liste + formulaire), séparés de ceux de
+// Muscu ci-dessus — deux listes, deux formulaires, aucun état partagé. ----------
+function attachGainageSettingsListeners() {
+  const addBtn = document.getElementById("add-gainage-config-btn");
+  if (addBtn) {
+    addBtn.addEventListener("click", () => {
+      gainageSettingsFormOpen = true;
+      gainageSettingsEditingConfigId = null;
+      gainageSettingsFormDraft = { name: "" };
+      renderGymSettingsContent();
+    });
+  }
+  document.querySelectorAll("[data-edit-gainage-config]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const config = gainageExerciseConfigs.find((c) => c.id === el.dataset.editGainageConfig);
+      if (!config) return;
+      gainageSettingsFormOpen = true;
+      gainageSettingsEditingConfigId = config.id;
+      gainageSettingsFormDraft = { name: config.name };
+      renderGymSettingsContent();
+    });
+  });
+  document.querySelectorAll("[data-duplicate-gainage-config]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const config = gainageExerciseConfigs.find((c) => c.id === btn.dataset.duplicateGainageConfig);
+      if (!config) return;
+      gainageSettingsFormOpen = true;
+      gainageSettingsEditingConfigId = null;
+      gainageSettingsFormDraft = { name: config.name + " (copie)" };
+      renderGymSettingsContent();
+    });
+  });
+  document.querySelectorAll("[data-delete-gainage-config]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      showConfirm(
+        "Supprimer cet exercice de gainage configuré ? Les séances déjà enregistrées ne sont pas affectées.",
+        () => {
+          gainageExerciseConfigs = gainageExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteGainageConfig);
+          saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+          renderGymSettingsContent();
+        },
+        { confirmLabel: "Supprimer", danger: true }
+      );
+    });
+  });
+
+  if (!gainageSettingsFormOpen) return;
+
+  const nameInput = document.getElementById("gainage-config-name-input");
+  document.querySelectorAll("[data-suggest-gainage-name]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      nameInput.value = btn.dataset.suggestGainageName;
+      nameInput.focus();
+    });
+  });
+  document.getElementById("cancel-gainage-config-btn").addEventListener("click", () => {
+    gainageSettingsFormOpen = false;
+    renderGymSettingsContent();
+  });
+  document.getElementById("save-gainage-config-btn").addEventListener("click", () => {
+    const errorSlot = document.getElementById("gainage-config-form-error");
+    const name = capitalizeFirst(nameInput.value.trim());
+    if (!name) {
+      errorSlot.innerHTML = `<div class="error-msg">Donne un nom à cet exercice.</div>`;
+      return;
+    }
+    const nameLower = name.toLowerCase();
+    const isDuplicate = gainageExerciseConfigs.some((c) => c.id !== gainageSettingsEditingConfigId && c.name.trim().toLowerCase() === nameLower);
+    if (isDuplicate) {
+      errorSlot.innerHTML = `<div class="error-msg">Un exercice de gainage nommé « ${name} » existe déjà — choisis un nom différent.</div>`;
+      return;
+    }
+    errorSlot.innerHTML = "";
+    const newConfig = { id: gainageSettingsEditingConfigId || uid(), name };
+    if (gainageSettingsEditingConfigId) {
+      gainageExerciseConfigs = gainageExerciseConfigs.map((c) => (c.id === gainageSettingsEditingConfigId ? newConfig : c));
+    } else {
+      gainageExerciseConfigs.push(newConfig);
+    }
+    saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+    gainageSettingsFormOpen = false;
+    renderGymSettingsContent();
+  });
+  nameInput.focus();
 }

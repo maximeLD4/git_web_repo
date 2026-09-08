@@ -3,6 +3,10 @@
 let sessions = loadJSON(KEYS.sessions, []);
 let library = loadJSON(KEYS.library, []);
 let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
+// Liste des exercices de gainage nommés/configurés (Salle de sport, type
+// Cardio/Gainage) — volontairement plus simple que gymExerciseConfigs : pas
+// de poids/palier/incrément puisque le gainage ne se travaille qu'au temps.
+let gainageExerciseConfigs = loadJSON(KEYS.gainageExerciseConfigs, []);
 // Migration ponctuelle : un nom d'exercice enregistré sans majuscule initiale
 // (tapé avant ce correctif, ex. "ischio") est corrigé une bonne fois pour
 // toutes, pour que le nom affiché soit partout identique à ce qui est
@@ -26,6 +30,13 @@ let gymSettingsFocusTarget = "name"; // "name" (par défaut) ou "weight" (après
 let gymSettingsEditingConfigId = null;
 let gymSettingsFormDraft = { name: "", category: "pecs", baseWeights: [], maxIncrement: 0 };
 let gymSettingsActiveCategory = "all";
+// Bascule entre la gestion des exercices Muscu (poids) et celle des
+// exercices de Gainage (temps uniquement) dans l'écran Paramètres > Salle
+// de sport — deux listes bien distinctes, gérées séparément.
+let gymSettingsMode = "muscu"; // "muscu" | "gainage"
+let gainageSettingsFormOpen = false;
+let gainageSettingsEditingConfigId = null;
+let gainageSettingsFormDraft = { name: "" };
 let weights = loadJSON(KEYS.weights, []);
 let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [] };
 if (!Array.isArray(draft.exercises)) draft.exercises = [];
@@ -111,7 +122,6 @@ let liveDraftWeight = null; // poids final utilisé (base + incrément le cas é
 let liveDraftBaseWeight = null; // poids réellement sélectionné dans le menu déroulant (toujours un palier existant, jamais l'incrément)
 let liveDraftReps = 10;
 let liveDraftWeightMode = "off";
-let liveDraftDuration = null;
 let liveDraftDistance = null;
 // Dernier temps de repos mesuré MANUELLEMENT (bouton "Démarrer le repos" puis
 // arrêt automatique dès qu'on touche au poids/reps de la série suivante) —

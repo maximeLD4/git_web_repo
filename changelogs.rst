@@ -7,6 +7,81 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.27.0 - 2026-09-04
+====================
+
+- **Renommage "Cardio" → "Cardio/Gainage"**, partout où le type est
+  sélectionnable (Séance en direct, écran Créer).
+- **Nouveaux exercices de gainage, nommés et distincts** (comme en Muscu),
+  plutôt qu'un unique compteur générique :
+  - Paramètres → Salle de sport propose désormais une bascule
+    Muscu/Gainage, avec sa propre liste (ajouter/modifier/dupliquer/
+    supprimer un exercice de gainage — juste un nom, le gainage se travaille
+    au temps, jamais au poids).
+  - En Séance en direct, "Gainage" apparaît comme 4ᵉ catégorie à côté de
+    Rameur/Vélo/Course, mais révèle la liste de tes exercices de gainage
+    configurés au lieu de démarrer directement (comme pour la Muscu).
+  - Le champ distance est masqué pendant un exercice de gainage (inutile,
+    uniquement le temps compte) — aussi bien en direct que dans l'écran
+    Créer.
+  - Les noms d'exercices de gainage configurés apparaissent aussi en
+    suggestion dans l'écran Créer.
+
+2.26.1 - 2026-09-04
+====================
+
+- **Corrigé : les durées cardio s'affichaient en minutes décimales**
+  ("0.2min" pour 12 secondes) dans la frise du Live, l'historique et le
+  calendrier partagé — désormais en minutes et secondes ("12s", "3min30s",
+  etc.), via le même formateur déjà utilisé pour le temps passé par
+  exercice. La donnée elle-même reste stockée en minutes (compatibilité),
+  seul l'affichage change — au passage, le calcul de la durée réelle est
+  désormais arrondi à la seconde près plutôt qu'au dixième de minute (donc
+  jusqu'à 6 secondes plus précis).
+
+2.26.0 - 2026-09-04
+====================
+
+- **Cardio en Séance en direct aligné sur le fonctionnement de la muscu** :
+  le temps n'est plus saisi à la main via des +/- mais chronométré en temps
+  réel, exactement comme une série de muscu — "Débuter la série" lance le
+  chrono (affiché dans le gros bloc de statut), "Finir la série" l'arrête et
+  calcule la durée réelle. La distance reste modifiable pendant l'effort
+  (stepper km, toujours facultative) et n'a plus besoin d'être connue à
+  l'avance ; elle peut rester à 0 si on ne la renseigne pas.
+- Annuler une série cardio en cours fonctionne désormais exactement comme en
+  muscu (supprimer sa puce depuis la frise), sans mécanisme séparé à
+  apprendre.
+- Terminer toute la séance ("Fin") alors qu'une série est encore en cours
+  la finalise proprement au préalable (calcul de la durée réelle), au lieu
+  de risquer de l'enregistrer avec une durée à 0.
+
+2.25.3 - 2026-09-04
+====================
+
+- **Corrigé : l'animation de l'écran de chargement rejouait deux fois** au
+  démarrage — une fois affichée immédiatement au chargement du script, puis
+  une seconde fois dès que Firebase confirmait la connexion, chaque appel
+  reconstruisant l'icône (donc relançant son animation d'entrée). Désormais,
+  si l'écran de chargement est déjà affiché, seul le message est mis à
+  jour ; l'icône reste le même élément et son animation ne joue qu'une
+  fois.
+
+2.25.2 - 2026-09-04
+====================
+
+- **Corrigé : le glissement Muscu ⇄ Cardio en Séance en direct** ne se
+  comportait pas pareil dans les deux sens. Deux causes cumulées :
+  - la refonte graphique récente avait ajouté une règle CSS (`:has()` +
+    `!important`) qui forçait la position du curseur selon l'état déjà
+    affiché, entrant en conflit avec l'animation pilotée par
+    `js/18-live.js` (qui pré-anime le curseur avant de reconstruire
+    l'écran) — retirée, l'animation JS gère seule le glissement.
+  - le calcul du décalage vers "Cardio" utilisait encore un ajustement de
+    marge (`+ 6px`) datant d'avant cette refonte, qui a depuis supprimé le
+    padding/l'espacement du switch (bord à bord désormais) — corrigé pour
+    coller à la nouvelle géométrie.
+
 2.25.1 - 2026-09-04
 ====================
 

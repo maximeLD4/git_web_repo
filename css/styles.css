@@ -798,8 +798,10 @@ select.ex-name-pill:focus { outline: none; }
 .live-type-switch-btn.active { color: var(--on-ink); }
 .live-type-switch { background: var(--surface-2); padding: 0; gap: 0; }
 .live-type-thumb { top: 0; left: 0; width: 50%; height: 100%; }
-.live-type-switch:has(.live-type-switch-btn:first-child.active) .live-type-thumb { transform: translateX(0) !important; }
-.live-type-switch:has(.live-type-switch-btn:last-child.active) .live-type-thumb { transform: translateX(100%) !important; }
+/* Le glissement du curseur est piloté par js/18-live.js (transform inline,
+   pré-animé avant le rendu complet — voir le commentaire sur place) : pas de
+   règle ici qui figerait sa position via :has()/!important, ça entrerait en
+   conflit avec l'animation et la bloquerait selon le sens du switch. */
 
 /* ---------- Interrupteurs : carré dans un rail carré ---------- */
 .toggle-switch { width: 48px; height: 26px; }
@@ -1091,6 +1093,10 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 /* Le bleu de « l'acquis » revient à l'encre et au gris. */
 .toggle-switch.on { background: var(--ink); }
 .live-btn.has-progress { background: var(--surface); border: 2px solid var(--ink); }
+/* Catégorie Gainage sélectionnée dans la liste Rameur/Vélo/Course/Gainage —
+   même traitement que .has-progress : c'est le même signal visuel
+   ("sélectionné/en cours"), pas la peine d'en inventer un troisième. */
+.live-btn.active { background: var(--surface); border: 2px solid var(--ink); }
 .live-exercise-btn-badge::before, .flash { color: var(--text); }
 /* La hausse et la baisse ne peuvent plus s'opposer par la teinte : elles
    s'opposent par le poids d'encre — pleine pour ce qui progresse, grise pour

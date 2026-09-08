@@ -1,7 +1,15 @@
+// La durée cardio est stockée en minutes décimales (voir applyFinishLiveSet
+// dans 18-live.js, qui chronomètre en temps réel), mais on veut toujours
+// l'AFFICHER en minutes et secondes — jamais "0.2min", illisible. Délègue à
+// formatLiveDuration (18-live.js), déjà utilisée pour le temps passé par
+// exercice, pour n'avoir qu'un seul formateur de durée dans toute l'app.
+function formatCardioDuration(decimalMinutes) {
+  return formatLiveDuration(Math.round((decimalMinutes || 0) * 60));
+}
 function formatSetChip(exType, s) {
   if (exType === "cardio") {
-    const mins = s.weight || 0;
-    return s.reps ? `${mins}min · ${s.reps}km` : `${mins}min`;
+    const durationLabel = formatCardioDuration(s.weight);
+    return s.reps ? `${durationLabel} · ${s.reps}km` : durationLabel;
   }
   return `${s.weight || 0}kg × ${s.reps || 0}`;
 }
@@ -253,7 +261,7 @@ function categoryToggleHTML(category) {
 function cardioCategoryToggleHTML(category) {
   return `
     <div class="ex-type-toggle wrap-toggle" data-cardio-category-toggle style="margin-bottom:10px;">
-      ${CARDIO_CATEGORIES.map(
+      ${[...CARDIO_CATEGORIES, GAINAGE_CATEGORY].map(
         (c) => `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""}" data-cardio-category-btn="${c.key}">${c.label}</button>`
       ).join("")}
     </div>`;
@@ -294,7 +302,7 @@ function exerciseCardHTML(ex) {
   // sinon (Cardio, ou Muscu avec un exercice choisi) -> les séries.
   let bodyHTML;
   if (!exType) {
-    bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis Muscu ou Cardio pour continuer.</div>`;
+    bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis Muscu ou Cardio/Gainage pour continuer.</div>`;
   } else if (isMuscu && !category) {
     bodyHTML = categoryToggleHTML(category) + `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis une catégorie pour continuer.</div>`;
   } else if (isMuscu && configsInCategory.length === 0) {
@@ -308,13 +316,16 @@ function exerciseCardHTML(ex) {
       `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis un exercice pour continuer.</div>`;
   } else {
     const categoryAndNameHTML = isCardio ? cardioCategoryToggleHTML(category) : categoryToggleHTML(category) + nameSelectHTML(configsInCategory, effectiveConfig);
+    // Le gainage se travaille uniquement au temps — pas de colonne distance
+    // à afficher (contrairement à Rameur/Vélo/Course).
+    const isGainage = isCardio && category === GAINAGE_CATEGORY.key;
     const setsHTML = ex.sets
       .map((s, i) => {
         let cols;
         if (isCardio) {
           const weightInput = `<input class="set-weight" type="text" inputmode="decimal" placeholder="min" value="${s.weight}">`;
           const repsInput = `<input class="set-reps" type="text" inputmode="decimal" placeholder="km (optionnel)" value="${s.reps}">`;
-          cols = weightInput + repsInput;
+          cols = isGainage ? weightInput : weightInput + repsInput;
         } else {
           const currentWeight = s.weight === "" ? null : parseFloat(s.weight);
           // On fait confiance en priorité au mode explicitement sauvegardé sur
@@ -373,7 +384,7 @@ function exerciseCardHTML(ex) {
     bodyHTML = `
     ${categoryAndNameHTML}
     ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
-    <div class="sets-header"><span class="spacer"></span>${isCardio ? "<span>Min</span><span>Km</span>" : "<span>Reps</span><span>Kg</span>"}</div>
+    <div class="sets-header"><span class="spacer"></span>${isCardio ? (isGainage ? "<span>Min</span>" : "<span>Min</span><span>Km</span>") : "<span>Reps</span><span>Kg</span>"}</div>
     <div class="sets-list">${setsHTML}</div>
     <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>`;
   }
@@ -400,7 +411,7 @@ function exerciseCardHTML(ex) {
         ? `
     <div class="ex-type-toggle">
       <button type="button" class="ex-type-btn ${isMuscu ? "active" : ""}" data-set-type="muscu">Muscu</button>
-      <button type="button" class="ex-type-btn ${isCardio ? "active" : ""}" data-set-type="cardio">Cardio</button>
+      <button type="button" class="ex-type-btn ${isCardio ? "active" : ""}" data-set-type="cardio">Cardio/Gainage</button>
     </div>
     ${bodyHTML}`
         : `<div class="exercise-collapsed-summary" data-toggle-exercise="${ex.id}">${ex.name || (isCardio ? "Exercice cardio" : "Nouvel exercice")}${" · "}${summaryCount}${summaryLast}</div>`
@@ -410,7 +421,7 @@ function exerciseCardHTML(ex) {
 
 function logTabHTML() {
   const exercisesHTML = draft.exercises.map(exerciseCardHTML).join("");
-  const allNames = Array.from(new Set([...gymExerciseConfigs.map((c) => c.name), ...library])).sort((a, b) => a.localeCompare(b));
+  const allNames = Array.from(new Set([...gymExerciseConfigs.map((c) => c.name), ...gainageExerciseConfigs.map((c) => c.name), ...library])).sort((a, b) => a.localeCompare(b));
   const libOptions = allNames.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
   const editBanner = editingSessionId
     ? `<div class="edit-banner">Modification d'une séance existante<button type="button" id="cancel-edit-btn">Annuler</button></div>`
@@ -598,11 +609,18 @@ function attachLogListeners() {
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
         target.category = btn.dataset.cardioCategoryBtn;
-        // Les catégories Cardio se comportent toutes pareil pour l'instant :
-        // elles servent uniquement à préremplir le titre par défaut, que
-        // l'utilisateur peut toujours modifier librement ensuite.
-        const cat = CARDIO_CATEGORIES.find((c) => c.key === target.category);
-        target.name = cat ? cat.label : target.name;
+        if (target.category === GAINAGE_CATEGORY.key) {
+          // Le gainage n'a pas de nom générique unique (contrairement à
+          // Rameur/Vélo/Course, dont le nom EST la catégorie) — on laisse le
+          // champ nom tel quel, à saisir ou choisir librement parmi les
+          // suggestions (voir la datalist, qui inclut gainageExerciseConfigs).
+        } else {
+          // Les catégories Rameur/Vélo/Course se comportent toutes pareil :
+          // elles servent uniquement à préremplir le titre par défaut, que
+          // l'utilisateur peut toujours modifier librement ensuite.
+          const cat = CARDIO_CATEGORIES.find((c) => c.key === target.category);
+          target.name = cat ? cat.label : target.name;
+        }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         renderContentPreservingScroll(renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));

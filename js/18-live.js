@@ -113,19 +113,44 @@ function liveCategoryStepHTML() {
   const isCardio = liveDraftType === "cardio";
   const switchHTML = `
     <div class="live-type-switch">
-      <div class="live-type-thumb" id="live-type-thumb" style="transform: translateX(${isCardio ? "calc(100% + 6px)" : "0"});"></div>
+      <div class="live-type-thumb" id="live-type-thumb" style="transform: translateX(${isCardio ? "100%" : "0"});"></div>
       <button type="button" class="live-type-switch-btn ${!isCardio ? "active" : ""}" data-live-type-switch="muscu">${ICONS.dumbbell} Muscu</button>
-      <button type="button" class="live-type-switch-btn ${isCardio ? "active" : ""}" data-live-type-switch="cardio">${ICONS.stopwatch} Cardio</button>
+      <button type="button" class="live-type-switch-btn ${isCardio ? "active" : ""}" data-live-type-switch="cardio">${ICONS.stopwatch} Cardio/Gainage</button>
     </div>`;
 
   if (isCardio) {
-    // Cardio : la catégorie EST déjà le choix final (préremplit le nom), pas
-    // de niveau supplémentaire nécessaire — inchangé.
+    // Cardio "simple" (Rameur/Vélo/Course) : la catégorie EST déjà le choix
+    // final (préremplit le nom), pas de niveau supplémentaire — inchangé.
+    // Gainage fonctionne différemment (comme la Muscu) : c'est une
+    // catégorie qu'on sélectionne, révélant en dessous la liste des
+    // exercices de gainage nommés/configurés — voir plus bas.
+    const allCardioCats = [...CARDIO_CATEGORIES, GAINAGE_CATEGORY];
     const categoriesHTML = `
       <div class="live-grid" style="grid-template-columns:1fr 1fr;">
-        ${CARDIO_CATEGORIES.map((c) => `<button type="button" class="live-btn" data-live-cardio-category="${c.key}">${c.label}</button>`).join("")}
+        ${allCardioCats.map((c) => `<button type="button" class="live-btn ${liveDraftCategory === c.key ? "active" : ""}" data-live-cardio-category="${c.key}">${c.label}</button>`).join("")}
       </div>`;
-    return liveTimelineHTML() + switchHTML + categoriesHTML;
+    let gainageListHTML = "";
+    if (liveDraftCategory === GAINAGE_CATEGORY.key) {
+      // Même drapeau/consommation qu'en Muscu (voir plus bas) — évite de
+      // rejouer l'animation d'entrée à chaque rendu non lié à ce choix.
+      const shouldAnimateEnter = liveCategoryJustChanged;
+      liveCategoryJustChanged = false;
+      const inner =
+        gainageExerciseConfigs.length === 0
+          ? `<div class="empty-state">Aucun exercice de gainage configuré.<br>Ajoute-en dans Paramètres → Salle de sport.</div>`
+          : `<div class="live-grid" style="grid-template-columns:1fr 1fr;">
+              ${[...gainageExerciseConfigs]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((c) => {
+                  const already = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === c.name.trim().toLowerCase());
+                  const badgeHTML = already ? `<span class="live-exercise-btn-badge">${already.sets.length}</span>` : "";
+                  return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}"><span class="live-exercise-btn-name">${c.name}</span>${badgeHTML}</button>`;
+                })
+                .join("")}
+            </div>`;
+      gainageListHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}">${inner}</div>`;
+    }
+    return liveTimelineHTML() + switchHTML + categoriesHTML + gainageListHTML;
   }
 
   // Muscu : la catégorie s'affiche en rangée compacte de puces (comme un
@@ -183,7 +208,15 @@ function liveTimelineHTML() {
       if (!ex) return "";
       const set = ex.sets.find((s) => s.id === entry.setId);
       if (!set) return "";
-      const valueLabel = ex.exType === "cardio" ? `${set.weight}min${set.reps ? "/" + set.reps + "km" : ""}` : `${set.weight}kg×${set.reps}`;
+      // Le cardio en cours est un placeholder tant que "Finir la série"
+      // n'a pas été tapé (durée chronométrée en temps réel, voir
+      // applyFinishLiveSet) — afficher "0min" serait trompeur.
+      const isInProgressCardioPlaceholder = ex.exType === "cardio" && idx === liveSession.log.length - 1 && !!liveSession.setInProgressStartedAt;
+      const valueLabel = isInProgressCardioPlaceholder
+        ? "en cours..."
+        : ex.exType === "cardio"
+          ? `${formatCardioDuration(set.weight)}${set.reps ? "/" + set.reps + "km" : ""}`
+          : `${set.weight}kg×${set.reps}`;
       const confirming = idx === liveTimelineConfirmIndex;
       // Repos affiché entre deux puces = uniquement le repos réellement
       // MESURÉ manuellement ("Débuter la série" arrête le repos en cours et
@@ -291,15 +324,37 @@ function liveMuscuSetFormHTML(activeExercise) {
 
 function liveCardioSetFormHTML(activeExercise) {
   const phase = liveSetPhase();
-  const lastSet = activeExercise && activeExercise.sets.length ? activeExercise.sets[activeExercise.sets.length - 1] : null;
+  const sets = activeExercise ? activeExercise.sets : [];
+  // Le gainage se travaille uniquement au temps — pas de distance à
+  // proposer (contrairement à Rameur/Vélo/Course).
+  const isGainage = liveDraftCategory === GAINAGE_CATEGORY.key;
+  // En cours, la dernière entrée est le PLACEHOLDER de la série en train de
+  // se faire (durée/distance pas encore connues, voir startLiveSet) — pas
+  // une vraie série précédente. Le "Précédent" affiché doit donc pointer
+  // juste avant lui dans ce cas, jamais sur lui-même.
+  const inProgressSet = phase === "in-progress" && sets.length ? sets[sets.length - 1] : null;
+  const lastSet = phase === "in-progress" ? (sets.length > 1 ? sets[sets.length - 2] : null) : sets.length ? sets[sets.length - 1] : null;
 
   if (phase === "in-progress") {
+    const distance = liveDraftDistance || 0;
     return `
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}min${lastSet.reps ? "/" + lastSet.reps + "km" : ""}` : ""}</div>
-          ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
+          <div class="live-in-progress-banner">Chrono en cours</div>
+          ${inProgressSet && inProgressSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(inProgressSet.restSec)}</div>` : ""}
+          ${
+            isGainage
+              ? ""
+              : `<div class="live-stepper-group">
+            <div class="live-stepper-label">Distance (km, optionnel)</div>
+            <div class="live-stepper">
+              <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins">−</button>
+              <div class="live-stepper-value">${distance.toFixed(1)} km</div>
+              <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus">+</button>
+            </div>
+          </div>`
+          }
         </div>
         <div class="live-set-form-actions">
           <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
@@ -308,32 +363,15 @@ function liveCardioSetFormHTML(activeExercise) {
       </div>`;
   }
 
-  const duration = liveDraftDuration || 0;
-  const distance = liveDraftDistance || 0;
   return `
     <div class="live-set-form">
       <div class="live-set-form-scroll">
         <div class="live-exercise-name">${liveDraftName}</div>
-        ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}min${lastSet.reps ? " · " + lastSet.reps + "km" : ""}</div>` : ""}
-        <div class="live-stepper-group">
-          <div class="live-stepper-label">Durée (minutes)</div>
-          <div class="live-stepper">
-            <button type="button" class="live-stepper-btn" data-live-duration-minus aria-label="Moins">−</button>
-            <div class="live-stepper-value">${duration} min</div>
-            <button type="button" class="live-stepper-btn" data-live-duration-plus aria-label="Plus">+</button>
-          </div>
-        </div>
-        <div class="live-stepper-group">
-          <div class="live-stepper-label">Distance (km, optionnel)</div>
-          <div class="live-stepper">
-            <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins">−</button>
-            <div class="live-stepper-value">${distance.toFixed(1)} km</div>
-            <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus">+</button>
-          </div>
-        </div>
+        ${lastSet ? `<div class="live-prev-set">Précédent : ${formatCardioDuration(lastSet.weight)}${lastSet.reps ? " · " + lastSet.reps + "km" : ""}</div>` : ""}
+        <div class="live-prev-set">Le temps est chronométré automatiquement dès que tu débutes.</div>
       </div>
       <div class="live-set-form-actions">
-        <button type="button" class="live-validate-btn" data-live-start-set ${duration === 0 ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
+        <button type="button" class="live-validate-btn" data-live-start-set>${ICONS.play} Débuter la série</button>
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
     </div>`;
@@ -572,8 +610,12 @@ function startOrResumeLiveExercise() {
     liveActiveExerciseId = existing.id;
     const lastSet = existing.sets.length ? existing.sets[existing.sets.length - 1] : null;
     if (existing.exType === "cardio") {
-      liveDraftDuration = lastSet ? parseFloat(lastSet.weight) || 0 : 0;
-      liveDraftDistance = lastSet ? parseFloat(lastSet.reps) || 0 : 0;
+      // Le temps est désormais pris en temps réel (comme pour la muscu, voir
+      // startLiveSet/applyFinishLiveSet) — rien à préremplir pour la durée.
+      // La distance repart de zéro à chaque série : c'est une mesure propre
+      // à CETTE série, pas une valeur qu'on continuerait depuis la
+      // précédente.
+      liveDraftDistance = 0;
     } else {
       liveDraftWeightMode = lastSet ? lastSet.weightMode || "off" : "off";
       const config = findExerciseConfig(liveDraftName);
@@ -592,7 +634,6 @@ function startOrResumeLiveExercise() {
     // liveSession.exercises, on attend la validation de la première série.
     liveActiveExerciseId = null;
     if (liveDraftType === "cardio") {
-      liveDraftDuration = 0;
       liveDraftDistance = 0;
     } else {
       const config = findExerciseConfig(liveDraftName);
@@ -632,7 +673,11 @@ function startLiveSet() {
   const finalWeight = liveDraftType === "cardio" ? null : liveDraftBaseWeight + (liveDraftWeightMode === "on" ? increment : 0);
   const newSet =
     liveDraftType === "cardio"
-      ? { id: uid(), weight: liveDraftDuration || 0, reps: liveDraftDistance || 0, timestamp: Date.now() }
+      ? // Placeholder : la durée n'est pas encore connue (chronométrée en
+        // temps réel, voir applyFinishLiveSet) — elle sera complétée à
+        // "Finir la série", tout comme la distance éventuellement saisie
+        // entre-temps.
+        { id: uid(), weight: 0, reps: 0, timestamp: Date.now() }
       : { id: uid(), weight: finalWeight, reps: liveDraftReps, weightMode: liveDraftWeightMode, timestamp: Date.now() };
   // Le repos mesuré manuellement juste avant cette série (s'il y en a eu
   // un) lui est attaché ici, puis consommé — il ne doit pas se réappliquer
@@ -650,22 +695,42 @@ function startLiveSet() {
   renderLiveStep();
 }
 
-// "Finir la série" : ne modifie plus les données de la série (déjà fixées
-// au moment de "Débuter la série") — passe juste en mode repos, et prépare
-// le palier de poids suggéré pour la prochaine série pendant qu'on récupère.
+// "Finir la série" : passe en mode repos. Pour la muscu, les données étaient
+// déjà fixées au moment de "Débuter la série" — rien à faire ici sinon
+// préparer le palier suggéré pour la suivante. Pour le cardio en revanche,
+// la durée est chronométrée en temps réel : c'est ICI qu'on calcule le
+// temps réellement écoulé et qu'on complète le placeholder créé au
+// démarrage, avec la distance éventuellement saisie entre-temps.
 // La logique elle-même ne redessine rien (voir applyFinishLiveSet) : c'est
 // finishLiveSet() (bouton) qui s'en charge, pour pouvoir aussi être
 // appliquée silencieusement depuis un contexte qui va de toute façon
 // redessiner juste après (voir autoFinishLiveSetIfInProgress).
 function applyFinishLiveSet() {
   if (!liveSession.setInProgressStartedAt) return;
+  const startedAt = liveSession.setInProgressStartedAt;
   liveSession.setInProgressStartedAt = null;
-  // Pour la prochaine série, on propose automatiquement le palier de base
-  // disponible juste au-dessus (progression naturelle d'une série à
-  // l'autre), sauf si on est déjà au maximum disponible. Les reps restent
-  // inchangées — seul le poids avance. Le mode Standard/+Xkg est conservé
-  // tel quel, sans y toucher.
-  if (liveDraftType !== "cardio") {
+  if (liveDraftType === "cardio") {
+    // Le placeholder à compléter est toujours la toute dernière série
+    // loggée (voir startLiveSet — on ne peut pas en démarrer une seconde
+    // tant que celle-ci est en cours).
+    const entry = liveSession.log[liveSession.log.length - 1];
+    const exercise = entry ? liveSession.exercises.find((e) => e.id === entry.exerciseId) : null;
+    const set = exercise ? exercise.sets.find((s) => s.id === entry.setId) : null;
+    if (set) {
+      const elapsedMin = Math.max(0, (Date.now() - startedAt) / 60000);
+      // Arrondi à la seconde près (pas au dixième de minute) — sinon
+      // l'affichage minutes+secondes perdrait jusqu'à 6 secondes de
+      // précision à l'enregistrement.
+      set.weight = Math.round(elapsedMin * 60) / 60;
+      set.reps = liveDraftDistance || 0;
+    }
+    liveDraftDistance = 0;
+  } else {
+    // Pour la prochaine série, on propose automatiquement le palier de base
+    // disponible juste au-dessus (progression naturelle d'une série à
+    // l'autre), sauf si on est déjà au maximum disponible. Les reps restent
+    // inchangées — seul le poids avance. Le mode Standard/+Xkg est conservé
+    // tel quel, sans y toucher.
     liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, liveDraftBaseWeight);
   }
   startLiveRestManually();
@@ -713,6 +778,11 @@ function cancelLiveSession() {
 }
 
 function finishLiveSession() {
+  // Comme pour changer d'exercice ou revenir en arrière : si une série est
+  // encore en cours ("Débuter" tapé, "Finir" pas encore), on la finalise
+  // d'abord — sinon, pour le cardio notamment, elle serait enregistrée avec
+  // sa durée à 0 (placeholder jamais complété, voir applyFinishLiveSet).
+  autoFinishLiveSetIfInProgress();
   const cleaned = (liveSession.exercises || []).filter((e) => e.sets.length > 0);
   if (cleaned.length === 0) {
     // Rien d'enregistré cette fois-ci : on quitte simplement, sans créer de
@@ -806,7 +876,7 @@ function attachLiveStepListeners() {
       // glissement, ce qui casserait l'effet.
       const thumb = document.getElementById("live-type-thumb");
       if (thumb) {
-        thumb.style.transform = `translateX(${newType === "cardio" ? "calc(100% + 6px)" : "0"})`;
+        thumb.style.transform = `translateX(${newType === "cardio" ? "100%" : "0"})`;
         setTimeout(() => renderLiveApp(), 220);
       } else {
         renderLiveApp();
@@ -849,8 +919,18 @@ function attachLiveStepListeners() {
 
   content.querySelectorAll("[data-live-cardio-category]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const cat = CARDIO_CATEGORIES.find((c) => c.key === btn.dataset.liveCardioCategory);
-      liveDraftCategory = btn.dataset.liveCardioCategory;
+      const key = btn.dataset.liveCardioCategory;
+      if (key === GAINAGE_CATEGORY.key) {
+        // Comme les catégories Muscu : on sélectionne/désélectionne, ça
+        // révèle la liste des exercices de gainage juste en dessous, sans
+        // démarrer quoi que ce soit tout de suite.
+        liveDraftCategory = liveDraftCategory === key ? "" : key;
+        liveCategoryJustChanged = true;
+        renderLiveApp();
+        return;
+      }
+      const cat = CARDIO_CATEGORIES.find((c) => c.key === key);
+      liveDraftCategory = key;
       liveDraftName = cat ? cat.label : "";
       startOrResumeLiveExercise();
     });
@@ -885,11 +965,6 @@ function attachLiveStepListeners() {
       renderLiveApp();
     });
   }
-
-  const durMinus = content.querySelector("[data-live-duration-minus]");
-  const durPlus = content.querySelector("[data-live-duration-plus]");
-  if (durMinus) durMinus.addEventListener("click", () => { liveDraftDuration = Math.max(0, (liveDraftDuration || 0) - 1); renderLiveApp(); });
-  if (durPlus) durPlus.addEventListener("click", () => { liveDraftDuration = (liveDraftDuration || 0) + 1; renderLiveApp(); });
 
   const distMinus = content.querySelector("[data-live-distance-minus]");
   const distPlus = content.querySelector("[data-live-distance-plus]");

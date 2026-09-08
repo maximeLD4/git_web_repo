@@ -19,6 +19,7 @@ const FIREBASE_SYNC_MAP = {
   [KEYS.swimLibrary]: { path: "library/swim", getValue: () => swimLibrary },
   [KEYS.bikeLibrary]: { path: "library/bike", getValue: () => bikeLibrary },
   [KEYS.gymExerciseConfigs]: { path: "gymExerciseConfigs", getValue: () => gymExerciseConfigs },
+  [KEYS.gainageExerciseConfigs]: { path: "gainageExerciseConfigs", getValue: () => gainageExerciseConfigs },
   [KEYS.weights]: { path: "weights", getValue: () => weights },
 };
 
@@ -65,11 +66,12 @@ function pullFromFirebase() {
     base.child("library/swim").once("value"),
     base.child("library/bike").once("value"),
     base.child("gymExerciseConfigs").once("value"),
+    base.child("gainageExerciseConfigs").once("value"),
     base.child("weights").once("value"),
     base.child("backup").once("value"), // ancien format "tout en un bloc", pour migration ponctuelle
   ])
-    .then(([gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, weightsSnap, oldBackupSnap]) => {
-      const newSnaps = [gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, weightsSnap];
+    .then(([gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, weightsSnap, oldBackupSnap]) => {
+      const newSnaps = [gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, weightsSnap];
       const hasAnyNewData = newSnaps.some((s) => s.val() !== null);
       const oldBackup = oldBackupSnap.val();
 
@@ -94,6 +96,7 @@ function pullFromFirebase() {
       swimLibrary = swimLibSnap.val() || [];
       bikeLibrary = bikeLibSnap.val() || [];
       gymExerciseConfigs = configsSnap.val() || [];
+      gainageExerciseConfigs = gainageConfigsSnap.val() || [];
       weights = weightsSnap.val() || [];
       // On réapplique la correction de casse des noms d'exercice ici : sans
       // ça, une éventuelle ancienne valeur non capitalisée encore présente
@@ -106,7 +109,19 @@ function pullFromFirebase() {
     });
 }
 
+// Reconstruire tout le markup à chaque appel recréerait l'icône à chaque
+// fois (ex. une fois au tout premier chargement du script, puis une
+// seconde fois dès que Firebase confirme la connexion) — et donc rejouerait
+// son animation d'entrée à chaque étape. Si l'écran de chargement est déjà
+// affiché, on se contente de mettre à jour le message : l'icône reste le
+// même élément DOM, son animation ("1" occurrence, voir styles.css) ne
+// rejoue donc qu'une seule fois du tout début à l'affichage de l'app.
 function renderAuthLoadingScreen(message) {
+  const existingLabel = app.querySelector(".auth-loading .auth-loading-label");
+  if (existingLabel) {
+    existingLabel.textContent = message || "Chargement...";
+    return;
+  }
   app.className = "theme-auth";
   app.innerHTML = `
     <div class="auth-loading">
