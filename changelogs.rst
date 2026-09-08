@@ -28,6 +28,26 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.29.4 - 2026-09-04
+====================
+
+- **Corrigé : une séance enregistrée hors-ligne pouvait disparaître après
+  être repassé en ligne.** Ton diagnostic était le bon (même si "merger"
+  n'était pas exactement la faille) : au lancement, l'app rapatriait
+  toujours le cloud AVANT de renvoyer ce qui était resté en attente — un
+  rapatriement pouvait donc écraser localement une donnée pas encore
+  renvoyée avec une version plus ancienne du cloud, qui ne la contenait pas
+  encore. Séquence exacte qui déclenchait la perte : enregistrer hors-ligne
+  → fermer l'app → repasser en ligne (app fermée) → rouvrir. L'ordre est
+  maintenant inversé : tout ce qui est resté en attente part D'ABORD vers
+  Firebase, et le rapatriement ne se fait qu'ensuite.
+  Limite connue (rare) : en cas de modifications simultanées sur deux
+  appareils différents pendant qu'un des deux est hors-ligne, celui qui
+  synchronise en dernier peut encore écraser les changements de l'autre
+  pour un même domaine (séances, poids...) — un vrai merge fusionnant les
+  deux irait plus loin, mais représente un changement plus profond de la
+  structure de synchro ; à creuser si ce cas te concerne réellement.
+
 2.29.3 - 2026-09-04
 ====================
 

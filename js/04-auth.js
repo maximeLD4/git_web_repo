@@ -47,7 +47,7 @@ function scheduleFirebaseSync(key) {
 }
 
 function pushToFirebase() {
-  if (!currentUser) return;
+  if (!currentUser) return Promise.resolve();
   // On ne pousse que les domaines réellement modifiés depuis la dernière
   // synchro confirmée — c'est précisément ce qui évite d'écraser à tort un
   // domaine non concerné par la modification en cours. Un domaine n'est
@@ -56,22 +56,29 @@ function pushToFirebase() {
   // ligne, l'envoi peut échouer (ou rester en attente) et le domaine doit
   // rester marqué à synchroniser pour qu'on retente plus tard, y compris
   // après une fermeture complète de l'app entre-temps.
+  // Renvoie une promesse qui se résout une fois TOUTES les tentatives
+  // retombées (réussies ou non) — utilisée pour s'assurer qu'un envoi resté
+  // en attente parte bien AVANT un rapatriement depuis le cloud (voir
+  // onAuthStateChanged) : sans cet ordre, le rapatriement pourrait écraser
+  // localement des données pas encore renvoyées, les faisant disparaître.
   const keysToSync = Array.from(firebaseDirtyKeys);
-  keysToSync.forEach((key) => {
-    const mapping = FIREBASE_SYNC_MAP[key];
-    if (!mapping) return;
-    firebase
-      .database()
-      .ref("users/" + currentUser.uid + "/" + mapping.path)
-      .set(mapping.getValue())
-      .then(() => {
-        firebaseDirtyKeys.delete(key);
-        persistFirebaseDirtyKeys();
-      })
-      .catch((err) => {
-        console.error("Synchronisation cloud impossible pour " + mapping.path + " (les données restent sauvegardées localement, on retentera plus tard) :", err);
-      });
-  });
+  return Promise.all(
+    keysToSync.map((key) => {
+      const mapping = FIREBASE_SYNC_MAP[key];
+      if (!mapping) return Promise.resolve();
+      return firebase
+        .database()
+        .ref("users/" + currentUser.uid + "/" + mapping.path)
+        .set(mapping.getValue())
+        .then(() => {
+          firebaseDirtyKeys.delete(key);
+          persistFirebaseDirtyKeys();
+        })
+        .catch((err) => {
+          console.error("Synchronisation cloud impossible pour " + mapping.path + " (les données restent sauvegardées localement, on retentera plus tard) :", err);
+        });
+    })
+  );
 }
 
 // Retente les synchros restées en attente (voir pushToFirebase) — à chaque
@@ -274,18 +281,28 @@ firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
     renderAuthLoadingScreen("Récupération de tes données...");
-    withTimeout(pullFromFirebase(), 5000, () => {
-      console.warn("Récupération des données Firebase trop longue (probablement hors-ligne) — on continue avec les données locales de cet appareil.");
-    }).finally(() => {
-      currentApp = "home";
-      render();
-      // Rattrape toute synchro restée en attente d'une session précédente
-      // (voir persistFirebaseDirtyKeys) — par exemple une séance enregistrée
-      // hors-ligne puis l'app fermée avant le retour du réseau. Un simple
-      // "on est de retour, connecté" suffit à retenter, pas besoin d'attendre
-      // une nouvelle modification.
-      if (firebaseDirtyKeys.size > 0) pushToFirebase();
-    });
+    // Ordre volontaire et important : on pousse D'ABORD tout ce qui serait
+    // resté en attente d'une session précédente (voir persistFirebaseDirtyKeys
+    // — par exemple une séance enregistrée hors-ligne puis l'app fermée
+    // avant le retour du réseau), et seulement ENSUITE on rapatrie depuis le
+    // cloud. Dans l'autre sens, le rapatriement aurait écrasé localement
+    // cette séance pas encore renvoyée avec une version plus ancienne du
+    // cloud — elle aurait alors disparu, comme observé en pratique.
+    const flushPending = firebaseDirtyKeys.size > 0
+      ? withTimeout(pushToFirebase(), 5000, () => {
+          console.warn("Envoi des données en attente trop long (probablement hors-ligne) — le rapatriement se fait quand même, on retentera l'envoi plus tard.");
+        })
+      : Promise.resolve();
+    flushPending
+      .then(() =>
+        withTimeout(pullFromFirebase(), 5000, () => {
+          console.warn("Récupération des données Firebase trop longue (probablement hors-ligne) — on continue avec les données locales de cet appareil.");
+        })
+      )
+      .finally(() => {
+        currentApp = "home";
+        render();
+      });
   } else {
     currentUser = null;
     renderLoginScreen();
