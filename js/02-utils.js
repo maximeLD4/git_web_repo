@@ -61,7 +61,13 @@ function scrollCardTopIntoView(card, topMargin = 16) {
   // écart d'arrondi de quelques pixels déclenchait une animation de
   // scroll perceptible alors qu'on était déjà pile au bon endroit.
   if (Math.abs(delta) < 6) return;
-  contentEl.scrollBy({ top: delta, behavior: "smooth" });
+  // Volontairement instantané (pas "smooth") : un réalignement animé
+  // laissait une fenêtre de quelques centaines de ms pendant laquelle un tap
+  // rapide sur le bouton suivant (catégorie, Gainage, Ajouter une série...)
+  // pouvait atterrir sur une cible encore en mouvement, ou être absorbé par
+  // le navigateur comme un geste "stopper le défilement" plutôt qu'un vrai
+  // tap — d'où le besoin occasionnel de cliquer deux fois.
+  contentEl.scrollBy({ top: delta, behavior: "auto" });
 }
 
 function scrollCardBottomIntoView(card) {
@@ -84,7 +90,10 @@ function scrollCardBottomIntoView(card) {
   // Même seuil que pour l'alignement en haut : évite un scroll perceptible
   // pour un écart insignifiant.
   if (Math.abs(delta) < 6) return;
-  contentEl.scrollBy({ top: delta, behavior: "smooth" });
+  // Même raison qu'en haut (voir scrollCardTopIntoView) : instantané plutôt
+  // qu'animé, pour ne jamais laisser de fenêtre où un tap rapide sur le
+  // bouton suivant pourrait être raté ou absorbé par le défilement en cours.
+  contentEl.scrollBy({ top: delta, behavior: "auto" });
 }
 
 // Glissement latéral au changement de mois, réutilisable par tous les

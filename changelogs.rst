@@ -28,6 +28,19 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.28.4 - 2026-09-04
+====================
+
+- **Corrigé : premier clic parfois sans effet en créant une séance**
+  (Sport > Salle de sport > Créer), notamment en enchaînant les choix
+  rapidement (type, catégorie, Gainage, Ajouter une série...). Cause : le
+  réalignement automatique du défilement après chaque sélection était animé
+  ("smooth") — un tap arrivant pendant cette animation pouvait manquer sa
+  cible encore en mouvement, ou être absorbé par le navigateur comme un
+  geste "stopper le défilement" plutôt qu'un vrai tap. Le réalignement est
+  désormais instantané, ce qui supprime cette fenêtre. Partagé par tous les
+  sports (Course, Natation, Vélo inclus), donc corrigé partout d'un coup.
+
 2.28.3 - 2026-09-04
 ====================
 
