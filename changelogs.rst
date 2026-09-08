@@ -28,6 +28,18 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.29.1 - 2026-09-04
+====================
+
+- **Corrigé : l'app restait bloquée indéfiniment sur "Récupération de tes
+  données..." hors-ligne.** Contrairement à une requête réseau classique,
+  les appels Firebase Realtime Database (`.once("value")`) peuvent rester
+  en attente indéfiniment sans jamais échouer quand l'appareil est
+  hors-ligne — ils n'avaient donc pas l'occasion de déclencher le repli sur
+  les données locales déjà prévu. Un délai limite de 7 secondes force
+  maintenant la bascule sur les données locales de l'appareil si Firebase
+  ne répond pas dans ce délai.
+
 2.29.0 - 2026-09-04
 ====================
 

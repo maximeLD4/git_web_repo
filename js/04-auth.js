@@ -53,6 +53,42 @@ function pushToFirebase() {
   });
 }
 
+// Délai limite volontaire : contrairement à une requête réseau classique
+// (fetch), un appel .once("value") de Firebase Realtime Database peut
+// rester en attente indéfiniment quand l'appareil est hors-ligne, sans
+// jamais échouer ni réussir — sans ce filet, l'écran "Récupération de tes
+// données..." resterait affiché pour toujours au lieu de basculer sur les
+// données locales déjà présentes sur l'appareil.
+function withTimeout(promise, ms, onTimeout) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      if (onTimeout) onTimeout();
+      resolve();
+    }, ms);
+    promise.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        // pullFromFirebase() gère déjà ses propres erreurs via son .catch
+        // interne (voir plus bas) — ici, on se contente de ne pas rester
+        // bloqué en attendant indéfiniment un rejet qui, en pratique, ne
+        // vient pas toujours.
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      }
+    );
+  });
+}
+
 function pullFromFirebase() {
   if (!currentUser) return Promise.resolve();
   const base = firebase.database().ref("users/" + currentUser.uid);
@@ -188,7 +224,9 @@ firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
     renderAuthLoadingScreen("Récupération de tes données...");
-    pullFromFirebase().finally(() => {
+    withTimeout(pullFromFirebase(), 7000, () => {
+      console.warn("Récupération des données Firebase trop longue (probablement hors-ligne) — on continue avec les données locales de cet appareil.");
+    }).finally(() => {
       currentApp = "home";
       render();
     });
