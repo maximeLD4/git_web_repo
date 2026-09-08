@@ -28,6 +28,23 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.29.3 - 2026-09-04
+====================
+
+- **Corrigé la vraie cause de ta question suivante : les données venant de
+  Firebase n'étaient jamais mises en cache localement.** `pullFromFirebase`
+  mettait bien à jour séances/exercices/poids en mémoire à chaque
+  connexion, mais ne les écrivait jamais dans le stockage local de
+  l'appareil — tout fonctionnait donc normalement tant qu'on restait en
+  ligne, mais au prochain lancement hors-ligne (ou si Firebase ne répondait
+  pas à temps), l'app repartait sur d'anciennes données locales
+  potentiellement vides : par exemple, les exercices configurés dans
+  Paramètres > Salle de sport à reconstruire entièrement. Chaque domaine
+  récupéré est désormais aussi écrit localement, pour être disponible dès
+  la prochaine ouverture, réseau ou pas (nouvelle fonction utilitaire
+  `saveJSONLocalOnly`, qui évite au passage de renvoyer inutilement vers
+  Firebase des données qui en proviennent déjà).
+
 2.29.2 - 2026-09-04
 ====================
 

@@ -163,6 +163,22 @@ function saveJSON(key, value) {
   if (typeof scheduleFirebaseSync === "function") scheduleFirebaseSync(key);
 }
 
+// Comme saveJSON, mais sans déclencher de resynchro cloud en retour —
+// utilisée uniquement pour mettre en cache localement des données qui
+// viennent justement d'être récupérées DEPUIS Firebase (voir
+// pullFromFirebase dans 04-auth.js) : les repousser aussitôt vers Firebase
+// serait un aller-retour inutile, puisque c'est très exactement leur source.
+function saveJSONLocalOnly(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    if (!localStorageWarned) {
+      console.error("Sauvegarde locale indisponible dans ce contexte.", e);
+      localStorageWarned = true;
+    }
+  }
+}
+
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const todayISO = () => new Date().toISOString().slice(0, 10);
 

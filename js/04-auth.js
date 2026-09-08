@@ -163,6 +163,27 @@ function pullFromFirebase() {
       gymExerciseConfigs = configsSnap.val() || [];
       gainageExerciseConfigs = gainageConfigsSnap.val() || [];
       weights = weightsSnap.val() || [];
+      // Essentiel pour l'usage hors-ligne : jusqu'ici, ce qui venait d'être
+      // récupéré n'était mis à jour qu'en mémoire, jamais réellement écrit
+      // dans le stockage local de l'appareil. Résultat observé en pratique :
+      // tout fonctionnait tant qu'on restait en ligne (les données vivaient
+      // en mémoire), mais au prochain lancement hors-ligne (ou si Firebase
+      // ne répondait pas à temps), l'app repartait sur d'anciennes données
+      // locales potentiellement vides — par exemple des exercices de Salle
+      // de sport à reconfigurer entièrement. On sauvegarde donc explicitement
+      // chaque domaine dès qu'il vient d'être récupéré, pour qu'il soit
+      // disponible localement dès la prochaine ouverture, réseau ou pas.
+      saveJSONLocalOnly(KEYS.sessions, sessions);
+      saveJSONLocalOnly(KEYS.runSessions, runSessions);
+      saveJSONLocalOnly(KEYS.swimSessions, swimSessions);
+      saveJSONLocalOnly(KEYS.bikeSessions, bikeSessions);
+      saveJSONLocalOnly(KEYS.library, library);
+      saveJSONLocalOnly(KEYS.runLibrary, runLibrary);
+      saveJSONLocalOnly(KEYS.swimLibrary, swimLibrary);
+      saveJSONLocalOnly(KEYS.bikeLibrary, bikeLibrary);
+      saveJSONLocalOnly(KEYS.gymExerciseConfigs, gymExerciseConfigs);
+      saveJSONLocalOnly(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+      saveJSONLocalOnly(KEYS.weights, weights);
       // On réapplique la correction de casse des noms d'exercice ici : sans
       // ça, une éventuelle ancienne valeur non capitalisée encore présente
       // dans le cloud (pas encore synchronisée avec la correction locale)
