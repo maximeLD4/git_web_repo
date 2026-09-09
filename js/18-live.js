@@ -800,16 +800,18 @@ function getLiveAudioContext() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return null;
   if (!liveAudioCtx) liveAudioCtx = new AudioCtx();
-  // Certains navigateurs (notamment iOS) démarrent le contexte "suspendu"
-  // tant qu'il n'a pas été relancé depuis un vrai geste utilisateur — sans
-  // effet s'il tournait déjà, donc sans risque de le rappeler à chaque bip.
-  if (liveAudioCtx.state === "suspended") liveAudioCtx.resume().catch(() => {});
   return liveAudioCtx;
 }
 
-function playLiveBeep(frequency, durationMs) {
-  const ctx = getLiveAudioContext();
-  if (!ctx) return;
+// Joue effectivement le son sur un contexte confirmé "running" — jamais
+// avant. C'est le cœur du correctif : reprendre un contexte suspendu
+// (ctx.resume()) est ASYNCHRONE, donc le lancer sans attendre puis démarrer
+// l'oscillateur dans la foulée revenait à le programmer sur un contexte
+// encore suspendu la plupart du temps — silencieux sans la moindre erreur.
+// Après un repos assez long (notamment sur iOS, qui suspend volontiers un
+// contexte audio inactif), c'est exactement ce qui pouvait faire "sauter"
+// le bip du passage repos → travail sans que rien ne le signale.
+function scheduleLiveTone(ctx, frequency, durationMs) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = "sine";
@@ -823,6 +825,18 @@ function playLiveBeep(frequency, durationMs) {
   gain.connect(ctx.destination);
   osc.start();
   osc.stop(ctx.currentTime + durationMs / 1000 + 0.03);
+}
+
+function playLiveBeep(frequency, durationMs) {
+  const ctx = getLiveAudioContext();
+  if (!ctx) return;
+  if (ctx.state === "suspended") {
+    ctx.resume()
+      .then(() => scheduleLiveTone(ctx, frequency, durationMs))
+      .catch(() => {});
+  } else {
+    scheduleLiveTone(ctx, frequency, durationMs);
+  }
 }
 
 function hapticPulse(pattern) {

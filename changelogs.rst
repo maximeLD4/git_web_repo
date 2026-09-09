@@ -28,6 +28,21 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.31.5 - 2026-09-04
+====================
+
+- **Corrigé un vrai bug de lecture audio dans la boucle Gainage.** Vérifié
+  d'abord que le déclenchement lui-même fonctionnait toujours (test réel :
+  les 3 sons se jouent bien aux bons moments) — le problème était plus
+  profond. `resume()` d'un contexte audio suspendu est asynchrone ; le code
+  le lançait sans l'attendre puis démarrait aussitôt le bip, qui se
+  retrouvait donc programmé sur un contexte encore suspendu la plupart du
+  temps — silencieux sans la moindre erreur visible. Après un repos assez
+  long (notamment sur iOS, qui suspend volontiers un contexte audio
+  inactif), c'est très probablement ce qui faisait "sauter" le bip du
+  passage repos → travail. Le bip attend maintenant confirmation que le
+  contexte est bien relancé avant de se jouer.
+
 2.31.4 - 2026-09-04
 ====================
 
