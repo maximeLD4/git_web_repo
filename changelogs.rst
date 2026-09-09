@@ -28,6 +28,143 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.31.4 - 2026-09-04
+====================
+
+- **Les 4 catégories cardio ont maintenant exactement la même hauteur**
+  (Créer) : Rameur/Vélo/Course mesuraient déjà 158px à l'identique : c'est
+  cette valeur qui sert maintenant de référence pour Gainage aussi, réglé
+  sur la même hauteur minimale plutôt que de rester plus court. Plus aucun
+  saut de mise en page en changeant de catégorie dans le cas courant.
+  L'animation de hauteur ajoutée juste avant (2.31.3) reste en place pour
+  les cas plus rares où l'écart réapparaît (ex. plusieurs passages ajoutés
+  à Rameur/Vélo/Course, qui dépassent alors cette hauteur de référence).
+
+2.31.3 - 2026-09-04
+====================
+
+- **Corrigé le saut brutal de hauteur en changeant de catégorie/type
+  d'exercice** (Créer). Mesuré précisément avant de corriger : la largeur
+  des champs était déjà identique partout, c'est la hauteur de la carte qui
+  change beaucoup selon la catégorie (Gainage n'a ni barre d'outils ni
+  bouton "Ajouter", contrairement à Rameur/Vélo/Course — environ 100px
+  d'écart). Ce changement de hauteur est maintenant animé en douceur au
+  lieu de se produire d'un coup, sur les 4 sélections concernées (type
+  Muscu/Cardio, catégorie Muscu, catégorie cardio, exercice Muscu choisi).
+
+2.31.2 - 2026-09-04
+====================
+
+- **Rameur/Vélo/Course : un temps et un kilométrage à remplir par défaut**,
+  comme pour la config de boucle du Gainage — plus besoin de taper
+  "Ajouter un passage" pour voir apparaître les champs. Ni l'un ni l'autre
+  n'est obligatoire (inchangé), et le filet fonctionne aussi bien sur un
+  exercice fraîchement choisi qu'en rouvrant pour modifier un exercice
+  enregistré vide.
+
+2.31.1 - 2026-09-04
+====================
+
+- **Unité visuelle entre les modes de saisie d'un exercice** (Créer) : le
+  menu déroulant de poids (Muscu) était en fond plein/boxé, mais les champs
+  Min/Km (Rameur/Vélo/Course) et Tours/Travail/Repos (Gainage) étaient en
+  simple ligne soulignée — deux langages visuels différents dans la même
+  famille de cartes. Tous partagent désormais le même habillage (fond
+  plein, valeur en gras centrée), y compris le bloc Fractionné de Course à
+  pied. Chaque type garde son propre mode de saisie (stepper, menu
+  déroulant, champ texte/numérique) — seul l'habillage s'aligne.
+
+2.31.0 - 2026-09-04
+====================
+
+- **Uniformisation de la saisie entre "séance effectuée" et "plan"**
+  (module Créer). Muscu et Rameur/Vélo/Course l'étaient déjà ; le Gainage
+  ne l'était pas : il se saisissait en boucle (tours/travail/repos) pour un
+  plan, mais en séries individuelles pour une séance déjà faite. C'est
+  maintenant la même config de boucle dans les deux cas — la façon de
+  saisir ne dépend plus de l'usage final, seule la finalité change (cible à
+  venir, ou résumé de ce qui vient d'être fait).
+  - La validation à l'enregistrement suit désormais exactement la même
+    règle des deux côtés (un seul endroit dans le code, plus de logique
+    dupliquée qui pouvait diverger).
+  - L'historique des séances (liste et calendrier partagé) affiche
+    maintenant un résumé "8×40s/15s" pour un Gainage enregistré en boucle,
+    au lieu de rester vide.
+  - Le rappel "Dernière fois" (dans Créer) fonctionne aussi pour un
+    Gainage en boucle.
+
+2.30.3 - 2026-09-04
+====================
+
+- **Corrigé (Créer) : le titre se met maintenant à jour automatiquement en
+  passant à Gainage** — comme pour Rameur/Vélo/Course, le nom de
+  l'exercice devient directement le nom de la catégorie choisie ("Gainage"),
+  sans liste déroulante ni saisie requise. La configuration de boucle
+  (tours/travail/repos, façon Fractionné) reste inchangée en dessous.
+- **Corrigé : un exercice Rameur/Vélo/Course sans temps ni distance
+  renseignés disparaissait du plan à l'enregistrement** — ces deux valeurs
+  sont facultatives à la préparation (à remplir plus tard en Séance en
+  direct si besoin), l'exercice est maintenant bien conservé même vide.
+  Cohérence assurée aussi côté Live : un tel exercice compte comme "fait"
+  dès la première fois, comme pour une cible chiffrée unique.
+
+2.30.2 - 2026-09-04
+====================
+
+- **Corrigé (Créer) : le nom ne se vidait pas en passant à Gainage** — en
+  changeant de catégorie cardio, un nom hérité d'une autre catégorie (ex.
+  "Vélo") restait affiché à tort pour un exercice de gainage, qui n'a pas
+  de nom générique unique. Le champ se vide maintenant, à saisir/choisir
+  librement.
+- **Décompte pour un cardio (Rameur/Vélo/Course) préparé via un plan** :
+  le chrono affiche maintenant un temps restant par rapport à la durée
+  cible, plutôt qu'un temps qui compte indéfiniment — cohérent avec le
+  décompte déjà utilisé pour la boucle Gainage.
+- **Retour automatique au menu de sélection une fois un exercice préparé
+  entièrement fait** (toutes ses séries cibles pour Muscu/Rameur/Vélo/
+  Course, ou sa boucle pour le Gainage) — avant, on restait sur l'écran de
+  l'exercice, sans lien avec les autres exercices préparés.
+- **Corrigé : un exercice préparé se grisait dès la 1ère série**, même
+  quand plusieurs séries cibles restaient à faire (ex. une pyramide). Il
+  ne se grise désormais que lorsqu'il est vraiment fini en entier.
+
+2.30.1 - 2026-09-04
+====================
+
+- **Configuration de boucle (gainage en plan) restylée** : simples champs
+  numériques en rangée (Tours/Travail/Repos), à l'image du bloc
+  "Fractionné" de Course à pied (qui alterne lui aussi effort et repos),
+  plutôt que les gros steppers empruntés au Live — cohérent avec le reste
+  de l'écran Créer.
+- **Les séries préétablies d'un plan se déroulent maintenant en Séance en
+  direct** : pour un exercice muscu planifié avec plusieurs séries cibles
+  (ex. une pyramide 60×10, 65×8, 70×6), chaque série finie propose la
+  suivante telle quelle — poids exact défini, pas d'incrément automatique —
+  jusqu'à épuisement des séries prévues, où la progression automatique
+  habituelle reprend le relais.
+
+2.30.0 - 2026-09-04
+====================
+
+- **Plans d'entraînement, préparables en amont et lançables en Séance en
+  direct** — le pont manquant entre le module Créer et le module Live :
+  - Dans **Créer**, une bascule "Séance effectuée / Plan" (visible sur un
+    brouillon neuf) : un plan a une liste d'exercices avec des séries
+    CIBLES (poids/reps), et pour le gainage, une configuration de boucle
+    (tours/travail/repos) à la place — le repos ne se planifie jamais
+    ailleurs, ça reste une notion du direct.
+  - Nouvelle vue **"Plans"** dans l'onglet Historique de Salle de sport
+    (bascule Séances/Plans), avec modifier/dupliquer/supprimer — plusieurs
+    plans peuvent coexister, réutilisables à volonté.
+  - En **Séance en direct**, un plan pour la séance se choisit une fois au
+    tout début (ou "aucun plan"). Une section "Ton plan" apparaît alors en
+    grille, en plus du parcours normal par catégorie qui reste
+    entièrement disponible pour tout le reste — aucun ordre imposé.
+    Démarrer un exercice du plan préremplit poids/reps (ou ouvre
+    directement l'écran de boucle, déjà réglé) à la première fois ; ensuite,
+    la progression réelle de la séance prend le relais. Un exercice déjà
+    fait au moins une fois se grise, sans jamais se désactiver.
+
 2.29.6 - 2026-09-04
 ====================
 

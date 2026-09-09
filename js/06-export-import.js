@@ -1,7 +1,7 @@
 
 async function exportBackup() {
   const backup = {
-    sessions, library, weights, gymExerciseConfigs, gainageExerciseConfigs,
+    sessions, library, weights, gymExerciseConfigs, gainageExerciseConfigs, sessionPlans,
     runSessions, runLibrary,
     swimSessions, swimLibrary,
     bikeSessions, bikeLibrary,
@@ -125,6 +125,7 @@ function restoreFromBackupData(data) {
   weights = data.weights || [];
   gymExerciseConfigs = data.gymExerciseConfigs || [];
   gainageExerciseConfigs = data.gainageExerciseConfigs || [];
+  sessionPlans = data.sessionPlans || [];
   runSessions = data.runSessions || [];
   runLibrary = data.runLibrary || [];
   swimSessions = data.swimSessions || [];
@@ -136,6 +137,7 @@ function restoreFromBackupData(data) {
   saveJSON(KEYS.weights, weights);
   saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
   saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+  saveJSON(KEYS.sessionPlans, sessionPlans);
   saveJSON(KEYS.runSessions, runSessions);
   saveJSON(KEYS.runLibrary, runLibrary);
   saveJSON(KEYS.swimSessions, swimSessions);

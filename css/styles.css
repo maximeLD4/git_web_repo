@@ -248,6 +248,12 @@ select.ex-name-pill:focus { outline: none; }
 .weight-chip.active { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
 .weight-chip.removable { display: inline-flex; align-items: center; gap: 5px; padding-right: 8px; }
 .weight-chip.removable button { display: flex; background: none; border: none; color: inherit; opacity: 0.55; padding: 0; cursor: pointer; }
+/* Réserve la même hauteur pour les 4 catégories cardio (Rameur/Vélo/Course
+   mesurent tous 158px pour une série ; Gainage n'en fait que 55 avec sa
+   config de boucle, plus courte puisqu'elle n'a ni barre d'outils ni bouton
+   "Ajouter") — évite tout saut de mise en page en changeant de catégorie,
+   plutôt que de le corriger après coup en l'animant. */
+.cardio-config-area { min-height: 158px; }
 .sets-list { padding: 0 0 10px; display: flex; flex-direction: column; gap: 2px; }
 .sets-header { display: flex; align-items: center; gap: 10px; padding: 0 16px 6px 18px; }
 .sets-header .spacer { width: 18px; flex-shrink: 0; }
@@ -573,6 +579,20 @@ select.ex-name-pill:focus { outline: none; }
 
 /* ========== SPÉCIFICITÉS COURSE / NATATION / VÉLO (allure, groupement par semaine) ========== */
 .block-fields-row { display: flex; gap: 8px; margin: 0 16px 12px 18px; }
+/* Unité visuelle entre les trois façons de saisir une valeur dans une carte
+   d'exercice (Muscu : menu déroulant de palier ; Rameur/Vélo/Course : champ
+   Min/Km ; Gainage/Fractionné : tours-travail-repos ou allure) — même
+   register que le menu déroulant de poids (.set-main select.set-weight) :
+   fond plein, pas de soulignement, plutôt qu'un champ texte à la ligne
+   comme ailleurs dans l'app. Le MODE de saisie reste différent (normal,
+   chacun capture une donnée différente), seul l'habillage s'aligne. */
+.block-fields-row input,
+.set-main input.set-weight,
+.set-main input.set-reps {
+  background: var(--surface-2); border: none; border-bottom: none; border-radius: 0;
+  padding: 11px 8px; font-size: 15px; font-family: var(--font); font-weight: 700;
+  text-align: center;
+}
 .block-mode-hint { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; color: var(--text-dim); margin: -6px 16px 12px 18px; font-style: normal; }
 .pace-input-group { display: flex; align-items: center; gap: 4px; }
 .pace-input-group input { text-align: center; padding: 10px 4px; }
@@ -1103,6 +1123,16 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .toggle-switch.on { background: var(--ink); }
 .live-btn.has-progress { background: var(--surface); border: 2px solid var(--ink); }
 .live-exercise-btn-badge::before, .flash { color: var(--text); }
+/* Section "Ton plan" (Séance en direct) : un exercice déjà fait au moins
+   une fois cette séance se grise — pas désactivé (on peut le refaire), juste
+   visuellement en retrait, à l'inverse de .has-progress qui, lui, met en
+   avant "reviens continuer ça". Ici c'est l'inverse : "déjà fait, regarde
+   plutôt ailleurs". */
+.live-plan-section { margin-bottom: 14px; }
+.live-plan-section-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.live-plan-section-title svg { width: 13px; height: 13px; flex-shrink: 0; }
+.live-plan-progress { margin-left: auto; font-variant-numeric: tabular-nums; }
+.live-btn.plan-done { opacity: 0.45; }
 /* La hausse et la baisse ne peuvent plus s'opposer par la teinte : elles
    s'opposent par le poids d'encre — pleine pour ce qui progresse, grise pour
    ce qui recule ou stagne. Le glyphe continue de porter la direction. */

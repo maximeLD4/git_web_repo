@@ -20,6 +20,7 @@ const FIREBASE_SYNC_MAP = {
   [KEYS.bikeLibrary]: { path: "library/bike", getValue: () => bikeLibrary },
   [KEYS.gymExerciseConfigs]: { path: "gymExerciseConfigs", getValue: () => gymExerciseConfigs },
   [KEYS.gainageExerciseConfigs]: { path: "gainageExerciseConfigs", getValue: () => gainageExerciseConfigs },
+  [KEYS.sessionPlans]: { path: "sessionPlans", getValue: () => sessionPlans },
   [KEYS.weights]: { path: "weights", getValue: () => weights },
 };
 
@@ -139,11 +140,12 @@ function pullFromFirebase() {
     base.child("library/bike").once("value"),
     base.child("gymExerciseConfigs").once("value"),
     base.child("gainageExerciseConfigs").once("value"),
+    base.child("sessionPlans").once("value"),
     base.child("weights").once("value"),
     base.child("backup").once("value"), // ancien format "tout en un bloc", pour migration ponctuelle
   ])
-    .then(([gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, weightsSnap, oldBackupSnap]) => {
-      const newSnaps = [gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, weightsSnap];
+    .then(([gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, plansSnap, weightsSnap, oldBackupSnap]) => {
+      const newSnaps = [gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, plansSnap, weightsSnap];
       const hasAnyNewData = newSnaps.some((s) => s.val() !== null);
       const oldBackup = oldBackupSnap.val();
 
@@ -169,6 +171,7 @@ function pullFromFirebase() {
       bikeLibrary = bikeLibSnap.val() || [];
       gymExerciseConfigs = configsSnap.val() || [];
       gainageExerciseConfigs = gainageConfigsSnap.val() || [];
+      sessionPlans = plansSnap.val() || [];
       weights = weightsSnap.val() || [];
       // Essentiel pour l'usage hors-ligne : jusqu'ici, ce qui venait d'être
       // récupéré n'était mis à jour qu'en mémoire, jamais réellement écrit
@@ -190,6 +193,7 @@ function pullFromFirebase() {
       saveJSONLocalOnly(KEYS.bikeLibrary, bikeLibrary);
       saveJSONLocalOnly(KEYS.gymExerciseConfigs, gymExerciseConfigs);
       saveJSONLocalOnly(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+      saveJSONLocalOnly(KEYS.sessionPlans, sessionPlans);
       saveJSONLocalOnly(KEYS.weights, weights);
       // On réapplique la correction de casse des noms d'exercice ici : sans
       // ça, une éventuelle ancienne valeur non capitalisée encore présente

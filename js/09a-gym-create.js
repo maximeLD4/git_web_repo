@@ -16,6 +16,25 @@ function formatSetChip(exType, s) {
 function formatSetsSummary(exType, sets) {
   return sets.map((s) => formatSetChip(exType, s)).join(", ");
 }
+// Comme formatSetsSummary, mais gère aussi le cas d'une boucle (Gainage,
+// voir cardioSetsHistoryHTML) — utilisé pour le rappel "Dernière fois" en
+// haut d'un exercice dans l'écran Créer.
+function formatLastPerfSummary(last) {
+  if (last.loop) return `${last.loop.rounds}×${last.loop.workSec}s/${last.loop.restSec}s`;
+  return formatSetsSummary(last.exType, last.sets);
+}
+// Résumé "Cardio" d'un exercice dans l'historique (séances, calendrier
+// partagé) : soit la liste habituelle de puces temps/distance, soit — pour
+// le Gainage, désormais saisi en boucle plutôt qu'en séries individuelles,
+// même en séance déjà faite (même mécanisme qu'un plan, voir Créer et la
+// discussion sur l'uniformisation de la saisie) — un résumé du type
+// "8×40s/15s".
+function cardioSetsHistoryHTML(ex) {
+  if (ex.loop) {
+    return `<div class="history-sets"><div class="history-set-chip">${ex.loop.rounds}×${ex.loop.workSec}s/${ex.loop.restSec}s</div></div>`;
+  }
+  return `<div class="history-sets">${ex.sets.map((set) => `${historyRestBadgeHTML(set.restSec)}<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`;
+}
 // Petit badge "repos" affiché dans l'historique/le calendrier partagé, entre
 // deux séries — repris depuis la Séance en direct (restSec mesuré
 // manuellement via "Débuter"/"Finir la série"). Absent si le repos n'a pas
@@ -48,6 +67,27 @@ function serializeExercisesFromDOM() {
     // DOM (il est dans la partie repliée) : on conserve alors le nom déjà
     // connu plutôt que d'écraser par une valeur vide.
     const name = nameEl ? nameEl.value : existing ? existing.name : "";
+
+    // Exercice de gainage dans un PLAN : pas de séries, une configuration de
+    // boucle à la place (voir loopConfigFieldsHTML) — on la lit et on
+    // s'arrête là pour cette carte, "sets" reste vide.
+    const loopRoundsInput = card.querySelector(".loop-rounds");
+    if (loopRoundsInput) {
+      const loop = {
+        rounds: parseInt(loopRoundsInput.value, 10) || 1,
+        workSec: parseInt(card.querySelector(".loop-work").value, 10) || 5,
+        restSec: parseInt(card.querySelector(".loop-rest").value, 10) || 0,
+      };
+      result.push({ id, name, exType, category, sets: [], loop });
+      return;
+    } else if (existing && existing.loop) {
+      // Carte de boucle (gainage en plan) réduite : les champs n'existent
+      // pas dans le DOM — on conserve la configuration déjà connue plutôt
+      // que de la perdre silencieusement.
+      result.push({ id, name, exType, category, sets: [], loop: existing.loop });
+      return;
+    }
+
     const rows = card.querySelectorAll(".set-row");
     let sets;
     if (rows.length === 0 && existing) {
@@ -118,25 +158,30 @@ function scheduleDraftSave() {
     const dateEl = document.getElementById("log-date");
     const labelEl = document.getElementById("log-label");
     draft = {
+      kind: draft.kind || "session",
       date: dateEl ? dateEl.value : draft.date,
       label: labelEl ? labelEl.value : draft.label,
       exercises: serializeExercisesFromDOM(),
       editingSessionId,
+      editingPlanId,
     };
     saveJSON(KEYS.draft, draft);
   }, 350);
 }
 
 function clearDraft() {
-  draft = { date: todayISO(), label: "", exercises: [] };
+  draft = { kind: "session", date: todayISO(), label: "", exercises: [] };
   editingSessionId = null;
+  editingPlanId = null;
   openExerciseIds = {};
   saveJSON(KEYS.draft, draft);
 }
 
 function startEditSession(session) {
   editingSessionId = session.id;
+  editingPlanId = null;
   draft = {
+    kind: "session",
     date: session.date,
     label: session.label || "",
     exercises: JSON.parse(JSON.stringify(session.exercises)),
@@ -154,6 +199,28 @@ function startEditSession(session) {
   render();
 }
 
+// Équivalent de startEditSession, pour un PLAN plutôt qu'une séance déjà
+// faite — mêmes mécanismes (même écran Créer, juste des séries CIBLES et,
+// pour le gainage, une config de boucle au lieu de séries).
+function startEditPlan(plan) {
+  editingPlanId = plan.id;
+  editingSessionId = null;
+  draft = {
+    kind: "plan",
+    date: todayISO(),
+    label: plan.label || "",
+    exercises: JSON.parse(JSON.stringify(plan.exercises)),
+    editingPlanId,
+  };
+  openExerciseIds = {};
+  draft.exercises.forEach((ex) => {
+    openExerciseIds[ex.id] = false;
+  });
+  saveJSON(KEYS.draft, draft);
+  tab = "log";
+  render();
+}
+
 function duplicateSession(session) {
   const clonedExercises = JSON.parse(JSON.stringify(session.exercises)).map((ex) => ({
     ...ex,
@@ -161,11 +228,32 @@ function duplicateSession(session) {
     sets: ex.sets.map((s) => ({ ...s, id: uid() })),
   }));
   editingSessionId = null;
+  editingPlanId = null;
   openExerciseIds = {};
   clonedExercises.forEach((ex) => {
     openExerciseIds[ex.id] = false;
   });
-  draft = { date: todayISO(), label: session.label || "", exercises: clonedExercises, editingSessionId: null };
+  draft = { kind: "session", date: todayISO(), label: session.label || "", exercises: clonedExercises, editingSessionId: null };
+  saveJSON(KEYS.draft, draft);
+  tab = "log";
+  render();
+}
+
+// Équivalent de duplicateSession, pour un plan — donne un nouveau plan
+// indépendant à partir d'un existant, plutôt que de le modifier sur place.
+function duplicatePlan(plan) {
+  const clonedExercises = JSON.parse(JSON.stringify(plan.exercises)).map((ex) => ({
+    ...ex,
+    id: uid(),
+    sets: (ex.sets || []).map((s) => ({ ...s, id: uid() })),
+  }));
+  editingSessionId = null;
+  editingPlanId = null;
+  openExerciseIds = {};
+  clonedExercises.forEach((ex) => {
+    openExerciseIds[ex.id] = false;
+  });
+  draft = { kind: "plan", date: todayISO(), label: (plan.label || "") + " (copie)", exercises: clonedExercises, editingPlanId: null };
   saveJSON(KEYS.draft, draft);
   tab = "log";
   render();
@@ -194,7 +282,7 @@ function getLastPerformance(name) {
   if (!norm) return null;
   for (const s of sessions) {
     const found = s.exercises.find((e) => e.name.trim().toLowerCase() === norm);
-    if (found) return { date: s.date, exType: found.exType || "muscu", sets: found.sets };
+    if (found) return { date: s.date, exType: found.exType || "muscu", sets: found.sets, loop: found.loop || null };
   }
   return null;
 }
@@ -279,6 +367,27 @@ function nameSelectHTML(configsInCategory, effectiveConfig) {
   return `<select class="ex-name-input ex-name-pill">${placeholder}${options}</select>`;
 }
 
+// Configuration de boucle (tours/travail/repos) pour un exercice de gainage
+// dans un PLAN — mêmes réglages, mêmes classes visuelles (.live-stepper-*)
+// que la boucle en Séance en direct, pour que ce soit familier et pour
+// pouvoir la relancer telle quelle une fois en Live (voir 18-live.js).
+// Les valeurs sont lues via des input[type=hidden] au moment de la
+// sérialisation (voir serializeExercisesFromDOM), sur le même principe que
+// le stepper de répétitions un peu plus haut dans ce fichier.
+// Configuration de boucle (tours/travail/repos) pour un exercice de gainage
+// dans un PLAN — même style de champs que le bloc "Fractionné" de Course à
+// pied (répétitions/distance-par-répétition/récupération), qui alterne lui
+// aussi effort et repos : de simples champs numériques dans une rangée,
+// cohérents avec le reste de l'écran Créer plutôt qu'empruntés au Live.
+function loopConfigFieldsHTML(loop) {
+  return `
+    <div class="block-fields-row" data-loop-config>
+      <div class="field"><label>Tours</label><input class="loop-rounds" type="number" inputmode="numeric" placeholder="ex. 10" value="${loop.rounds}"></div>
+      <div class="field"><label>Travail (s)</label><input class="loop-work" type="number" inputmode="numeric" placeholder="ex. 30" value="${loop.workSec}"></div>
+      <div class="field"><label>Repos (s)</label><input class="loop-rest" type="number" inputmode="numeric" placeholder="ex. 30" value="${loop.restSec}"></div>
+    </div>`;
+}
+
 function exerciseCardHTML(ex) {
   const exType = ex.exType || ""; // "" tant qu'aucun type n'a été choisi
   const isCardio = exType === "cardio";
@@ -299,7 +408,8 @@ function exerciseCardHTML(ex) {
   // Le corps de la carte dépend d'où on en est dans le parcours :
   // aucun type choisi -> juste une invite ; Muscu sans catégorie -> choisir la
   // catégorie ; Muscu avec catégorie mais sans exercice -> choisir l'exercice ;
-  // sinon (Cardio, ou Muscu avec un exercice choisi) -> les séries.
+  // sinon (Cardio — Rameur/Vélo/Course/Gainage, dont le nom EST toujours la
+  // catégorie choisie — ou Muscu avec un exercice choisi) -> les séries.
   let bodyHTML;
   if (!exType) {
     bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis Muscu ou Cardio/Gainage pour continuer.</div>`;
@@ -319,7 +429,33 @@ function exerciseCardHTML(ex) {
     // Le gainage se travaille uniquement au temps — pas de colonne distance
     // à afficher (contrairement à Rameur/Vélo/Course).
     const isGainage = isCardio && category === GAINAGE_CATEGORY.key;
-    const setsHTML = ex.sets
+
+    // Le gainage se prépare/s'enregistre en configuration de boucle
+    // (tours/travail/repos) plutôt qu'en séries — mêmes réglages qu'en
+    // Séance en direct (pour pouvoir la relancer telle quelle), et surtout
+    // MÊME mécanisme qu'on soit en train de préparer un plan ou de logguer
+    // une séance déjà faite : la façon de saisir ne doit pas changer selon
+    // ce à quoi ça sert au final. Rameur/Vélo/Course, eux, gardent la liste
+    // de séries habituelle dans les deux cas (déjà unifié).
+    if (isGainage) {
+      const loop = ex.loop || { rounds: 10, workSec: 30, restSec: 30 };
+      bodyHTML = `
+    ${categoryAndNameHTML}
+    <div class="cardio-config-area">
+    ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatLastPerfSummary(last)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
+    ${loopConfigFieldsHTML(loop)}
+    </div>`;
+    } else {
+    // Rameur/Vélo/Course : un temps et un kilométrage à remplir par défaut,
+    // même si aucune série n'a encore été ajoutée (ex. en rouvrant pour
+    // modifier un exercice enregistré vide, voir "ni l'un ni l'autre n'est
+    // obligatoire" à l'enregistrement) — ni l'un ni l'autre n'est requis,
+    // cette ligne à blanc n'est qu'un point de départ pratique, pas une
+    // valeur imposée. Purement un filet d'affichage : tant que rien n'est
+    // saisi dedans, elle disparaît à nouveau au prochain enregistrement (les
+    // séries vides sont filtrées, voir plus bas).
+    const setsForRender = isCardio && !isGainage && ex.sets.length === 0 ? [{ id: uid(), weight: "", reps: "" }] : ex.sets;
+    const setsHTML = setsForRender
       .map((s, i) => {
         let cols;
         if (isCardio) {
@@ -364,7 +500,7 @@ function exerciseCardHTML(ex) {
           cols = repsField + weightField;
         }
         const isFirst = i === 0;
-        const isLast = i === ex.sets.length - 1;
+        const isLast = i === setsForRender.length - 1;
         return `
     ${setRestLineHTML(s.restSec)}
     <div class="set-row" data-id="${s.id}">
@@ -375,7 +511,7 @@ function exerciseCardHTML(ex) {
       <div class="set-toolbar">
         <button type="button" class="set-action-btn" data-move-set-up="${s.id}" aria-label="Monter" ${isFirst ? "disabled" : ""}>${ICONS.miniUp}</button>
         <button type="button" class="set-action-btn" data-move-set-down="${s.id}" aria-label="Descendre" ${isLast ? "disabled" : ""}>${ICONS.miniDown}</button>
-        <button type="button" class="set-action-btn danger" data-remove-set="${s.id}" aria-label="Supprimer" ${ex.sets.length === 1 ? "disabled" : ""}>${ICONS.trash}</button>
+        <button type="button" class="set-action-btn danger" data-remove-set="${s.id}" aria-label="Supprimer" ${setsForRender.length === 1 ? "disabled" : ""}>${ICONS.trash}</button>
       </div>
     </div>`;
       })
@@ -383,10 +519,13 @@ function exerciseCardHTML(ex) {
 
     bodyHTML = `
     ${categoryAndNameHTML}
-    ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
+    <div class="${isCardio ? "cardio-config-area" : ""}">
+    ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatLastPerfSummary(last)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
     <div class="sets-header"><span class="spacer"></span>${isCardio ? (isGainage ? "<span>Min</span>" : "<span>Min</span><span>Km</span>") : "<span>Reps</span><span>Kg</span>"}</div>
     <div class="sets-list">${setsHTML}</div>
-    <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>`;
+    <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>
+    </div>`;
+    }
   }
 
   const isOpen = openExerciseIds[ex.id] !== false; // par défaut développé, sauf réduction explicite
@@ -425,7 +564,29 @@ function logTabHTML() {
   const libOptions = allNames.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
   const editBanner = editingSessionId
     ? `<div class="edit-banner">Modification d'une séance existante<button type="button" id="cancel-edit-btn">Annuler</button></div>`
+    : editingPlanId
+      ? `<div class="edit-banner">Modification d'un plan existant<button type="button" id="cancel-edit-btn">Annuler</button></div>`
+      : "";
+  const isPlan = draft.kind === "plan";
+  // La bascule Séance/Plan ne s'affiche que sur un brouillon tout neuf —
+  // une fois qu'on modifie une séance/un plan existant, ou qu'on a déjà
+  // commencé à ajouter des exercices, le mode est figé (les deux formes de
+  // données ne sont pas interchangeables sans y repenser à deux fois).
+  const showKindToggle = !editingSessionId && !editingPlanId && draft.exercises.length === 0;
+  const kindToggleHTML = showKindToggle
+    ? `
+    <div class="ex-type-toggle" data-draft-kind-toggle style="margin-bottom:10px;">
+      <button type="button" class="ex-type-btn ${!isPlan ? "active" : ""}" data-draft-kind="session">Séance effectuée</button>
+      <button type="button" class="ex-type-btn ${isPlan ? "active" : ""}" data-draft-kind="plan">Plan (à préparer)</button>
+    </div>`
     : "";
+  const fieldsHTML = isPlan
+    ? `<div class="field"><label>Nom du plan</label><input type="text" id="log-label" placeholder="Push day, jambes…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>`
+    : `
+    <div class="field-row">
+      <div class="field"><label>Date</label><input type="date" id="log-date" value="${draft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="log-label" placeholder="Push day, jambes… (optionnel)" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>
+    </div>`;
   return `
     <div class="backup-row">
       <button class="backup-btn" id="import-draft-btn">${ICONS.down} Importer une séance</button>
@@ -433,10 +594,8 @@ function logTabHTML() {
       <input type="file" id="import-draft-file" accept="application/json" style="display:none">
     </div>
     ${editBanner}
-    <div class="field-row">
-      <div class="field"><label>Date</label><input type="date" id="log-date" value="${draft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="log-label" placeholder="Push day, jambes… (optionnel)" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>
-    </div>
+    ${kindToggleHTML}
+    ${fieldsHTML}
     <div id="exercises-container">${exercisesHTML}</div>
     <datalist id="exercise-suggestions">${libOptions}</datalist>
     <div id="log-bottom-spacer" style="height:0;"></div>
@@ -444,10 +603,18 @@ function logTabHTML() {
 }
 
 function logActionsBarContentHTML() {
+  const isPlan = draft.kind === "plan";
+  const saveLabel = isPlan
+    ? editingPlanId
+      ? "Enregistrer les modifications"
+      : "Enregistrer le plan"
+    : editingSessionId
+      ? "Enregistrer les modifications"
+      : "Enregistrer la séance";
   return `
     <div id="error-slot"></div>
     <button class="add-exercise-btn" id="add-exercise-btn">${ICONS.plus} Ajouter un exercice</button>
-    <button class="save-btn" id="save-session-btn">${ICONS.check} ${editingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
+    <button class="save-btn" id="save-session-btn">${ICONS.check} ${saveLabel}</button>
     <div id="flash-slot"></div>
   `;
 }
@@ -462,8 +629,17 @@ function attachContentListeners() {
 function attachLogListeners() {
   const dateEl = document.getElementById("log-date");
   const labelEl = document.getElementById("log-label");
-  dateEl.addEventListener("input", scheduleDraftSave);
+  if (dateEl) dateEl.addEventListener("input", scheduleDraftSave);
   labelEl.addEventListener("input", scheduleDraftSave);
+
+  document.querySelectorAll("[data-draft-kind]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (draft.kind === btn.dataset.draftKind) return;
+      draft.kind = btn.dataset.draftKind;
+      saveJSON(KEYS.draft, draft);
+      renderContent();
+    });
+  });
 
   const importDraftBtn = document.getElementById("import-draft-btn");
   const importDraftFile = document.getElementById("import-draft-file");
@@ -544,7 +720,7 @@ function attachLogListeners() {
       const last = getLastPerformance(name);
       if (last) {
         hint.style.display = "";
-        hint.innerHTML = `Dernière fois (${formatDateFR(last.date)}) : <b>${formatSetsSummary(last.exType, last.sets)}</b>`;
+        hint.innerHTML = `Dernière fois (${formatDateFR(last.date)}) : <b>${formatLastPerfSummary(last)}</b>`;
       } else {
         hint.style.display = "none";
         hint.innerHTML = "";
@@ -581,7 +757,7 @@ function attachLogListeners() {
         }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
-        renderContentPreservingScroll(renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
+        renderContentAnimatingCardHeight(card.dataset.id, renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
       });
     }
 
@@ -599,7 +775,7 @@ function attachLogListeners() {
         target.sets = [];
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
-        renderContentPreservingScroll(renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
+        renderContentAnimatingCardHeight(card.dataset.id, renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
       });
     });
 
@@ -609,21 +785,28 @@ function attachLogListeners() {
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
         target.category = btn.dataset.cardioCategoryBtn;
-        if (target.category === GAINAGE_CATEGORY.key) {
-          // Le gainage n'a pas de nom générique unique (contrairement à
-          // Rameur/Vélo/Course, dont le nom EST la catégorie) — on laisse le
-          // champ nom tel quel, à saisir ou choisir librement parmi les
-          // suggestions (voir la datalist, qui inclut gainageExerciseConfigs).
-        } else {
-          // Les catégories Rameur/Vélo/Course se comportent toutes pareil :
-          // elles servent uniquement à préremplir le titre par défaut, que
-          // l'utilisateur peut toujours modifier librement ensuite.
-          const cat = CARDIO_CATEGORIES.find((c) => c.key === target.category);
-          target.name = cat ? cat.label : target.name;
+        // Rameur/Vélo/Course/Gainage se comportent tous pareil : la
+        // catégorie choisie préremplit directement le titre (elle EST le
+        // nom de l'exercice), que l'utilisateur peut toujours modifier
+        // librement ensuite s'il le souhaite.
+        const cat = [...CARDIO_CATEGORIES, GAINAGE_CATEGORY].find((c) => c.key === target.category);
+        target.name = cat ? cat.label : target.name;
+        // Rameur/Vélo/Course : un temps et un kilométrage à remplir par
+        // défaut dès le choix de la catégorie — comme pour le Gainage, plus
+        // besoin d'appuyer sur "Ajouter un passage" pour voir apparaître les
+        // champs. Ni l'un ni l'autre n'est obligatoire (voir la validation à
+        // l'enregistrement) ; on ne touche pas à des séries déjà présentes
+        // (ex. en revenant de Gainage vers Vélo après avoir déjà rempli
+        // Rameur, ce serait dommage de perdre ce qui était saisi ailleurs —
+        // mais Gainage n'a de toute façon jamais de "sets", donc ce cas ne
+        // se présente pas ; ce garde-fou est surtout là pour ne jamais
+        // écraser une valeur déjà en cours de saisie).
+        if (target.category !== GAINAGE_CATEGORY.key && target.sets.length === 0) {
+          target.sets = [{ id: uid(), weight: "", reps: "" }];
         }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
-        renderContentPreservingScroll(renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
+        renderContentAnimatingCardHeight(card.dataset.id, renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
       });
     });
 
@@ -673,6 +856,16 @@ function attachLogListeners() {
       }
     });
 
+    // Configuration de boucle (gainage en plan) — de simples champs, comme
+    // le reste de l'écran : un "input" déclenche juste la sauvegarde
+    // différée, pas de logique de stepper à gérer ici.
+    const loopConfigEl = card.querySelector("[data-loop-config]");
+    if (loopConfigEl) {
+      loopConfigEl.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("input", scheduleDraftSave);
+      });
+    }
+
     card.querySelectorAll("[data-move-set-up]").forEach((btn) => {
       btn.addEventListener("click", () => moveSet(card, btn.dataset.moveSetUp, -1));
     });
@@ -703,7 +896,7 @@ function attachLogListeners() {
         }
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
-        renderContentPreservingScroll(renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
+        renderContentAnimatingCardHeight(card.dataset.id, renderContent, () => scrollCardTopIntoView(document.querySelector(`.exercise-card[data-id="${card.dataset.id}"]`)));
       });
     });
     card.querySelectorAll("[data-toggle-exercise]").forEach((el) => {
@@ -828,14 +1021,43 @@ function attachLogActionsBarListeners() {
 
   document.getElementById("save-session-btn").addEventListener("click", () => {
     const exs = serializeExercisesFromDOM();
-    const withData = exs
-      .map((e) => ({ ...e, name: e.name.trim(), sets: e.sets.filter((s) => s.weight !== "" || s.reps !== "") }))
-      .filter((e) => e.sets.length > 0);
-    const cleaned = withData.map((e, idx) => ({ ...e, name: e.name || `Exercice ${idx + 1}` }));
-
     const errorSlot = document.getElementById("error-slot");
+    // Même règle de validité qu'on prépare un plan ou qu'on logue une séance
+    // déjà faite (voir la discussion sur l'uniformisation de la saisie) :
+    // valide s'il y a des séries (Muscu), une config de boucle (Gainage),
+    // ou — pour Rameur/Vélo/Course — simplement un nom/catégorie choisis :
+    // temps et distance y sont toujours facultatifs.
+    const cleaned = exs
+      .map((e, idx) => ({ ...e, name: e.name.trim() || `Exercice ${idx + 1}`, sets: e.sets.filter((s) => s.weight !== "" || s.reps !== "") }))
+      .filter((e) => e.sets.length > 0 || e.loop || (e.exType === "cardio" && e.category !== GAINAGE_CATEGORY.key));
+
+    if (draft.kind === "plan") {
+      if (cleaned.length === 0) {
+        errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un exercice avant d'enregistrer ce plan.</div>`;
+        return;
+      }
+      errorSlot.innerHTML = "";
+      const wasEditingPlan = !!editingPlanId;
+      const planLabel = labelEl.value.trim() || `Plan ${sessionPlans.filter((p) => p.id !== editingPlanId).length + 1}`;
+      const plan = { id: editingPlanId || uid(), label: planLabel, exercises: cleaned };
+      if (wasEditingPlan) {
+        sessionPlans = sessionPlans.map((p) => (p.id === editingPlanId ? plan : p));
+      } else {
+        sessionPlans = [plan, ...sessionPlans];
+      }
+      saveJSON(KEYS.sessionPlans, sessionPlans);
+      clearDraft();
+      render();
+      document.getElementById("flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditingPlan ? "Plan modifié" : "Plan enregistré"}</div>`;
+      setTimeout(() => {
+        const f = document.getElementById("flash-slot");
+        if (f) f.innerHTML = "";
+      }, 1800);
+      return;
+    }
+
     if (cleaned.length === 0) {
-      errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un exercice avec une série avant d'enregistrer.</div>`;
+      errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un exercice avant d'enregistrer.</div>`;
       return;
     }
     errorSlot.innerHTML = "";

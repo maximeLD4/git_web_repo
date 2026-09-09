@@ -46,6 +46,47 @@ function renderContentPreservingScroll(renderFn, afterRenderScroll) {
   }
 }
 
+// Comme renderContentPreservingScroll, mais anime en plus le changement de
+// hauteur d'UNE carte d'exercice précise plutôt que de le laisser se
+// produire d'un coup — utile quand le contenu change de nature au point de
+// changer radicalement de hauteur (ex. passer de Rameur/Vélo/Course, qui a
+// une barre d'outils + un bouton "Ajouter", à Gainage, qui n'a ni l'un ni
+// l'autre : environ 100px d'écart d'un coup, ressenti comme un "saut").
+// Le scroll, lui, s'aligne normalement (voir scrollCardTopIntoView) : il
+// cale le HAUT de la carte, qui ne bouge pas avec ce changement de hauteur
+// (seul le bas de la carte change), donc pas de conflit entre les deux
+// animations.
+function renderContentAnimatingCardHeight(cardId, renderFn, afterRenderScroll) {
+  const oldCard = document.querySelector(`.exercise-card[data-id="${cardId}"]`);
+  const oldHeight = oldCard ? oldCard.offsetHeight : null;
+
+  renderContentPreservingScroll(renderFn, afterRenderScroll);
+
+  const newCard = document.querySelector(`.exercise-card[data-id="${cardId}"]`);
+  if (!newCard || oldHeight == null) return;
+  const newHeight = newCard.offsetHeight;
+  // En dessous d'un petit seuil, pas la peine d'animer : la différence ne
+  // se verrait de toute façon pas.
+  if (Math.abs(newHeight - oldHeight) < 6) return;
+
+  newCard.style.height = oldHeight + "px";
+  newCard.style.overflow = "hidden";
+  // Force le navigateur à appliquer cette valeur AVANT de la faire
+  // transitionner — sinon les deux changements de hauteur (l'ancienne
+  // valeur qu'on vient de fixer, puis la nouvelle) se confondent en un seul
+  // saut instantané au lieu de s'animer entre les deux.
+  newCard.getBoundingClientRect();
+  newCard.style.transition = "height 0.22s ease";
+  newCard.style.height = newHeight + "px";
+  const cleanup = () => {
+    newCard.style.transition = "";
+    newCard.style.height = "";
+    newCard.style.overflow = "";
+    newCard.removeEventListener("transitionend", cleanup);
+  };
+  newCard.addEventListener("transitionend", cleanup);
+}
+
 function scrollCardTopIntoView(card, topMargin = 16) {
   if (!card) return;
   const contentEl = document.getElementById("content");

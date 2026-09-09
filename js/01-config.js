@@ -18,6 +18,7 @@ const KEYS = {
   gymExerciseConfigs: "gymlog:gym-exercise-configs",
   gainageExerciseConfigs: "gymlog:gainage-exercise-configs",
   firebaseDirtyKeys: "gymlog:firebase-dirty-keys",
+  sessionPlans: "gymlog:session-plans",
   liveSession: "gymlog:live-session",
 };
 

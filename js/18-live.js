@@ -68,7 +68,7 @@ function renderLiveStep() {
   const wasAtEnd = prevTimeline ? prevTimeline.scrollLeft + prevTimeline.clientWidth >= prevTimeline.scrollWidth - 4 : true;
   const prevScrollLeft = prevTimeline ? prevTimeline.scrollLeft : null;
 
-  const stepHTML = liveStep === "category" ? liveCategoryStepHTML() : liveLogSetStepHTML();
+  const stepHTML = livePlanPickerNeeded() ? livePlanPickerStepHTML() : liveStep === "category" ? liveCategoryStepHTML() : liveLogSetStepHTML();
   // Le bloc de statut (gros chrono, bien visible) s'affiche en haut du
   // contenu sur N'IMPORTE QUEL écran du Live tant qu'un repos OU une série
   // est en cours — pas seulement sur l'écran de saisie — puisqu'on peut très
@@ -114,8 +114,88 @@ function liveStatusHeroHTML() {
   return "";
 }
 
+// Retrouve, dans le plan attaché à la séance en cours (s'il y en a un),
+// l'exercice planifié correspondant à ce nom — utilisé pour préremplir
+// poids/reps (ou la config de boucle) la toute première fois qu'on démarre
+// cet exercice (voir startOrResumeLiveExercise). Après cette première fois,
+// c'est l'historique réel de la séance qui prend le relais, pas le plan.
+function getAttachedPlanExerciseFor(name) {
+  if (!liveSession.planId) return null;
+  const plan = sessionPlans.find((p) => p.id === liveSession.planId);
+  if (!plan) return null;
+  const norm = (name || "").trim().toLowerCase();
+  return plan.exercises.find((e) => e.name.trim().toLowerCase() === norm) || null;
+}
+
+// Écran affiché une seule fois, tout au début d'une séance neuve (rien
+// encore loggé) : proposer d'attacher un plan préparé à l'avance (voir
+// l'onglet Créer > Plan), ou de continuer sans. Ne s'affiche jamais si
+// aucun plan n'existe, ni après ce premier choix (voir renderLiveStep).
+// Ne propose le choix d'un plan qu'une seule fois, tout au début d'une
+// séance neuve : rien encore loggé, jamais répondu (planId reste undefined
+// tant qu'on n'a rien choisi — null veut dire "explicitement aucun plan"),
+// et seulement s'il existe au moins un plan à proposer.
+function livePlanPickerNeeded() {
+  return liveSession.planId === undefined && (!liveSession.log || liveSession.log.length === 0) && sessionPlans.length > 0;
+}
+
+function livePlanPickerStepHTML() {
+  const buttons = sessionPlans
+    .map((p) => `<button type="button" class="live-btn" data-live-pick-plan="${p.id}"><span class="live-exercise-btn-name">${p.label} · ${p.exercises.length} exo${p.exercises.length !== 1 ? "s" : ""}</span></button>`)
+    .join("");
+  return `
+    <div class="live-set-form">
+      <div class="live-set-form-scroll live-set-form-scroll-fixed">
+        <div class="live-exercise-name">Un plan pour aujourd'hui ?</div>
+        <div class="live-grid" style="grid-template-columns:1fr 1fr;">${buttons}</div>
+      </div>
+      <div class="live-set-form-actions">
+        <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-pick-plan="">Aucun plan, je verrai au fur et à mesure</button>
+      </div>
+    </div>`;
+}
+
+// Section "Ton plan" — accès rapide (en grille, dans le désordre) aux
+// exercices du plan attaché à la séance en cours, en plus du parcours
+// normal par catégorie qui reste entièrement disponible pour tout le reste.
+// Un exercice déjà fait au moins une fois cette séance se grise (pas
+// désactivé, juste visuellement discret) — voir .plan-done en CSS.
+// Un exercice préparé est "fait" seulement quand il a été fait EN ENTIER —
+// toutes ses séries cibles pour Muscu/Rameur/Vélo/Course (pas juste la
+// 1ère d'une pyramide), ou sa boucle pour le Gainage (dont on ne peut de
+// toute façon ressortir vers ce menu qu'une fois finie/arrêtée, voir
+// applyFinishLiveSet/checkLiveLoopAutoAdvance/stopLiveLoop) — jamais dès la
+// première série.
+function isPlanExercisePreparedDone(ex) {
+  const liveEx = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === ex.name.trim().toLowerCase());
+  if (!liveEx || liveEx.sets.length === 0) return false;
+  if (ex.loop) return true;
+  const targetCount = ex.sets && ex.sets.length ? ex.sets.length : 1;
+  return liveEx.sets.length >= targetCount;
+}
+
+function livePlanSectionHTML() {
+  if (!liveSession.planId) return "";
+  const plan = sessionPlans.find((p) => p.id === liveSession.planId);
+  if (!plan) return "";
+  let doneCount = 0;
+  const buttons = plan.exercises
+    .map((ex) => {
+      const done = isPlanExercisePreparedDone(ex);
+      if (done) doneCount += 1;
+      return `<button type="button" class="live-btn ${done ? "plan-done" : ""}" data-live-plan-exercise="${ex.id}"><span class="live-exercise-btn-name">${ex.name}</span></button>`;
+    })
+    .join("");
+  return `
+    <div class="live-plan-section">
+      <div class="live-plan-section-title">${ICONS.stopwatch} Ton plan : ${plan.label} <span class="live-plan-progress">${doneCount}/${plan.exercises.length}</span></div>
+      <div class="live-grid" style="grid-template-columns:1fr 1fr;">${buttons}</div>
+    </div>`;
+}
+
 function liveCategoryStepHTML() {
   const isCardio = liveDraftType === "cardio";
+  const planSectionHTML = livePlanSectionHTML();
   const switchHTML = `
     <div class="live-type-switch">
       <div class="live-type-thumb" id="live-type-thumb" style="transform: translateX(${isCardio ? "100%" : "0"});"></div>
@@ -155,7 +235,7 @@ function liveCategoryStepHTML() {
             </div>`;
       gainageListHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}">${inner}</div>`;
     }
-    return liveTimelineHTML() + switchHTML + categoriesHTML + gainageListHTML;
+    return liveTimelineHTML() + planSectionHTML + switchHTML + categoriesHTML + gainageListHTML;
   }
 
   // Muscu : la catégorie s'affiche en rangée compacte de puces (comme un
@@ -195,7 +275,7 @@ function liveCategoryStepHTML() {
     exercisesHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}" data-category-key="${liveDraftCategory}">${inner}</div>`;
   }
 
-  return liveTimelineHTML() + switchHTML + categoryRowHTML + exercisesHTML;
+  return liveTimelineHTML() + planSectionHTML + switchHTML + categoryRowHTML + exercisesHTML;
 }
 
 function liveTimelineHTML() {
@@ -664,6 +744,22 @@ function liveTick() {
 // revanche, la durée de chaque phase est fixée d'avance (voir
 // startLiveLoop) — on affiche donc un DÉCOMPTE (temps restant), plus lisible
 // pour savoir combien de temps il reste avant le prochain changement.
+// Pour Rameur/Vélo/Course préparés via un plan (jamais le Gainage, qui a sa
+// propre boucle) : renvoie la durée cible en secondes de la série en cours
+// (le placeholder déjà poussé dans exercise.sets par startLiveSet compte
+// dans l'index), ou null si cet exercice n'a pas de cible de plan restante
+// — auquel cas le chrono compte normalement (voir updateLiveRestChronoDisplay).
+function getCurrentCardioTargetSec() {
+  if (liveDraftType !== "cardio" || liveSession.loop) return null;
+  const exercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
+  const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+  if (!exercise || !planExercise || !planExercise.sets || !planExercise.sets.length) return null;
+  const idx = Math.max(0, exercise.sets.length - 1);
+  const target = planExercise.sets[idx];
+  if (!target || target.weight === "" || target.weight == null) return null;
+  return Math.round(parseFloat(target.weight) * 60);
+}
+
 function updateLiveRestChronoDisplay() {
   const el = document.getElementById("live-rest-chrono");
   const startedAt = liveSession ? liveSession.restStartedAt || liveSession.setInProgressStartedAt : null;
@@ -677,6 +773,13 @@ function updateLiveRestChronoDisplay() {
     const totalSec = liveSession.setInProgressStartedAt ? loop.workSec : loop.restSec;
     el.textContent = formatLiveChrono(Math.max(0, totalSec - elapsedSec));
     return;
+  }
+  if (liveSession.setInProgressStartedAt) {
+    const targetSec = getCurrentCardioTargetSec();
+    if (targetSec != null) {
+      el.textContent = formatLiveChrono(Math.max(0, targetSec - elapsedSec));
+      return;
+    }
   }
   el.textContent = formatLiveChrono(elapsedSec);
 }
@@ -766,6 +869,16 @@ function checkLiveLoopAutoAdvance() {
         playLiveLoopDoneSignal();
         liveSession.loop = null;
         stopLiveRestManually();
+        // Exercice de gainage PRÉPARÉ (via le plan attaché) dont la boucle
+        // vient de se terminer entièrement : retour au menu de sélection,
+        // comme pour n'importe quel exercice préparé achevé (voir aussi
+        // applyFinishLiveSet pour Muscu/Rameur/Vélo/Course).
+        const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+        if (planExercise && planExercise.loop) {
+          closeCurrentLiveSegment();
+          liveActiveExerciseId = null;
+          liveStep = "category";
+        }
         saveJSON(KEYS.liveSession, liveSession);
         renderLiveApp();
       } else {
@@ -789,17 +902,6 @@ function startLiveLoop(rounds, workSec, restSec) {
   startLiveSet();
 }
 
-// Arrête la boucle en cours à tout moment — se contente de retirer
-// l'automatisation : la série ou le repos en cours au moment de l'arrêt
-// n'est pas annulé, on repasse juste en contrôle manuel normal à partir de
-// là (la série en cours, si il y en a une, devra être finie à la main).
-// Arrête la boucle en cours à tout moment — et arrête vraiment TOUT d'un
-// seul geste (pas juste l'automatisation) : si un tour est en train de se
-// faire, on le finalise avec le temps réellement écoulé jusqu'ici (comme un
-// "Finir la série" normal, pour ne pas perdre le travail déjà fait), puis on
-// coupe aussitôt le repos qui vient de démarrer — pas de chrono qui continue
-// tout seul en arrière-plan, pas de second geste à faire ensuite pour
-// vraiment sortir.
 // Arrête la boucle en cours à tout moment — ne coupe que l'automatisation,
 // pas l'effort naturel qui suit : si un tour était en train de se faire, on
 // le finalise avec le temps réellement écoulé (comme un "Finir la série"
@@ -807,16 +909,24 @@ function startLiveLoop(rounds, workSec, restSec) {
 // — qui, lui, continue bel et bien de tourner (arrêter la boucle ne veut
 // pas dire arrêter de se reposer). Si on était déjà en repos au moment
 // d'arrêter, il continue simplement tel quel, sans relancer de tour
-// suivant.
+// suivant. Si l'exercice fait partie du plan attaché (préparé), on
+// considère qu'arrêter la boucle vaut "terminé" : retour au menu de
+// sélection, comme pour les autres types d'exercices préparés.
 function stopLiveLoop() {
   if (!liveSession || !liveSession.loop) return;
+  const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+  const wasPreparedGainage = !!(planExercise && planExercise.loop);
   liveSession.loop = null;
   if (liveSession.setInProgressStartedAt) {
-    finishLiveSet();
-  } else {
-    saveJSON(KEYS.liveSession, liveSession);
-    renderLiveApp();
+    applyFinishLiveSet(); // pas finishLiveSet() : un seul rendu, à la toute fin
   }
+  if (wasPreparedGainage) {
+    closeCurrentLiveSegment();
+    liveActiveExerciseId = null;
+    liveStep = "category";
+  }
+  saveJSON(KEYS.liveSession, liveSession);
+  renderLiveApp();
 }
 
 function formatLiveChrono(totalSeconds) {
@@ -846,6 +956,11 @@ function openLiveSegment(name, exType) {
 function startOrResumeLiveExercise() {
   closeCurrentLiveSegment();
   openLiveSegment(liveDraftName, liveDraftType);
+  // Repart toujours d'un état propre : sans ça, un formulaire de boucle
+  // resté ouvert (préréglé pour l'exercice précédent) pourrait s'afficher à
+  // tort pour un tout autre exercice de gainage enchaîné sans passer par
+  // "Démarrer"/"Annuler" entre les deux.
+  liveLoopFormOpen = false;
   const norm = liveDraftName.trim().toLowerCase();
   const existing = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === norm);
   if (existing) {
@@ -859,29 +974,58 @@ function startOrResumeLiveExercise() {
       // précédente.
       liveDraftDistance = 0;
     } else {
-      liveDraftWeightMode = lastSet ? lastSet.weightMode || "off" : "off";
-      const config = findExerciseConfig(liveDraftName);
-      const increment = config && config.maxIncrement ? config.maxIncrement : 0;
-      // Le poids sauvegardé sur la dernière série est le poids FINAL (base +
-      // incrément le cas échéant) — on en déduit le palier de base réel
-      // avant de calculer le palier suivant, pour ne jamais faire avancer le
-      // menu déroulant sur une valeur incrémentée qui n'existe pas dans sa
-      // liste.
-      const lastBaseWeight = lastSet ? parseFloat(lastSet.weight) - (liveDraftWeightMode === "on" ? increment : 0) : null;
-      liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, lastBaseWeight);
-      liveDraftReps = lastSet ? parseFloat(lastSet.reps) || 10 : 10;
+      // Si cet exercice fait partie du plan attaché, et qu'il reste une
+      // série cible prévue pour ce numéro de série (ex. une pyramide
+      // 60×10, 65×8, 70×6), on la propose telle quelle — poids exact défini,
+      // pas d'incrément automatique — pour dérouler la progression prévue à
+      // l'avance. Une fois les séries du plan épuisées pour cet exercice, on
+      // repasse sur la logique habituelle (incrément auto / dernier poids).
+      const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+      const nextTarget = planExercise && planExercise.sets && existing.sets.length < planExercise.sets.length ? planExercise.sets[existing.sets.length] : null;
+      if (nextTarget) {
+        liveDraftWeightMode = "off";
+        liveDraftBaseWeight = nextTarget.weight !== "" ? parseFloat(nextTarget.weight) : null;
+        liveDraftReps = nextTarget.reps !== "" ? parseFloat(nextTarget.reps) || 10 : 10;
+      } else {
+        liveDraftWeightMode = lastSet ? lastSet.weightMode || "off" : "off";
+        const config = findExerciseConfig(liveDraftName);
+        const increment = config && config.maxIncrement ? config.maxIncrement : 0;
+        // Le poids sauvegardé sur la dernière série est le poids FINAL (base +
+        // incrément le cas échéant) — on en déduit le palier de base réel
+        // avant de calculer le palier suivant, pour ne jamais faire avancer le
+        // menu déroulant sur une valeur incrémentée qui n'existe pas dans sa
+        // liste.
+        const lastBaseWeight = lastSet ? parseFloat(lastSet.weight) - (liveDraftWeightMode === "on" ? increment : 0) : null;
+        liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, lastBaseWeight);
+        liveDraftReps = lastSet ? parseFloat(lastSet.reps) || 10 : 10;
+      }
     }
   } else {
     // Nouvel exercice pour cette séance : pas encore ajouté à
     // liveSession.exercises, on attend la validation de la première série.
     liveActiveExerciseId = null;
+    // Si cet exercice fait partie du plan attaché à la séance, on préremplit
+    // depuis sa cible plutôt que depuis les valeurs par défaut génériques —
+    // seulement cette toute première fois : une fois de vraies séries
+    // loggées, c'est la branche ci-dessus (historique réel) qui prend le
+    // relais, le plan ne joue plus aucun rôle pour cet exercice.
+    const planExercise = getAttachedPlanExerciseFor(liveDraftName);
     if (liveDraftType === "cardio") {
       liveDraftDistance = 0;
+      if (planExercise && planExercise.loop) {
+        liveLoopDraftRounds = planExercise.loop.rounds;
+        liveLoopDraftWork = planExercise.loop.workSec;
+        liveLoopDraftRest = planExercise.loop.restSec;
+        // Ouvre directement l'écran de confirmation de la boucle, déjà
+        // prérempli — prêt à lancer, comme demandé.
+        liveLoopFormOpen = true;
+      }
     } else {
       const config = findExerciseConfig(liveDraftName);
       const base = config ? computeBaseWeightsOnly(config) : [];
-      liveDraftBaseWeight = base.length ? base[0] : null;
-      liveDraftReps = 10;
+      const targetSet = planExercise && planExercise.sets && planExercise.sets.length ? planExercise.sets[0] : null;
+      liveDraftBaseWeight = targetSet && targetSet.weight !== "" ? parseFloat(targetSet.weight) : base.length ? base[0] : null;
+      liveDraftReps = targetSet && targetSet.reps !== "" ? parseFloat(targetSet.reps) || 10 : 10;
       liveDraftWeightMode = "off";
     }
   }
@@ -951,6 +1095,12 @@ function applyFinishLiveSet() {
   if (!liveSession.setInProgressStartedAt) return;
   const startedAt = liveSession.setInProgressStartedAt;
   liveSession.setInProgressStartedAt = null;
+  // Un exercice PRÉPARÉ (via le plan attaché) dont toutes les cibles
+  // viennent d'être faites est considéré "terminé" — voir plus bas, où ce
+  // drapeau renvoie vers l'écran de sélection (points 3/4 : retour au menu
+  // + grisage uniquement quand vraiment fini, pas dès la 1ère série d'une
+  // pyramide).
+  let preparedExerciseDone = false;
   if (liveDraftType === "cardio") {
     // Le placeholder à compléter est toujours la toute dernière série
     // loggée (voir startLiveSet — on ne peut pas en démarrer une seconde
@@ -967,15 +1117,58 @@ function applyFinishLiveSet() {
       set.reps = liveDraftDistance || 0;
     }
     liveDraftDistance = 0;
+    // Rameur/Vélo/Course préparés (jamais le Gainage ici — pas de "sets"
+    // cibles pour lui, juste une boucle ; voir checkLiveLoopAutoAdvance/
+    // stopLiveLoop pour sa propre détection de fin, plus bas) : une seule
+    // "série" suffit généralement à considérer que c'est fait — y compris
+    // quand aucun temps/distance cible n'a été renseigné dans le plan (ces
+    // deux valeurs sont facultatives à la préparation), auquel cas on
+    // considère qu'une seule fois suffit, comme pour une cible chiffrée
+    // unique (voir aussi isPlanExercisePreparedDone, même règle).
+    if (!liveSession.loop) {
+      const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+      if (planExercise && planExercise.sets && exercise) {
+        const targetCount = planExercise.sets.length || 1;
+        if (exercise.sets.length >= targetCount) preparedExerciseDone = true;
+      }
+    }
   } else {
-    // Pour la prochaine série, on propose automatiquement le palier de base
-    // disponible juste au-dessus (progression naturelle d'une série à
-    // l'autre), sauf si on est déjà au maximum disponible. Les reps restent
-    // inchangées — seul le poids avance. Le mode Standard/+Xkg est conservé
-    // tel quel, sans y toucher.
-    liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, liveDraftBaseWeight);
+    // Si cet exercice fait partie du plan attaché, et qu'il reste une série
+    // cible prévue pour ce numéro de série (ex. une pyramide 60×10, 65×8,
+    // 70×6), on la propose telle quelle — poids exact défini, pas
+    // d'incrément automatique — pour dérouler la progression prévue à
+    // l'avance. C'est ICI, pas seulement dans startOrResumeLiveExercise,
+    // que ça compte le plus : c'est ce qui se déclenche en enchaînant les
+    // séries d'affilée sans quitter l'exercice.
+    const exercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
+    const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+    const nextTarget = exercise && planExercise && planExercise.sets && exercise.sets.length < planExercise.sets.length ? planExercise.sets[exercise.sets.length] : null;
+    if (nextTarget) {
+      liveDraftWeightMode = "off";
+      liveDraftBaseWeight = nextTarget.weight !== "" ? parseFloat(nextTarget.weight) : null;
+      liveDraftReps = nextTarget.reps !== "" ? parseFloat(nextTarget.reps) || 10 : 10;
+    } else {
+      // Pour la prochaine série, on propose automatiquement le palier de base
+      // disponible juste au-dessus (progression naturelle d'une série à
+      // l'autre), sauf si on est déjà au maximum disponible. Les reps restent
+      // inchangées — seul le poids avance. Le mode Standard/+Xkg est conservé
+      // tel quel, sans y toucher.
+      liveDraftBaseWeight = computeNextLiveBaseWeight(liveDraftName, liveDraftBaseWeight);
+      // Plus aucune cible prévue par le plan pour cet exercice : terminé.
+      if (planExercise && planExercise.sets && planExercise.sets.length) {
+        preparedExerciseDone = true;
+      }
+    }
   }
   startLiveRestManually();
+  if (preparedExerciseDone) {
+    // Retour au menu de sélection (préparés + tous les autres) — le repos
+    // qu'on vient de lancer continue de tourner, affiché sur cet écran
+    // comme sur n'importe quel autre (voir liveStatusHeroHTML).
+    closeCurrentLiveSegment();
+    liveActiveExerciseId = null;
+    liveStep = "category";
+  }
   saveJSON(KEYS.liveSession, liveSession);
 }
 
@@ -1157,6 +1350,31 @@ function attachLiveStepListeners() {
       liveDraftCategory = liveDraftCategory === key ? "" : key;
       liveCategoryJustChanged = true;
       renderLiveApp();
+    });
+  });
+
+  content.querySelectorAll("[data-live-pick-plan]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      // Chaîne vide (bouton "Aucun plan") -> null, explicitement "pas de
+      // plan" — pour ne plus jamais reproposer ce choix cette séance (voir
+      // livePlanPickerNeeded, qui ne se déclenche que si planId est encore
+      // undefined).
+      liveSession.planId = btn.dataset.livePickPlan || null;
+      saveJSON(KEYS.liveSession, liveSession);
+      renderLiveStep();
+    });
+  });
+
+  content.querySelectorAll("[data-live-plan-exercise]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const plan = sessionPlans.find((p) => p.id === liveSession.planId);
+      if (!plan) return;
+      const ex = plan.exercises.find((e) => e.id === btn.dataset.livePlanExercise);
+      if (!ex) return;
+      liveDraftType = ex.exType;
+      liveDraftCategory = ex.category;
+      liveDraftName = ex.name;
+      startOrResumeLiveExercise();
     });
   });
 

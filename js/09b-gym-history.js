@@ -33,7 +33,7 @@ function sessionCardHTML(s) {
     <div class="history-ex-name">${ex.name}${getExerciseDurationSeconds(ex) != null ? ` <span style="color:var(--text-dim); font-weight:600;">· ${formatLiveDuration(getExerciseDurationSeconds(ex))}</span>` : ""}</div>
     ${
       (ex.exType || "muscu") === "cardio"
-        ? `<div class="history-sets">${ex.sets.map((set) => `${historyRestBadgeHTML(set.restSec)}<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`
+        ? cardioSetsHistoryHTML(ex)
         : setBarsHTML(ex)
     }
   </div>`
@@ -119,6 +119,49 @@ function calendarViewHTML() {
   `;
 }
 
+// Résumé compact d'un exercice de plan : séries cibles pour Muscu/Rameur/
+// Vélo/Course, ou tours×travail/repos pour une config de boucle (Gainage).
+function planExerciseSummary(ex) {
+  if (ex.loop) return `${ex.loop.rounds}×${ex.loop.workSec}s/${ex.loop.restSec}s`;
+  return formatSetsSummary(ex.exType, ex.sets);
+}
+
+function planCardHTML(plan) {
+  const open = !!openHistoryIds[plan.id];
+  const exHTML = plan.exercises
+    .map((ex) => `<div class="history-ex-name">${ex.name} <span style="color:var(--text-dim); font-weight:600;">· ${planExerciseSummary(ex)}</span></div>`)
+    .join("");
+  return `
+  <div class="history-card">
+    <div class="history-head" data-toggle="${plan.id}">
+      <div class="history-head-left">
+        <div class="history-date">${plan.label}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="history-meta">${plan.exercises.length} exo${plan.exercises.length !== 1 ? "s" : ""}</div>
+        <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
+      </div>
+    </div>
+    ${
+      open
+        ? `<div class="history-body">${exHTML}</div>
+           <div class="delete-row">
+             <button class="edit-link" data-edit-plan="${plan.id}">${ICONS.edit} Modifier</button>
+             <button class="edit-link" data-duplicate-plan="${plan.id}">${ICONS.duplicate} Dupliquer</button>
+             <button class="delete-link" data-delete-plan="${plan.id}">${ICONS.trash} Supprimer</button>
+           </div>`
+        : ""
+    }
+  </div>`;
+}
+
+function plansListHTML() {
+  if (sessionPlans.length === 0) {
+    return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucun plan préparé pour l'instant.<br>Va dans l'onglet "Créer", choisis "Plan" pour en créer un.</div>`;
+  }
+  return sessionPlans.map(planCardHTML).join("");
+}
+
 function historyTabHTML() {
   const sorted = [...sessions].sort((a, b) => (a.date < b.date ? 1 : -1));
   const lastExport = loadJSON(KEYS.lastExport, null);
@@ -132,6 +175,18 @@ function historyTabHTML() {
     <div class="sync-status">Dernier export : ${formatRelativeTime(lastExport)} · Dernier import : ${formatRelativeTime(lastImport)}</div>
     <div class="backup-note">Cette sauvegarde inclut toutes tes activités (muscu, course, natation, vélo) — un seul fichier pour tout ton historique. Pour le retrouver sur un autre appareil : exporte ici, envoie-toi le fichier (AirDrop, mail, cloud…), puis importe-le là-bas.</div>
   `;
+  // Bascule Séances/Plans — indépendante de la bascule Liste/Calendrier, qui
+  // elle ne concerne que les séances (un plan n'a pas de date propre).
+  const modeToggle = `
+    <div class="ex-type-toggle" style="margin: 0 0 12px;">
+      <button type="button" class="ex-type-btn ${gymHistoryMode === "sessions" ? "active" : ""}" data-gym-history-mode="sessions">${ICONS.dumbbell} Séances</button>
+      <button type="button" class="ex-type-btn ${gymHistoryMode === "plans" ? "active" : ""}" data-gym-history-mode="plans">${ICONS.stopwatch} Plans</button>
+    </div>`;
+
+  if (gymHistoryMode === "plans") {
+    return backup + modeToggle + plansListHTML();
+  }
+
   const viewToggle = `
     <div class="ex-type-toggle" style="margin: 0 0 16px;">
       <button type="button" class="ex-type-btn ${historyViewMode === "list" ? "active" : ""}" data-history-view="list">${ICONS.history} Liste</button>
@@ -139,21 +194,56 @@ function historyTabHTML() {
     </div>`;
 
   if (historyViewMode === "calendar") {
-    return backup + viewToggle + calendarViewHTML();
+    return backup + modeToggle + viewToggle + calendarViewHTML();
   }
   if (sorted.length === 0) {
-    return backup + viewToggle + `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
+    return backup + modeToggle + viewToggle + `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
   }
   const upcoming = sorted.filter((s) => isUpcoming(s)).sort((a, b) => (a.date > b.date ? 1 : -1));
   const past = sorted.filter((s) => !isUpcoming(s));
   const showHeadings = upcoming.length > 0 && past.length > 0;
   const upcomingHTML = upcoming.length > 0 ? (showHeadings ? `<div class="session-group-heading">À venir</div>` : "") + upcoming.map(sessionCardHTML).join("") : "";
   const pastHTML = past.length > 0 ? (showHeadings ? `<div class="session-group-heading">Effectuées</div>` : "") + past.map(sessionCardHTML).join("") : "";
-  return backup + viewToggle + upcomingHTML + pastHTML;
+  return backup + modeToggle + viewToggle + upcomingHTML + pastHTML;
 }
 
 
 function attachHistoryListeners() {
+  document.querySelectorAll("[data-gym-history-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      gymHistoryMode = btn.dataset.gymHistoryMode;
+      renderContent();
+    });
+  });
+  document.querySelectorAll("[data-edit-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const plan = sessionPlans.find((p) => p.id === btn.dataset.editPlan);
+      if (plan) startEditPlan(plan);
+    });
+  });
+  document.querySelectorAll("[data-duplicate-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const plan = sessionPlans.find((p) => p.id === btn.dataset.duplicatePlan);
+      if (plan) duplicatePlan(plan);
+    });
+  });
+  document.querySelectorAll("[data-delete-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      showConfirm(
+        "Supprimer définitivement ce plan ? Cette action est irréversible.",
+        () => {
+          sessionPlans = sessionPlans.filter((p) => p.id !== btn.dataset.deletePlan);
+          saveJSON(KEYS.sessionPlans, sessionPlans);
+          renderContent();
+        },
+        { confirmLabel: "Supprimer", danger: true }
+      );
+    });
+  });
+
   document.querySelectorAll("[data-history-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
       historyViewMode = btn.dataset.historyView;

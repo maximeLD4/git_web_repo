@@ -7,6 +7,13 @@ let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
 // Cardio/Gainage) — volontairement plus simple que gymExerciseConfigs : pas
 // de poids/palier/incrément puisque le gainage ne se travaille qu'au temps.
 let gainageExerciseConfigs = loadJSON(KEYS.gainageExerciseConfigs, []);
+// Plans préparés en amont (module Créer, mode "Plan") — une liste d'exercices
+// avec des séries CIBLES (poids/reps) plutôt que des séries réellement
+// faites ; pour le gainage, une config de boucle (tours/travail/repos) au
+// lieu de séries, puisque le gainage ne se planifie pas en poids/reps.
+// Chaque plan : { id, label, createdAt, exercises: [{ id, name, exType,
+// category, sets: [{id, weight, reps}], loop: {rounds, workSec, restSec} | null }] }
+let sessionPlans = loadJSON(KEYS.sessionPlans, []);
 // Migration ponctuelle : un nom d'exercice enregistré sans majuscule initiale
 // (tapé avant ce correctif, ex. "ischio") est corrigé une bonne fois pour
 // toutes, pour que le nom affiché soit partout identique à ce qui est
@@ -38,14 +45,20 @@ let gainageSettingsFormOpen = false;
 let gainageSettingsEditingConfigId = null;
 let gainageSettingsFormDraft = { name: "" };
 let weights = loadJSON(KEYS.weights, []);
-let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [] };
+let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [], kind: "session" };
 if (!Array.isArray(draft.exercises)) draft.exercises = [];
+if (!draft.kind) draft.kind = "session"; // séances déjà sauvegardées avant l'ajout des plans
 
 let tab = "log";
 let openHistoryIds = {};
 let openExerciseIds = {}; // réduit/développé des exercices dans l'onglet Créer (par défaut : développé, sauf réduction explicite)
 let draftSaveTimer = null;
 let editingSessionId = draft.editingSessionId || null;
+let editingPlanId = draft.editingPlanId || null;
+// "sessions" (par défaut) ou "plans" — bascule d'affichage dans l'onglet
+// Historique de la Salle de sport, indépendante du mode Séance/Plan de
+// l'onglet Créer.
+let gymHistoryMode = "sessions";
 let historyViewMode = "calendar"; // "list" | "calendar"
 let calendarMonth = todayISO().slice(0, 7);
 let selectedCalendarDate = null;
