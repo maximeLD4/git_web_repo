@@ -198,7 +198,7 @@ function liveCategoryStepHTML() {
   const planSectionHTML = livePlanSectionHTML();
   const switchHTML = `
     <div class="live-type-switch">
-      <div class="live-type-thumb" id="live-type-thumb" style="transform: translateX(${isCardio ? "100%" : "0"});"></div>
+      <div class="live-type-thumb" id="live-type-thumb" style="transform: translateX(${isCardio ? "100%" : "0%"});"></div>
       <button type="button" class="live-type-switch-btn ${!isCardio ? "active" : ""}" data-live-type-switch="muscu">${ICONS.dumbbell} Muscu</button>
       <button type="button" class="live-type-switch-btn ${isCardio ? "active" : ""}" data-live-type-switch="cardio">${ICONS.stopwatch} Cardio/Gainage</button>
     </div>`;
@@ -1296,7 +1296,11 @@ function attachLiveNavigationListeners(content) {
       // glissement, ce qui casserait l'effet.
       const thumb = document.getElementById("live-type-thumb");
       if (thumb) {
-        thumb.style.transform = `translateX(${newType === "cardio" ? "100%" : "0"})`;
+        // Même unité (%) des deux côtés — passer de "100%" à "0" (sans
+        // unité) empêchait le moteur CSS d'animer correctement la
+        // transition dans ce sens précis : elle sautait instantanément au
+        // lieu de glisser, alors que l'autre sens (vers "100%") fonctionnait.
+        thumb.style.transform = `translateX(${newType === "cardio" ? "100%" : "0%"})`;
         setTimeout(() => renderLiveApp(), 220);
       } else {
         renderLiveApp();

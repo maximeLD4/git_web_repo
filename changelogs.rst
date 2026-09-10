@@ -28,6 +28,34 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.35.1 - 2026-09-04
+====================
+
+- **Corrigé le glissement Muscu ↔ Cardio/Gainage qui ne fonctionnait que
+  dans un sens** (Séance en direct). Cause trouvée en mesurant la position
+  réelle du curseur toutes les 30ms : deux règles CSS `!important`, reste
+  d'une ancienne approche 100% CSS (avant l'animation pilotée par JS
+  actuelle), entraient en conflit avec elle. `.live-type-thumb` étant le
+  premier enfant de `.live-type-switch` (avant les boutons), la règle
+  ciblant Muscu via `:first-child` ne correspondait jamais à rien, alors
+  que celle ciblant Cardio via `:last-child` correspondait bien et imposait
+  sa valeur en permanence dès qu'on quittait Cardio — d'où un glissement à
+  sens unique. Les deux règles obsolètes sont retirées ; le glissement
+  fonctionne maintenant symétriquement dans les deux sens (vérifié image
+  par image).
+
+2.35.0 - 2026-09-04
+====================
+
+- **Angles très légèrement arrondis, partout, avec exactement la même
+  valeur.** Tout était à `border-radius: 0` en dur (boutons, cartes,
+  cases, puces...), avec une variable `--radius` déjà présente mais
+  jamais utilisée : les 88 endroits concernés pointent maintenant vers
+  cette même variable (réglée à 3px), un seul endroit à changer pour
+  ajuster l'arrondi de toute l'app d'un coup si besoin un jour. Les
+  quelques éléments délibérément ronds (bouton de lancement, boutons
+  d'icône circulaires) n'étaient pas concernés, inchangés.
+
 2.34.7 - 2026-09-04
 ====================
 
