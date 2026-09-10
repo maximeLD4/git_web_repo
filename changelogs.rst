@@ -28,6 +28,30 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.36.0 - 2026-09-04
+====================
+
+- **Trois modes de couleur : Jour, Nuit, Anne.** Nouveau sélecteur dans
+  Paramètres. Jour reste inchangé. Nuit passe en fond sombre chaud, textes
+  clairs, couleurs de sport éclaircies pour rester lisibles. Anne glisse
+  toute l'app vers un rose pâle (pas fuchsia), une teinte pastel différente
+  par sport.
+  - Le mode s'applique dès le tout premier rendu (posé sur `<html>`), sans
+    flash du mode Jour avant bascule.
+  - Recensé et corrigé une quinzaine de couleurs codées en dur qui
+    ignoraient complètement ces nouveaux modes : icônes des tuiles Accueil,
+    carte Salle de sport dans Réglages, fonds `color-mix` visant un blanc
+    figé, texte des fenêtres de confirmation, points de légende du
+    calendrier partagé (recalculés à chaque changement de mode, posés en
+    style inline donc invisibles aux variables CSS), texte blanc sur fond
+    "encre" (cartes Performance/Poids, barre d'actions) qui serait devenu
+    illisible une fois l'encre inversée en Nuit.
+  - Corrigé au passage : l'en-tête devenait clair et lumineux en Nuit à
+    cause de cette même inversion — reste maintenant sombre sur les trois
+    modes, comme il se doit pour un mode pensé pour les yeux.
+  - Vérifié visuellement (Accueil, Créer, Réglages, Séance en direct,
+    Calendrier, Performance, Poids) sur les trois modes.
+
 2.35.1 - 2026-09-04
 ====================
 

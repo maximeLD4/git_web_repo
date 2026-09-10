@@ -1,5 +1,6 @@
 /* ---------- storage helpers (fully local, no account, no server) ---------- */
 const KEYS = {
+  colorMode: "gymlog:color-mode",
   sessions: "gymlog:sessions",
   library: "gymlog:library",
   weights: "gymlog:weights",
@@ -46,6 +47,9 @@ const ICONS = {
   bike: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1" fill="currentColor"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
   chevronRight: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-10-9.3C.4 8 1.7 4.6 5 3.7c2.3-.6 4.6.4 6 2.4 1.4-2 3.7-3 6-2.4 3.3.9 4.6 4.3 3 7.5-2.5 4.7-10 9.3-10 9.3z"/></svg>',
   gear: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
   logout: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
   camera: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>',
@@ -122,3 +126,43 @@ const ACTIVITY_META = [
   // désormais comptée/affichée à part, pas comme si c'était de la muscu.
   { key: "gainage", color: "#A65C4B", rgb: "166,92,75", label: "Gainage" },
 ];
+
+// Ces couleurs sont posées en style inline (calendrier partagé) — elles ne
+// répondent donc PAS aux variables CSS de thème comme le reste de l'app.
+// On les recalcule "à la main" à chaque changement de mode (voir
+// applyColorMode dans 03-state.js) plutôt que de les figer une fois pour
+// toutes, pour qu'elles restent lisibles sur un fond sombre (Nuit) ou
+// s'accordent avec la teinte rose (Anne).
+const ACTIVITY_META_COLORS = {
+  day: {
+    gym: ["#8FA06B", "143,160,107"],
+    run: ["#D08A62", "208,138,98"],
+    swim: ["#6FA3A0", "111,163,160"],
+    bike: ["#D9AD5D", "217,173,93"],
+    gainage: ["#A65C4B", "166,92,75"],
+  },
+  night: {
+    gym: ["#A9BC8B", "169,188,139"],
+    run: ["#E0A47F", "224,164,127"],
+    swim: ["#8BC0BC", "139,192,188"],
+    bike: ["#E8C077", "232,192,119"],
+    gainage: ["#C47C6C", "196,124,108"],
+  },
+  anne: {
+    gym: ["#C98FA0", "201,143,160"],
+    run: ["#E0A9A0", "224,169,160"],
+    swim: ["#B79BC4", "183,155,196"],
+    bike: ["#E8BE8E", "232,190,142"],
+    gainage: ["#B06A72", "176,106,114"],
+  },
+};
+function applyActivityMetaColors(mode) {
+  const set = ACTIVITY_META_COLORS[mode] || ACTIVITY_META_COLORS.day;
+  ACTIVITY_META.forEach((a) => {
+    const c = set[a.key];
+    if (c) {
+      a.color = c[0];
+      a.rgb = c[1];
+    }
+  });
+}

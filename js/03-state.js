@@ -1,5 +1,20 @@
 
 /* ---------- state ---------- */
+// "day" | "night" | "anne" — voir applyColorMode, appelé tout de suite après
+// pour poser la classe sur <html> et recalculer les couleurs du calendrier
+// partagé (ACTIVITY_META, posées en style inline donc pas suivies par les
+// variables CSS) dès le tout premier rendu, avant même de dessiner quoi que
+// ce soit — pour ne jamais montrer le mode Jour une fraction de seconde
+// avant de basculer vers le mode choisi.
+let colorMode = loadJSON(KEYS.colorMode, "day");
+function applyColorMode(mode) {
+  colorMode = mode;
+  document.documentElement.classList.remove("mode-day", "mode-night", "mode-anne");
+  document.documentElement.classList.add("mode-" + mode);
+  applyActivityMetaColors(mode);
+}
+applyColorMode(colorMode);
+
 let sessions = loadJSON(KEYS.sessions, []);
 let library = loadJSON(KEYS.library, []);
 let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);

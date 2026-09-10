@@ -44,17 +44,35 @@ function renderSettingsApp() {
 function renderSettingsContent() {
   document.getElementById("content").innerHTML = `
     <div class="home-card" data-open-settings="gym">
-      <div class="home-card-icon" style="background: rgba(107,127,69,0.14); color: #6B7F45;">${ICONS.dumbbell}</div>
+      <div class="home-card-icon" style="background: rgba(var(--rgb-gym), 0.14); color: rgb(var(--rgb-gym));">${ICONS.dumbbell}</div>
       <div class="home-card-text">
         <div class="home-card-title">Salle de sport</div>
         <div class="home-card-sub">${gymExerciseConfigs.length + gainageExerciseConfigs.length} exercice${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""} configuré${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""}</div>
       </div>
       <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
+    <div class="home-section-label" style="margin: 20px 0 10px;">Apparence</div>
+    <div class="ex-type-toggle" style="margin-bottom: 12px;">
+      <button type="button" class="ex-type-btn ${colorMode === "day" ? "active" : ""}" data-color-mode="day">${ICONS.sun} Jour</button>
+      <button type="button" class="ex-type-btn ${colorMode === "night" ? "active" : ""}" data-color-mode="night">${ICONS.moon} Nuit</button>
+      <button type="button" class="ex-type-btn ${colorMode === "anne" ? "active" : ""}" data-color-mode="anne">${ICONS.heart} Anne</button>
+    </div>
   `;
   document.querySelector("[data-open-settings]").addEventListener("click", () => {
     currentApp = "settings-gym";
     render();
+  });
+  document.querySelectorAll("[data-color-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.colorMode;
+      if (mode === colorMode) return;
+      applyColorMode(mode);
+      saveJSON(KEYS.colorMode, mode);
+      // Re-rendu complet (pas juste ce petit toggle) : les couleurs de
+      // module (icônes, etc.) codées en dur ailleurs dans ce même écran
+      // doivent, elles aussi, refléter le nouveau mode tout de suite.
+      renderSettingsApp();
+    });
   });
 }
 
