@@ -28,6 +28,30 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.36.2 - 2026-09-04
+====================
+
+- **Mode Anne : contraste renforcé** — le fond, les bordures/filets et le
+  texte secondaire étaient un peu trop pâles au global. Fond légèrement
+  plus saturé, bordures/filets plus visibles, texte secondaire plus lisible,
+  et les teintes par sport (tuiles Accueil) approfondies pour avoir plus de
+  peps tout en restant dans la même famille bordeaux/cramoisi/rose du
+  thème "Barbra".
+
+2.36.1 - 2026-09-04
+====================
+
+- **Palette du mode Anne reconstruite à partir du thème Slack "Barbra"**
+  (#FFC4D9, #9E0B2E, #C01343) plutôt que d'un rose pastel inventé : fond
+  rose très pâle, bordeaux foncé (#9E0B2E) comme encre/texte, et une
+  déclinaison de rose/cramoisi par sport.
+  - Trouvé et corrigé en testant : le cramoisi (#C01343) posé directement
+    comme couleur "moutarde" rendait le titre de "Séance en direct"
+    illisible (texte bordeaux sur fond cramoisi, deux tons foncés trop
+    proches). Le rose clair (#FFC4D9) prend ce rôle à la place — mêmes
+    contrastes que sur les deux autres modes.
+  - Vérifié visuellement sur Accueil, Créer, Calendrier et Poids.
+
 2.36.0 - 2026-09-04
 ====================
 

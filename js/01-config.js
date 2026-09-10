@@ -149,11 +149,11 @@ const ACTIVITY_META_COLORS = {
     gainage: ["#C47C6C", "196,124,108"],
   },
   anne: {
-    gym: ["#C98FA0", "201,143,160"],
-    run: ["#E0A9A0", "224,169,160"],
-    swim: ["#B79BC4", "183,155,196"],
-    bike: ["#E8BE8E", "232,190,142"],
-    gainage: ["#B06A72", "176,106,114"],
+    gym: ["#C9718F", "201,113,143"],
+    run: ["#D9435F", "217,67,95"],
+    swim: ["#B03A5B", "176,58,91"],
+    bike: ["#E0708F", "224,112,143"],
+    gainage: ["#8C2F45", "140,47,69"],
   },
 };
 function applyActivityMetaColors(mode) {

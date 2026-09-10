@@ -821,43 +821,48 @@ html.mode-night #app.theme-auth { --accent: #EDE4DB; --accent-rgb: 237, 228, 219
    les yeux" recherché par un mode nuit. */
 html.mode-night .header { background: #15110E; }
 
-/* ---------- Anne : même structure claire que Jour, glissée vers un rose pâle ---------- */
+/* ---------- Anne : palette "Barbra" (thème Slack), construite à partir de
+   trois couleurs precises — #FFC4D9 (rose clair), #9E0B2E (bordeaux foncé,
+   sert d'encre), #C01343 (cramoisi, sert d'accent/moutarde) — plutôt qu'un
+   rose pastel inventé. Les teintes par sport restent dans cette même
+   famille bordeaux/cramoisi/rose pour que ça reste cohérent avec elle,
+   sans piocher des teintes qui n'y figurent pas. ---------- */
 html.mode-anne, html.mode-anne #app {
-  --bg: #FBF1F3;
-  --surface: #FFFAFB;
-  --surface-2: rgba(92, 58, 70, 0.055);
-  --border: rgba(92, 58, 70, 0.10);
-  --rule: rgba(92, 58, 70, 0.14);
-  --text: #5C3A46;
-  --text-dim: rgba(92, 58, 70, 0.62);
-  --ink: #5C3A46;
-  --ink-rgb: 92,58,70;
-  --on-ink: #FFF6F8;
-  --on-ink-rgb: 255,246,248;
-  --surface-rgb: 255,250,251;
-  --action: #5C3A46;
-  --yellow: #E8A0B4;
-  --yellow-rgb: 232,160,180;
-  --rgb-gym: 201,143,160;
-  --rgb-run: 224,169,160;
-  --rgb-swim: 183,155,196;
-  --rgb-bike: 232,190,142;
-  --rgb-performance: 214,130,140;
-  --rgb-weight: 197,153,182;
-  --rgb-calendar: 176,140,148;
+  --bg: #FCE3EC;
+  --surface: #FFF6F9;
+  --surface-2: rgba(158, 11, 46, 0.08);
+  --border: rgba(158, 11, 46, 0.16);
+  --rule: rgba(158, 11, 46, 0.20);
+  --text: #9E0B2E;
+  --text-dim: rgba(158, 11, 46, 0.7);
+  --ink: #9E0B2E;
+  --ink-rgb: 158,11,46;
+  --on-ink: #FFF2F6;
+  --on-ink-rgb: 255,242,246;
+  --surface-rgb: 255,246,249;
+  --action: #9E0B2E;
+  --yellow: #FFC4D9;
+  --yellow-rgb: 255,196,217;
+  --rgb-gym: 224,110,150;
+  --rgb-run: 209,60,95;
+  --rgb-swim: 176,58,91;
+  --rgb-bike: 224,140,170;
+  --rgb-performance: 192,19,67;
+  --rgb-weight: 158,11,46;
+  --rgb-calendar: 158,11,46;
 }
-html.mode-anne #app.theme-gym { --accent: #C98FA0; --accent-rgb: 201, 143, 160; }
-html.mode-anne #app.theme-run { --accent: #E0A9A0; --accent-rgb: 224, 169, 160; }
-html.mode-anne #app.theme-weight { --accent: #A98CB0; --accent-rgb: 169, 140, 176; }
-html.mode-anne #app.theme-calendar { --accent: #5C3A46; --accent-rgb: 92, 58, 70; }
-html.mode-anne #app.theme-settings { --accent: #5C3A46; --accent-rgb: 92, 58, 70; }
-html.mode-anne #app.theme-swim { --accent: #B79BC4; --accent-rgb: 183, 155, 196; }
-html.mode-anne #app.theme-bike { --accent: #E8BE8E; --accent-rgb: 232, 190, 142; }
-html.mode-anne #app.theme-home { --accent: #5C3A46; --accent-rgb: 92, 58, 70; }
-html.mode-anne #app.theme-scanner { --accent: #E8A0B4; --accent-rgb: 232, 160, 180; }
-html.mode-anne #app.theme-performance { --accent: #C97A87; --accent-rgb: 201, 122, 135; }
-html.mode-anne #app.theme-live { --accent: #E8A0B4; --accent-rgb: 232, 160, 180; }
-html.mode-anne #app.theme-auth { --accent: #5C3A46; --accent-rgb: 92, 58, 70; }
+html.mode-anne #app.theme-gym { --accent: #C9718F; --accent-rgb: 201, 113, 143; }
+html.mode-anne #app.theme-run { --accent: #D9435F; --accent-rgb: 217, 67, 95; }
+html.mode-anne #app.theme-weight { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
+html.mode-anne #app.theme-calendar { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
+html.mode-anne #app.theme-settings { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
+html.mode-anne #app.theme-swim { --accent: #B03A5B; --accent-rgb: 176, 58, 91; }
+html.mode-anne #app.theme-bike { --accent: #E0708F; --accent-rgb: 224, 112, 143; }
+html.mode-anne #app.theme-home { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
+html.mode-anne #app.theme-scanner { --accent: #C01343; --accent-rgb: 192, 19, 67; }
+html.mode-anne #app.theme-performance { --accent: #C01343; --accent-rgb: 192, 19, 67; }
+html.mode-anne #app.theme-live { --accent: #C01343; --accent-rgb: 192, 19, 67; }
+html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 .auth-screen {
   position: fixed; inset: 0; max-width: 480px; margin: 0 auto;
   overflow: hidden; display: flex; flex-direction: column;
