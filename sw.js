@@ -48,6 +48,7 @@ const APP_SHELL_CORE = [
   "./js/16-performance.js",
   "./js/17-main.js",
   "./js/18-live.js",
+  "./js/19-live-sound.js",
   "./icons/apple-touch-icon.png",
   "./icons/apple-touch-icon-120.png",
   "./icons/apple-touch-icon-152.png",

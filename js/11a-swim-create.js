@@ -266,8 +266,8 @@ function swimLogTabHTML() {
     </div>
     ${editBanner}
     <div class="field-row">
-      <div class="field"><label>Date</label><input type="date" id="swim-date" value="${swimDraft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="swim-label" placeholder="Séance technique, endurance… (optionnel)" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></div>
+      <div class="field field-date"><label>Date</label><input type="date" id="swim-date" value="${swimDraft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="swim-label" placeholder="Séance technique…" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></div>
     </div>
     <div class="run-summary-bar" id="swim-summary-bar">${formatSwimSessionTotalsLine(swimDraft.blocks)}</div>
     <div id="swim-blocks-container">${blocksHTML}</div>

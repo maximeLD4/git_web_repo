@@ -298,8 +298,8 @@ function runLogTabHTML() {
     </div>
     ${editBanner}
     <div class="field-row">
-      <div class="field"><label>Date</label><input type="date" id="run-date" value="${runDraft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="run-label" placeholder="Sortie longue, fractionné 10x400… (optionnel)" value="${(runDraft.label || "").replace(/"/g, "&quot;")}"></div>
+      <div class="field field-date"><label>Date</label><input type="date" id="run-date" value="${runDraft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="run-label" placeholder="Fractionné 10x400…" value="${(runDraft.label || "").replace(/"/g, "&quot;")}"></div>
     </div>
     <div class="run-summary-bar" id="run-summary-bar">${formatSessionTotalsLine(runDraft.blocks)}</div>
     <div id="blocks-container">${blocksHTML}</div>

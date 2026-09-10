@@ -287,19 +287,36 @@ function getLastPerformance(name) {
   return null;
 }
 
+function gymHeaderSubText() {
+  if (gymTopMode === "plan") {
+    return `${sessionPlans.length} plan${sessionPlans.length !== 1 ? "s" : ""} enregistré${sessionPlans.length !== 1 ? "s" : ""}`;
+  }
+  return `${sessions.length} séance${sessions.length !== 1 ? "s" : ""} enregistrée${sessions.length !== 1 ? "s" : ""}`;
+}
+
 function renderGymApp() {
   app.className = "theme-gym";
+  // Rattrapage silencieux : si un brouillon d'une session précédente (avant
+  // cette restructuration, ou après une fermeture en plein milieu) a un
+  // "kind" différent du mode affiché, on aligne le mode sur lui plutôt que
+  // de laisser les deux se contredire à l'écran.
+  if (draft.kind && draft.kind !== gymTopMode) gymTopMode = draft.kind;
+  const isPlanMode = gymTopMode === "plan";
   app.innerHTML = `
     <div class="header">
       <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
       <div class="header-icon-only">${ICONS.dumbbell}</div>
-      <div class="header-sub">${sessions.length} séance${sessions.length !== 1 ? "s" : ""} enregistrée${sessions.length !== 1 ? "s" : ""}</div>
+      <div class="header-sub" id="gym-header-sub">${gymHeaderSubText()}</div>
+    </div>
+    <div class="ex-type-toggle" id="gym-top-mode-toggle" style="margin: 14px 16px 0 18px;">
+      <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-gym-top-mode="session">Séance effectuée</button>
+      <button type="button" class="ex-type-btn ${isPlanMode ? "active" : ""}" data-gym-top-mode="plan">Plan à préparer</button>
     </div>
     <div class="content" id="content"></div>
     <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${tab === "log" ? "active" : ""}" data-tab="log">${ICONS.dumbbell}Créer</button>
-      <button class="tab-btn ${tab === "history" ? "active" : ""}" data-tab="history">${ICONS.history}Séances</button>
+      <button class="tab-btn ${tab === "history" ? "active" : ""}" data-tab="history">${ICONS.history}${isPlanMode ? "Plans" : "Séances"}</button>
     </div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", () => {
@@ -315,7 +332,35 @@ function renderGymApp() {
       renderGymApp();
     });
   });
+  document.querySelectorAll("[data-gym-top-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => switchGymTopMode(btn.dataset.gymTopMode));
+  });
   renderContent();
+}
+
+// Change le grand mode Séance/Plan qui structure tout le module. Si un
+// brouillon non enregistré est en cours (peu importe si c'est une édition
+// ou une nouvelle saisie), on prévient avant de l'effacer — changer de mode
+// n'a de sens qu'en repartant d'une ardoise vierge pour l'autre mode.
+function switchGymTopMode(newMode) {
+  if (gymTopMode === newMode) return;
+  const hasUnsavedDraft = draft.exercises && draft.exercises.length > 0;
+  const applySwitch = () => {
+    gymTopMode = newMode;
+    clearDraft();
+    draft.kind = newMode;
+    saveJSON(KEYS.draft, draft);
+    renderGymApp();
+  };
+  if (hasUnsavedDraft) {
+    showConfirm(
+      "Changer de mode effacera la séance/le plan en cours de saisie (non enregistré). Continuer ?",
+      applySwitch,
+      { confirmLabel: "Changer", danger: true }
+    );
+  } else {
+    applySwitch();
+  }
 }
 
 function renderContent() {
@@ -340,9 +385,14 @@ function renderContent() {
 function categoryToggleHTML(category) {
   return `
     <div class="ex-type-toggle wrap-toggle" data-category-toggle style="margin-bottom:10px;">
-      ${GYM_EXERCISE_CATEGORIES.map(
-        (c) => `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""}" data-category-btn="${c.key}">${c.label}</button>`
-      ).join("")}
+      ${GYM_EXERCISE_CATEGORIES.map((c) => {
+        // Simple signal visuel (jamais un blocage, voir .ex-type-btn-needs-setup
+        // en CSS) : une catégorie sans le moindre exercice configuré se grise,
+        // mais reste sélectionnable normalement — la choisir affiche toujours
+        // le bouton "Configurer un exercice" comme aujourd'hui.
+        const hasConfigs = gymExerciseConfigs.some((cfg) => (cfg.category || "pecs") === c.key);
+        return `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""} ${!hasConfigs ? "ex-type-btn-needs-setup" : ""}" data-category-btn="${c.key}">${c.label}</button>`;
+      }).join("")}
     </div>`;
 }
 
@@ -413,12 +463,17 @@ function exerciseCardHTML(ex) {
   let bodyHTML;
   if (!exType) {
     bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis Muscu ou Cardio/Gainage pour continuer.</div>`;
+  } else if (isMuscu && gymExerciseConfigs.length === 0) {
+    // Aucun exercice Muscu configuré nulle part : pas la peine de faire
+    // choisir une catégorie d'abord pour découvrir ensuite qu'elle est vide
+    // elle aussi — direct vers l'invite à configurer.
+    bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice de musculation configuré.<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-go-settings-gym>${ICONS.plus} Configurer un exercice</button></div>`;
   } else if (isMuscu && !category) {
     bodyHTML = categoryToggleHTML(category) + `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis une catégorie pour continuer.</div>`;
   } else if (isMuscu && configsInCategory.length === 0) {
     bodyHTML =
       categoryToggleHTML(category) +
-      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Va dans Paramètres → Salle de sport pour en ajouter.</div>`;
+      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-go-settings-gym>${ICONS.plus} Configurer un exercice</button></div>`;
   } else if (isMuscu && !effectiveConfig) {
     bodyHTML =
       categoryToggleHTML(category) +
@@ -567,34 +622,24 @@ function logTabHTML() {
     : editingPlanId
       ? `<div class="edit-banner">Modification d'un plan existant<button type="button" id="cancel-edit-btn">Annuler</button></div>`
       : "";
+  // Le "kind" du brouillon suit désormais le grand sélecteur en haut du
+  // module (voir renderGymApp/switchGymTopMode) — plus de bascule locale ici,
+  // qui faisait doublon avec lui tout en étant moins visible.
   const isPlan = draft.kind === "plan";
-  // La bascule Séance/Plan ne s'affiche que sur un brouillon tout neuf —
-  // une fois qu'on modifie une séance/un plan existant, ou qu'on a déjà
-  // commencé à ajouter des exercices, le mode est figé (les deux formes de
-  // données ne sont pas interchangeables sans y repenser à deux fois).
-  const showKindToggle = !editingSessionId && !editingPlanId && draft.exercises.length === 0;
-  const kindToggleHTML = showKindToggle
-    ? `
-    <div class="ex-type-toggle" data-draft-kind-toggle style="margin-bottom:10px;">
-      <button type="button" class="ex-type-btn ${!isPlan ? "active" : ""}" data-draft-kind="session">Séance effectuée</button>
-      <button type="button" class="ex-type-btn ${isPlan ? "active" : ""}" data-draft-kind="plan">Plan (à préparer)</button>
-    </div>`
-    : "";
   const fieldsHTML = isPlan
     ? `<div class="field"><label>Nom du plan</label><input type="text" id="log-label" placeholder="Push day, jambes…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>`
     : `
     <div class="field-row">
-      <div class="field"><label>Date</label><input type="date" id="log-date" value="${draft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="log-label" placeholder="Push day, jambes… (optionnel)" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>
+      <div class="field field-date"><label>Date</label><input type="date" id="log-date" value="${draft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="log-label" placeholder="Push day…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>
     </div>`;
   return `
     <div class="backup-row">
-      <button class="backup-btn" id="import-draft-btn">${ICONS.down} Importer une séance</button>
+      <button class="backup-btn" id="import-draft-btn">${ICONS.down} ${isPlan ? "Importer un plan" : "Importer une séance"}</button>
       <button class="backup-btn" id="reset-draft-btn">${ICONS.reset} Réinitialiser</button>
       <input type="file" id="import-draft-file" accept="application/json" style="display:none">
     </div>
     ${editBanner}
-    ${kindToggleHTML}
     ${fieldsHTML}
     <div id="exercises-container">${exercisesHTML}</div>
     <datalist id="exercise-suggestions">${libOptions}</datalist>
@@ -631,15 +676,6 @@ function attachLogListeners() {
   const labelEl = document.getElementById("log-label");
   if (dateEl) dateEl.addEventListener("input", scheduleDraftSave);
   labelEl.addEventListener("input", scheduleDraftSave);
-
-  document.querySelectorAll("[data-draft-kind]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (draft.kind === btn.dataset.draftKind) return;
-      draft.kind = btn.dataset.draftKind;
-      saveJSON(KEYS.draft, draft);
-      renderContent();
-    });
-  });
 
   const importDraftBtn = document.getElementById("import-draft-btn");
   const importDraftFile = document.getElementById("import-draft-file");
@@ -714,6 +750,17 @@ function attachLogListeners() {
     const isCardio = card.dataset.extype === "cardio";
     const nameInput = card.querySelector(".ex-name-input");
     const hint = card.querySelector("[data-hint]");
+
+    const goSettingsBtn = card.querySelector("[data-go-settings-gym]");
+    if (goSettingsBtn) {
+      goSettingsBtn.addEventListener("click", () => {
+        // Le brouillon en cours est déjà sauvegardé au fil de la saisie (voir
+        // scheduleDraftSave) — configurer un exercice puis revenir sur Créer
+        // le retrouve tel quel.
+        currentApp = "settings-gym";
+        render();
+      });
+    }
 
     function refreshHint(name) {
       if (!hint) return;

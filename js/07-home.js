@@ -9,14 +9,36 @@ function tileStatHTML(n, word, suffix) {
 function renderHome() {
   app.className = "theme-home";
   const totalSessions = sessions.length + runSessions.length + swimSessions.length + bikeSessions.length;
+  // Seule la Muscu exige un exercice configuré au préalable pour être
+  // utilisable (choix dans une liste préconfigurée, contrairement à
+  // Rameur/Vélo/Course qui n'ont jamais eu besoin de configuration, et au
+  // Gainage qui se lance toujours via sa boucle générique — voir
+  // liveCategoryStepHTML/exerciseCardHTML). La bannière ci-dessous et le
+  // grisage des deux tuiles concernées (voir .home-tile-needs-setup) ne
+  // sont qu'un signal, jamais un blocage : les deux restent cliquables.
+  const needsGymOnboarding = gymExerciseConfigs.length === 0;
   app.innerHTML = `
     <div class="header" style="text-align:center;">
       <button type="button" class="logout-btn" data-logout aria-label="Se déconnecter">${ICONS.logout}</button>
       <div class="home-wordmark">GYMLOG</div>
     </div>
     <div class="content" id="content">
+      ${
+        needsGymOnboarding
+          ? `<div class="home-fluid-block">
+        <div class="home-onboarding-hint" data-open-settings-gym>
+          <div class="home-onboarding-hint-icon">${ICONS.dumbbell}</div>
+          <div>
+            <div class="home-onboarding-hint-title">Configure tes premiers exercices</div>
+            <div class="home-onboarding-hint-sub">Pour pouvoir suivre tes exercices de musculation</div>
+          </div>
+          <div class="home-onboarding-hint-arrow">${ICONS.chevronRight}</div>
+        </div>
+      </div>`
+          : ""
+      }
       <div class="home-fluid-block">
-        <div class="home-tile home-tile-wide ${liveSession ? "live-recording" : ""}" data-open-app="live">
+        <div class="home-tile home-tile-wide ${liveSession ? "live-recording" : ""} ${needsGymOnboarding ? "home-tile-needs-setup" : ""}" data-open-app="live">
           ${liveSession ? `<div class="live-rec-dot"></div>` : ""}
           <div class="home-tile-icon home-tile-icon-wide" style="background: ${liveSession ? "rgba(255,59,48,0.18)" : "rgba(255,159,10,0.14)"}; color: ${liveSession ? "#FF3B30" : "#FF9F0A"}; position: relative;">
             ${ICONS.dumbbell}
@@ -32,7 +54,7 @@ function renderHome() {
       <div class="home-section-label">Sports</div>
       <div class="home-fluid-block">
         <div class="home-hscroll">
-          <div class="home-tile home-tile-hscroll" data-open-app="gym">
+          <div class="home-tile home-tile-hscroll ${needsGymOnboarding ? "home-tile-needs-setup" : ""}" data-open-app="gym">
             <div class="home-tile-icon" style="background: rgba(143,160,107,0.14); color: #8FA06B;">${ICONS.dumbbell}</div>
             <div class="home-tile-title">Salle de sport</div>
             <div class="home-tile-sub">${tileStatHTML(sessions.length, "séance")}</div>
@@ -92,6 +114,13 @@ function renderHome() {
       render();
     });
   });
+  const onboardingHint = document.querySelector("[data-open-settings-gym]");
+  if (onboardingHint) {
+    onboardingHint.addEventListener("click", () => {
+      currentApp = "settings-gym";
+      render();
+    });
+  }
   document.querySelector("[data-logout]").addEventListener("click", () => {
     showConfirm("Te déconnecter ?", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
   });

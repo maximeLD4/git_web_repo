@@ -116,4 +116,9 @@ const ACTIVITY_META = [
   { key: "run", color: "#D08A62", rgb: "208,138,98", label: "Course" },
   { key: "swim", color: "#6FA3A0", rgb: "111,163,160", label: "Natation" },
   { key: "bike", color: "#D9AD5D", rgb: "217,173,93", label: "Vélo" },
+  // Gainage a sa propre entrée (couleur/légende) dans le calendrier partagé
+  // plutôt que d'être noyé sous "Muscu" — voir isGainageOnlySession dans
+  // 14-shared-calendar.js : une séance qui ne contient QUE du gainage est
+  // désormais comptée/affichée à part, pas comme si c'était de la muscu.
+  { key: "gainage", color: "#A65C4B", rgb: "166,92,75", label: "Gainage" },
 ];

@@ -58,7 +58,13 @@ let editingPlanId = draft.editingPlanId || null;
 // "sessions" (par défaut) ou "plans" — bascule d'affichage dans l'onglet
 // Historique de la Salle de sport, indépendante du mode Séance/Plan de
 // l'onglet Créer.
-let gymHistoryMode = "sessions";
+// "session" ou "plan" — le grand sélecteur en haut du module Salle de
+// sport, qui détermine à la fois ce que l'onglet Créer construit (une
+// séance déjà faite, ou un plan à préparer) et ce que l'onglet du bas liste
+// (Historique ou Mes plans). Remplace l'ancien double toggle (un dans
+// Créer, un dans Historique), tous deux trop discrets pour porter une
+// distinction aussi structurante.
+let gymTopMode = "session";
 let historyViewMode = "calendar"; // "list" | "calendar"
 let calendarMonth = todayISO().slice(0, 7);
 let selectedCalendarDate = null;

@@ -146,7 +146,7 @@ function livePlanPickerStepHTML() {
   return `
     <div class="live-set-form">
       <div class="live-set-form-scroll live-set-form-scroll-fixed">
-        <div class="live-exercise-name">Un plan pour aujourd'hui ?</div>
+        <div class="live-exercise-name" style="white-space: normal; overflow: visible; text-overflow: clip;">Un plan pour aujourd'hui ?</div>
         <div class="live-grid" style="grid-template-columns:1fr 1fr;">${buttons}</div>
       </div>
       <div class="live-set-form-actions">
@@ -220,22 +220,42 @@ function liveCategoryStepHTML() {
       // rejouer l'animation d'entrée à chaque rendu non lié à ce choix.
       const shouldAnimateEnter = liveCategoryJustChanged;
       liveCategoryJustChanged = false;
-      const inner =
-        gainageExerciseConfigs.length === 0
-          ? `<div class="empty-state">Aucun exercice de gainage configuré.<br>Ajoute-en dans Paramètres → Salle de sport.</div>`
-          : `<div class="live-grid" style="grid-template-columns:1fr 1fr;">
-              ${[...gainageExerciseConfigs]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((c) => {
-                  const already = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === c.name.trim().toLowerCase());
-                  const badgeHTML = already ? `<span class="live-exercise-btn-badge">${already.sets.length}</span>` : "";
-                  return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}"><span class="live-exercise-btn-name">${c.name}</span>${badgeHTML}</button>`;
-                })
-                .join("")}
-            </div>`;
+      // Le gainage n'a pas besoin d'un exercice nommé pour être lancé — au
+      // fond, c'est juste une boucle générique (n tours de t1 travail / t2
+      // repos), exactement comme Rameur/Vélo/Course n'ont pas besoin d'être
+      // configurés au préalable. Un bouton "Gainage" générique est donc
+      // toujours proposé en premier, que des exercices nommés (Planche,
+      // Superman...) soient configurés ou non — ceux-ci restent de simples
+      // raccourcis nommés facultatifs par-dessus, pas un préalable.
+      const genericAlready = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === "gainage");
+      const genericBadgeHTML = genericAlready ? `<span class="live-exercise-btn-badge">${genericAlready.sets.length}</span>` : "";
+      const genericButtonHTML = `<button type="button" class="live-btn ${genericAlready ? "has-progress" : ""}" data-live-exercise="Gainage"><span class="live-exercise-btn-name">Gainage</span>${genericBadgeHTML}</button>`;
+      const configuredButtonsHTML = [...gainageExerciseConfigs]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((c) => {
+          const already = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === c.name.trim().toLowerCase());
+          const badgeHTML = already ? `<span class="live-exercise-btn-badge">${already.sets.length}</span>` : "";
+          return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}"><span class="live-exercise-btn-name">${c.name}</span>${badgeHTML}</button>`;
+        })
+        .join("");
+      const inner = `<div class="live-grid" style="grid-template-columns:1fr 1fr;">${genericButtonHTML}${configuredButtonsHTML}</div>`;
       gainageListHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}">${inner}</div>`;
     }
     return liveTimelineHTML() + planSectionHTML + switchHTML + categoriesHTML + gainageListHTML;
+  }
+
+  // Aucun exercice Muscu configuré nulle part : pas la peine de faire
+  // choisir une catégorie d'abord pour découvrir ensuite qu'elle est vide
+  // elle aussi — direct vers l'invite à configurer (voir aussi le point
+  // équivalent pour le Gainage, déjà immédiat puisqu'il n'a pas cette
+  // étape de catégorie intermédiaire).
+  if (gymExerciseConfigs.length === 0) {
+    return (
+      liveTimelineHTML() +
+      planSectionHTML +
+      switchHTML +
+      `<div class="empty-state">Aucun exercice de musculation configuré.<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`
+    );
   }
 
   // Muscu : la catégorie s'affiche en rangée compacte de puces (comme un
@@ -257,7 +277,7 @@ function liveCategoryStepHTML() {
     const configs = gymExerciseConfigs.filter((c) => (c.category || "pecs") === liveDraftCategory);
     const inner =
       configs.length === 0
-        ? `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Ajoute-en dans Paramètres → Salle de sport.</div>`
+        ? `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`
         : `<div class="live-grid" style="grid-template-columns:1fr 1fr;">
             ${[...configs]
               .sort((a, b) => a.name.localeCompare(b.name))
@@ -788,81 +808,9 @@ function updateLiveRestChronoDisplay() {
 // du travail vers le repos une fois la durée de travail écoulée, puis du
 // repos vers le tour suivant une fois la durée de repos écoulée — jusqu'au
 // nombre de tours prévu, où la boucle s'arrête d'elle-même. Ne fait rien si
-// aucune boucle n'est en cours (voir startLiveLoop/stopLiveLoop).
-// ---------- Retour sonore + vibration (transitions de la boucle Gainage) ----------
-// Le son fonctionne partout (Web Audio API, aucune permission nécessaire).
-// La vibration, elle, ne fonctionne que sur Android/Chrome — Safari iOS n'a
-// jamais implémenté l'API de vibration web, même pour les apps "Sur l'écran
-// d'accueil" : navigator.vibrate y est simplement absent, l'appel ci-dessous
-// ne fait donc rien du tout, silencieusement, sur iPhone.
-let liveAudioCtx = null;
-function getLiveAudioContext() {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return null;
-  if (!liveAudioCtx) liveAudioCtx = new AudioCtx();
-  return liveAudioCtx;
-}
-
-// Joue effectivement le son sur un contexte confirmé "running" — jamais
-// avant. C'est le cœur du correctif : reprendre un contexte suspendu
-// (ctx.resume()) est ASYNCHRONE, donc le lancer sans attendre puis démarrer
-// l'oscillateur dans la foulée revenait à le programmer sur un contexte
-// encore suspendu la plupart du temps — silencieux sans la moindre erreur.
-// Après un repos assez long (notamment sur iOS, qui suspend volontiers un
-// contexte audio inactif), c'est exactement ce qui pouvait faire "sauter"
-// le bip du passage repos → travail sans que rien ne le signale.
-function scheduleLiveTone(ctx, frequency, durationMs) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = "sine";
-  osc.frequency.value = frequency;
-  // Petite enveloppe (montée/descente en volume) plutôt qu'un aplat brut —
-  // évite le "clic" désagréable d'un son qui démarre/s'arrête à volume plein.
-  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.015);
-  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + durationMs / 1000 + 0.03);
-}
-
-function playLiveBeep(frequency, durationMs) {
-  const ctx = getLiveAudioContext();
-  if (!ctx) return;
-  if (ctx.state === "suspended") {
-    ctx.resume()
-      .then(() => scheduleLiveTone(ctx, frequency, durationMs))
-      .catch(() => {});
-  } else {
-    scheduleLiveTone(ctx, frequency, durationMs);
-  }
-}
-
-function hapticPulse(pattern) {
-  if (navigator.vibrate) navigator.vibrate(pattern);
-}
-
-// Signal de fin de "travail" (on passe au repos) : un seul bip grave, plutôt
-// posé — pas la peine d'être alarmant, on vient de finir un effort.
-function playLiveRestSignal() {
-  playLiveBeep(440, 160);
-  hapticPulse(120);
-}
-// Signal de fin de "repos" (on relance un tour) : un bip plus aigu, un peu
-// plus insistant — c'est le signal "c'est reparti".
-function playLiveWorkSignal() {
-  playLiveBeep(880, 160);
-  hapticPulse([80, 60, 80]);
-}
-// Signal de fin de boucle complète : petit arpège ascendant, façon "bravo".
-function playLiveLoopDoneSignal() {
-  const ctx = getLiveAudioContext();
-  if (!ctx) return;
-  [523, 659, 784].forEach((freq, i) => setTimeout(() => playLiveBeep(freq, 180), i * 130));
-  hapticPulse([100, 60, 100, 60, 160]);
-}
-
+// aucune boucle n'est en cours (voir startLiveLoop/stopLiveLoop). Les
+// signaux sonores/haptiques appelés ici (playLiveRestSignal, etc.) vivent
+// dans 19-live-sound.js.
 function checkLiveLoopAutoAdvance() {
   const loop = liveSession ? liveSession.loop : null;
   if (!loop) return;
@@ -1290,7 +1238,17 @@ function finishLiveSession() {
 function attachLiveStepListeners() {
   const content = document.getElementById("live-content");
   if (!content) return;
+  attachLiveTimelineListeners(content);
+  attachLiveNavigationListeners(content);
+  attachLivePlanListeners(content);
+  attachLiveSetFormListeners(content);
+  attachLiveSetActionListeners(content);
+  attachLiveLoopListeners(content);
+}
 
+// Puces de la frise en haut d'écran : un appui passe en mode confirmation
+// (2s pour confirmer), un second appui sur la même puce supprime pour de bon.
+function attachLiveTimelineListeners(content) {
   content.querySelectorAll("[data-live-timeline-chip]").forEach((chip) => {
     chip.addEventListener("click", () => {
       const idx = parseInt(chip.dataset.liveTimelineChip, 10);
@@ -1313,7 +1271,12 @@ function attachLiveStepListeners() {
       }
     });
   });
+}
 
+// Navigation entre types/catégories (Muscu ↔ Cardio, catégories Muscu,
+// catégories Cardio dont Gainage) et raccourci vers Paramètres depuis un
+// cul-de-sac "aucun exercice configuré".
+function attachLiveNavigationListeners(content) {
   content.querySelectorAll("[data-live-type-switch]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const newType = btn.dataset.liveTypeSwitch;
@@ -1367,30 +1330,16 @@ function attachLiveStepListeners() {
     });
   });
 
-  content.querySelectorAll("[data-live-pick-plan]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      // Chaîne vide (bouton "Aucun plan") -> null, explicitement "pas de
-      // plan" — pour ne plus jamais reproposer ce choix cette séance (voir
-      // livePlanPickerNeeded, qui ne se déclenche que si planId est encore
-      // undefined).
-      liveSession.planId = btn.dataset.livePickPlan || null;
-      saveJSON(KEYS.liveSession, liveSession);
-      renderLiveStep();
+  const goSettingsBtn = content.querySelector("[data-live-go-settings]");
+  if (goSettingsBtn) {
+    goSettingsBtn.addEventListener("click", () => {
+      // La séance en cours (si il y en a une) reste intacte en arrière-plan
+      // (voir la reprise automatique dans renderLiveApp) — configurer un
+      // exercice puis revenir en Live la retrouve telle quelle.
+      currentApp = "settings-gym";
+      render();
     });
-  });
-
-  content.querySelectorAll("[data-live-plan-exercise]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const plan = sessionPlans.find((p) => p.id === liveSession.planId);
-      if (!plan) return;
-      const ex = plan.exercises.find((e) => e.id === btn.dataset.livePlanExercise);
-      if (!ex) return;
-      liveDraftType = ex.exType;
-      liveDraftCategory = ex.category;
-      liveDraftName = ex.name;
-      startOrResumeLiveExercise();
-    });
-  });
+  }
 
   content.querySelectorAll("[data-live-cardio-category]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1417,7 +1366,40 @@ function attachLiveStepListeners() {
       startOrResumeLiveExercise();
     });
   });
+}
 
+// Choix d'un plan pour la séance, puis sélection d'un de ses exercices
+// préparés (voir aussi livePlanSectionHTML/getAttachedPlanExerciseFor).
+function attachLivePlanListeners(content) {
+  content.querySelectorAll("[data-live-pick-plan]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      // Chaîne vide (bouton "Aucun plan") -> null, explicitement "pas de
+      // plan" — pour ne plus jamais reproposer ce choix cette séance (voir
+      // livePlanPickerNeeded, qui ne se déclenche que si planId est encore
+      // undefined).
+      liveSession.planId = btn.dataset.livePickPlan || null;
+      saveJSON(KEYS.liveSession, liveSession);
+      renderLiveStep();
+    });
+  });
+
+  content.querySelectorAll("[data-live-plan-exercise]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const plan = sessionPlans.find((p) => p.id === liveSession.planId);
+      if (!plan) return;
+      const ex = plan.exercises.find((e) => e.id === btn.dataset.livePlanExercise);
+      if (!ex) return;
+      liveDraftType = ex.exType;
+      liveDraftCategory = ex.category;
+      liveDraftName = ex.name;
+      startOrResumeLiveExercise();
+    });
+  });
+}
+
+// Champs de saisie d'une série (reps, poids/incrément, distance) — tout ce
+// qui ajuste liveDraft* sans valider quoi que ce soit.
+function attachLiveSetFormListeners(content) {
   const repsMinus = content.querySelector("[data-live-reps-minus]");
   const repsPlus = content.querySelector("[data-live-reps-plus]");
   if (repsMinus) repsMinus.addEventListener("click", () => { liveDraftReps = Math.max(0, liveDraftReps - 1); renderLiveApp(); });
@@ -1445,14 +1427,37 @@ function attachLiveStepListeners() {
   const distPlus = content.querySelector("[data-live-distance-plus]");
   if (distMinus) distMinus.addEventListener("click", () => { liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) - 0.1) * 10) / 10); renderLiveApp(); });
   if (distPlus) distPlus.addEventListener("click", () => { liveDraftDistance = Math.round(((liveDraftDistance || 0) + 0.1) * 10) / 10; renderLiveApp(); });
+}
 
+// Actions qui valident/changent l'état d'une série ou d'un exercice :
+// démarrer, finir, changer d'exercice.
+function attachLiveSetActionListeners(content) {
   const startSetBtn = content.querySelector("[data-live-start-set]");
   if (startSetBtn) startSetBtn.addEventListener("click", startLiveSet);
 
   const finishSetBtn = content.querySelector("[data-live-finish-set]");
   if (finishSetBtn) finishSetBtn.addEventListener("click", finishLiveSet);
 
-  // ---------- Minuteur en boucle (Gainage) ----------
+  const changeExBtn = content.querySelector("[data-live-change-exercise]");
+  if (changeExBtn) {
+    changeExBtn.addEventListener("click", () => {
+      // Changer d'exercice arrête toute boucle en cours — continuer à
+      // avancer automatiquement pour un exercice qu'on a quitté n'aurait
+      // pas de sens.
+      liveSession.loop = null;
+      autoFinishLiveSetIfInProgress();
+      closeCurrentLiveSegment();
+      saveJSON(KEYS.liveSession, liveSession);
+      liveActiveExerciseId = null;
+      liveStep = "category";
+      renderLiveApp();
+    });
+  }
+}
+
+// Minuteur en boucle (Gainage) : ouvrir/annuler le formulaire de réglage,
+// ses trois steppers, puis démarrer/arrêter la boucle elle-même.
+function attachLiveLoopListeners(content) {
   const openLoopBtn = content.querySelector("[data-live-open-loop-form]");
   if (openLoopBtn) openLoopBtn.addEventListener("click", () => { liveLoopFormOpen = true; renderLiveApp(); });
 
@@ -1479,20 +1484,4 @@ function attachLiveStepListeners() {
 
   const stopLoopBtn = content.querySelector("[data-live-stop-loop]");
   if (stopLoopBtn) stopLoopBtn.addEventListener("click", stopLiveLoop);
-
-  const changeExBtn = content.querySelector("[data-live-change-exercise]");
-  if (changeExBtn) {
-    changeExBtn.addEventListener("click", () => {
-      // Changer d'exercice arrête toute boucle en cours — continuer à
-      // avancer automatiquement pour un exercice qu'on a quitté n'aurait
-      // pas de sens.
-      liveSession.loop = null;
-      autoFinishLiveSetIfInProgress();
-      closeCurrentLiveSegment();
-      saveJSON(KEYS.liveSession, liveSession);
-      liveActiveExerciseId = null;
-      liveStep = "category";
-      renderLiveApp();
-    });
-  }
 }

@@ -192,8 +192,8 @@ function bikeLogTabHTML() {
     </div>
     ${editBanner}
     <div class="field-row">
-      <div class="field"><label>Date</label><input type="date" id="bike-date" value="${bikeDraft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="bike-label" placeholder="Sortie route, home trainer… (optionnel)" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></div>
+      <div class="field field-date"><label>Date</label><input type="date" id="bike-date" value="${bikeDraft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></div>
     </div>
     <div class="run-summary-bar" id="bike-summary-bar">${formatBikeSessionTotalsLine(bikeDraft.blocks)}</div>
     <div id="bike-blocks-container">${blocksHTML}</div>

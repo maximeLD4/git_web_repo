@@ -44,7 +44,7 @@ function renderSettingsApp() {
 function renderSettingsContent() {
   document.getElementById("content").innerHTML = `
     <div class="home-card" data-open-settings="gym">
-      <div class="home-card-icon" style="background: rgba(0,184,153,0.14); color: #00B899;">${ICONS.dumbbell}</div>
+      <div class="home-card-icon" style="background: rgba(107,127,69,0.14); color: #6B7F45;">${ICONS.dumbbell}</div>
       <div class="home-card-text">
         <div class="home-card-title">Salle de sport</div>
         <div class="home-card-sub">${gymExerciseConfigs.length + gainageExerciseConfigs.length} exercice${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""} configuré${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""}</div>
@@ -99,7 +99,7 @@ function gymSettingsListHTML() {
       </div>`;
     })
     .join("");
-  return `${tabsHTML}${filtered.length === 0 ? emptyState : items}<button class="add-exercise-btn" id="add-config-btn">${ICONS.plus} Ajouter un exercice</button>`;
+  return `${tabsHTML}${filtered.length === 0 ? emptyState : items}`;
 }
 
 function gymSettingsFormHTML() {
@@ -178,7 +178,8 @@ function renderGymSettingsApp() {
       <div class="header-icon-only">${ICONS.dumbbell}</div>
       <div class="header-sub">Exercices préconfigurés</div>
     </div>
-    <div class="content" id="content" style="padding-bottom: 24px;"></div>
+    <div class="content" id="content" style="padding-bottom: 90px;"></div>
+    <div class="log-actions-bar" id="settings-actions-bar" style="display:none; bottom:0; padding-bottom: calc(12px + env(safe-area-inset-bottom));"></div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
     const formOpen = gymSettingsMode === "gainage" ? gainageSettingsFormOpen : gymSettingsFormOpen;
@@ -212,6 +213,25 @@ function renderGymSettingsContent() {
   // La bascule Muscu/Gainage ne s'affiche que sur les listes — pas pendant
   // l'édition d'un exercice, où elle n'aurait pas de sens.
   document.getElementById("content").innerHTML = (formOpen ? "" : gymSettingsModeToggleHTML()) + body;
+
+  // Le bouton "Ajouter" vit dans une barre fixe en bas d'écran plutôt qu'en
+  // bas de la liste défilante — toujours accessible sans avoir à dérouler
+  // toute la liste, comme pour l'écran Créer (voir positionLogActionsBar,
+  // qui ne s'applique pas ici : cet écran n'a pas de barre d'onglets).
+  const actionsBar = document.getElementById("settings-actions-bar");
+  if (actionsBar) {
+    if (formOpen) {
+      actionsBar.style.display = "none";
+      actionsBar.innerHTML = "";
+    } else {
+      actionsBar.style.display = "";
+      actionsBar.innerHTML =
+        gymSettingsMode === "gainage"
+          ? `<button class="add-exercise-btn" id="add-gainage-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice de gainage</button>`
+          : `<button class="add-exercise-btn" id="add-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice</button>`;
+    }
+  }
+
   attachGymSettingsListeners();
 }
 
@@ -245,7 +265,7 @@ function gainageSettingsListHTML() {
       </div>`
     )
     .join("");
-  return `${gainageExerciseConfigs.length === 0 ? emptyState : items}<button class="add-exercise-btn" id="add-gainage-config-btn">${ICONS.plus} Ajouter un exercice de gainage</button>`;
+  return `${gainageExerciseConfigs.length === 0 ? emptyState : items}`;
 }
 
 function gainageSettingsFormHTML() {

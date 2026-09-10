@@ -23,8 +23,17 @@ function shiftSharedCalendarMonth(delta) {
   const d = new Date(y, m - 1 + delta, 1);
   sharedCalendarMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
+// Une séance qui ne contient QUE des exercices de gainage (aucun muscu) ne
+// doit pas être comptée/affichée comme "Muscu" dans le calendrier partagé —
+// elle vit dans les mêmes données (sessions), mais visuellement/logiquement
+// c'est autre chose. Une séance MIXTE (muscu + gainage) reste "Muscu" : pas
+// de double-comptage, la présence de vrai travail musculaire prime.
+function isGainageOnlySession(s) {
+  return s.exercises.length > 0 && s.exercises.every((ex) => (ex.category || "") === GAINAGE_CATEGORY.key);
+}
 function getActivitySessions(key) {
-  if (key === "gym") return sessions;
+  if (key === "gym") return sessions.filter((s) => !isGainageOnlySession(s));
+  if (key === "gainage") return sessions.filter((s) => isGainageOnlySession(s));
   if (key === "run") return runSessions;
   if (key === "swim") return swimSessions;
   return bikeSessions;
@@ -35,8 +44,11 @@ function editActivityFromCalendar(type, id) {
   if (!session) return;
   calendarReturnTarget = true;
   calendarReturnDate = session.date;
-  currentApp = type;
-  if (type === "gym") startEditSession(session);
+  // Le gainage vit dans le même module que la Muscu (currentApp = "gym") —
+  // "gainage" n'est qu'une distinction visuelle/logique propre à ce
+  // calendrier (voir getActivitySessions), pas un onglet séparé de l'app.
+  currentApp = type === "gainage" ? "gym" : type;
+  if (type === "gym" || type === "gainage") startEditSession(session);
   else if (type === "run") startEditRunSession(session);
   else if (type === "swim") startEditSwimSession(session);
   else startEditBikeSession(session);
@@ -50,8 +62,8 @@ function duplicateActivityFromCalendar(type, id) {
   // plutôt que de rester sur ce sport.
   calendarReturnTarget = true;
   calendarReturnDate = session.date;
-  currentApp = type;
-  if (type === "gym") duplicateSession(session);
+  currentApp = type === "gainage" ? "gym" : type;
+  if (type === "gym" || type === "gainage") duplicateSession(session);
   else if (type === "run") duplicateRunSession(session);
   else if (type === "swim") duplicateSwimSession(session);
   else duplicateBikeSession(session);
@@ -81,7 +93,7 @@ function sharedSessionPreviewHTML(s, type) {
   const open = !!openSharedCalendarIds[toggleKey];
   let detail, metaCount, statsLine;
 
-  if (type === "gym") {
+  if (type === "gym" || type === "gainage") {
     detail = s.exercises
       .map(
         (ex) => `
@@ -214,7 +226,7 @@ function renderSharedCalendarContent() {
 }
 
 function markActivityDone(type, id) {
-  if (type === "gym") {
+  if (type === "gym" || type === "gainage") {
     sessions = sessions.map((s) => (s.id === id ? { ...s, planned: false } : s));
     saveJSON(KEYS.sessions, sessions);
   } else if (type === "run") {
@@ -290,7 +302,7 @@ function attachSharedCalendarListeners() {
       showConfirm(
         "Supprimer définitivement cette activité ? Cette action est irréversible.",
         () => {
-          if (type === "gym") {
+          if (type === "gym" || type === "gainage") {
             sessions = sessions.filter((s) => s.id !== id);
             saveJSON(KEYS.sessions, sessions);
           } else if (type === "run") {

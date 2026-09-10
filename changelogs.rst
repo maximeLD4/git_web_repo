@@ -28,6 +28,146 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.34.5 - 2026-09-04
+====================
+
+- **Bouton "Ajouter un exercice" toujours visible** dans Paramètres →
+  Salle de sport (Muscu et Gainage) : passe d'un bouton en bas de la liste
+  défilante à une barre fixe en bas d'écran, comme dans Créer — plus
+  besoin de dérouler toute la liste pour y accéder. Se masque normalement
+  pendant l'édition/l'ajout d'un exercice.
+
+2.34.4 - 2026-09-04
+====================
+
+- **Catégories Muscu sans exercice configuré grisées dans Créer** (Salle
+  de sport) : Pecs/Dos/Épaules/Bras/Jambes/Fessiers/Abdos se désaturent
+  individuellement selon qu'elles ont ou non au moins un exercice
+  configuré. Signal visuel uniquement — chaque catégorie reste
+  parfaitement sélectionnable, y compris grisée, et l'affiche normalement
+  une fois choisie (avec le bouton "Configurer un exercice" si besoin,
+  comme avant).
+
+2.34.3 - 2026-09-04
+====================
+
+- **Rangement interne de Séance en direct** (aucun changement de
+  comportement, vérifié de bout en bout) :
+  - Le bloc son/vibration (7 fonctions, entièrement autonome) est sorti
+    dans son propre fichier `js/19-live-sound.js`.
+  - La fonction qui branchait TOUS les boutons de l'écran en un seul bloc
+    (220 lignes, 27 éléments différents) est découpée en 6 fonctions par
+    thème (frise, navigation catégories, plans, champs de série, actions
+    de série, boucle Gainage), appelées depuis un chef d'orchestre court.
+  - `js/18-live.js` passe de 1529 à 1487 lignes ; le reste part dans le
+    nouveau fichier.
+
+2.34.2 - 2026-09-04
+====================
+
+- **Gainage lançable en Séance en direct sans le moindre exercice
+  configuré** — au fond, le gainage n'est qu'une boucle générique (n tours
+  de travail/repos), pas besoin d'un nom préconfiguré pour ça, exactement
+  comme Rameur/Vélo/Course. Un bouton "Gainage" générique est désormais
+  toujours proposé en premier ; les exercices nommés configurés (Planche,
+  Superman...) restent disponibles à côté comme raccourcis optionnels.
+- Ajustement en cascade : seule la Muscu exige encore un exercice configuré
+  au préalable — le message et le grisage sur l'Accueil ("Configure tes
+  premiers exercices") ne se basent donc plus que sur elle, le Gainage
+  n'étant plus jamais bloqué.
+
+2.34.1 - 2026-09-04
+====================
+
+- **Remplacé la redirection automatique par un grisage visuel** : "Séance
+  en direct" et "Salle de sport" se grisent/désaturent sur l'Accueil tant
+  qu'aucun exercice (Muscu ou Gainage) n'est configuré, plutôt que de
+  rediriger de force vers Paramètres au clic. Les deux restent
+  parfaitement cliquables — "Séance en direct" fonctionne toujours pour
+  Rameur/Vélo/Course sans rien configurer, le grisage n'est qu'un signal,
+  pas un blocage.
+
+2.34.0 - 2026-09-04
+====================
+
+- **Accès bloqué/raccourci vers les modules non fonctionnels sans
+  configuration** :
+  - La tuile "Salle de sport" de l'Accueil mène directement à Paramètres →
+    Salle de sport tant qu'aucun exercice (Muscu ou Gainage) n'est
+    configuré — ce module est entièrement inutilisable sans ça,
+    contrairement à Rameur/Vélo/Course qui fonctionnent sans rien
+    configurer (donc "Séance en direct", lui, reste accessible tel quel).
+  - En Séance en direct comme dans Créer, choisir "Muscu" sans le moindre
+    exercice configuré affiche directement l'invite à en configurer un,
+    sans faire choisir une catégorie d'abord pour découvrir ensuite
+    qu'elle est vide elle aussi.
+
+2.33.1 - 2026-09-04
+====================
+
+- **Guidage vers la configuration pour un compte sans exercice configuré** —
+  jusqu'ici, un compte tout neuf tombait dans un cul-de-sac en tapant
+  "Séance en direct" ou "Créer" (message d'erreur, aucun moyen d'agir).
+  - Nouvelle bannière sur l'Accueil ("Configure tes premiers exercices"),
+    visible uniquement tant qu'aucun exercice (Muscu ou Gainage) n'est
+    configuré, qui mène directement à Paramètres → Salle de sport.
+  - Les 3 messages de blocage existants (Séance en direct en Muscu, en
+    Gainage, et l'onglet Créer en Muscu) ont maintenant un bouton
+    "Configurer un exercice" qui y mène directement, au lieu de laisser
+    deviner qu'il faut retourner à l'Accueil puis chercher Paramètres.
+  - Ce qui était en cours (séance en direct, brouillon de séance/plan)
+    reste intact pendant le détour et se retrouve tel quel au retour.
+
+2.33.0 - 2026-09-04
+====================
+
+- **Restructuration Séance/Plan dans Salle de sport** : la distinction, qui
+  n'était portée que par deux petits toggles discrets (un dans Créer, un
+  dans Historique), devient un grand sélecteur "Séance effectuée" / "Plan
+  à préparer" en haut du module, toujours visible. Ce choix détermine ce
+  que fait l'onglet Créer (saisir une séance faite ou préparer un plan) et
+  ce que liste l'onglet du bas ("Séances" ou "Plans") — un seul endroit
+  pour trancher, plus deux qui pouvaient se contredire.
+  - Changer de mode avec un brouillon non enregistré en cours (séance ou
+    plan) demande confirmation avant de l'effacer.
+  - L'en-tête (nombre de séances/plans) et le libellé du champ Séance/Nom
+    du plan suivent ce même sélecteur.
+
+2.32.0 - 2026-09-04
+====================
+
+- **Gainage mal catégorisé dans le calendrier partagé** : une séance
+  100% gainage comptait comme "Muscu" (même couleur, absente de la
+  légende). Nouvelle entrée "Gainage" dédiée ; une séance mixte
+  (muscu + gainage) reste comptée comme Muscu, une séance 100% gainage a
+  maintenant sa propre couleur/légende. Modifier/Dupliquer/Supprimer
+  depuis le calendrier fonctionnent aussi pour ces séances (auraient sinon
+  planté ou mal redirigé).
+- **En-tête de Salle de sport figé sur "X séances"** même sur l'onglet
+  Plans : s'adapte maintenant ("X plans").
+- **Débordement du placeholder "Séance"/"Nom du bloc"** sur les 4 modules
+  (Salle de sport, Course, Natation, Vélo) : colonne élargie et textes
+  raccourcis pour ne plus jamais se couper.
+- **Fond en diagonale retiré de l'écran de connexion** — reste de l'ancienne
+  direction Bauhaus, remplacé par un fond uni cohérent avec le reste de
+  l'app.
+- **Texte d'export/import mis à jour** pour mentionner que les plans et les
+  exercices configurés sont inclus dans la sauvegarde (ils l'étaient déjà,
+  seul le texte ne le disait pas).
+- Petit nettoyage : couleur de l'icône "Salle de sport" dans Réglages mise
+  à jour vers la palette actuelle (sans effet visuel réel actuellement, un
+  `!important` plus ancien la neutralise — corrigé quand même pour éviter
+  toute confusion si cette règle change un jour).
+
+2.31.6 - 2026-09-04
+====================
+
+- **Corrigé (trouvé pendant un audit UX) : le titre "Un plan pour
+  aujourd'hui ?" débordait et se coupait à l'écran** (Séance en direct,
+  premier écran quand des plans existent) — il réutilisait le style prévu
+  pour un nom d'exercice court, sur une seule ligne tronquée. Passe
+  maintenant à la ligne normalement.
+
 2.31.5 - 2026-09-04
 ====================
 
