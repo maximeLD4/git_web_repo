@@ -28,6 +28,24 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.34.7 - 2026-09-04
+====================
+
+- **Nettoyage interne (aucun changement visuel, vérifié)** : le bouton
+  "Configurer un exercice", répété avec le même style en dur à 4 endroits
+  (Créer×2, Live×2), utilise maintenant une seule classe CSS partagée
+  (`.configure-exercise-btn`).
+
+2.34.6 - 2026-09-04
+====================
+
+- **Catégories Muscu sans exercice configuré désormais aussi grisées en
+  Séance en direct**, pas seulement dans Créer — même signal visuel des
+  deux côtés (classe partagée `.needs-setup-btn`, renommée depuis
+  `.ex-type-btn-needs-setup` pour pouvoir s'appliquer aux deux styles de
+  puces). Toujours un simple signal : la catégorie reste sélectionnable
+  normalement, grisée ou non.
+
 2.34.5 - 2026-09-04
 ====================
 

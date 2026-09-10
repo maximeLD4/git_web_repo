@@ -231,11 +231,13 @@ select.ex-name-input { flex: 1; min-width: 0; background: var(--surface-2); bord
 .ex-type-toggle { display: flex; gap: 6px; margin: 0 16px 10px 18px; }
 .ex-type-btn { background: transparent; border: 1px solid var(--rule); color: var(--text-dim); font-family: var(--font); font-size: 12px; font-weight: 700; padding: 8px 13px; border-radius: 0; cursor: pointer; }
 .ex-type-btn.active { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
-/* Signal visuel (jamais un blocage, voir categoryToggleHTML) : une
-   catégorie sans le moindre exercice configuré se grise, mais reste
-   cliquable normalement — la sélectionner (.active) l'affiche toujours
-   pleinement, quel que soit ce drapeau, pour un retour clair au tap. */
-.ex-type-btn.ex-type-btn-needs-setup:not(.active) { opacity: 0.45; }
+/* Signal visuel (jamais un blocage) : une catégorie sans le moindre
+   exercice configuré se grise, mais reste cliquable normalement —
+   sélectionnée (.active), elle s'affiche toujours pleinement, quel que
+   soit ce drapeau, pour un retour clair au tap. Générique (pas juste
+   .ex-type-btn) pour pouvoir aussi griser les puces de catégorie Muscu en
+   Séance en direct (.live-subcat-btn), qui utilisent le même principe. */
+.needs-setup-btn:not(.active) { opacity: 0.45; }
 .ex-type-toggle.wrap-toggle { flex-wrap: wrap; margin: 0 16px 10px 18px; }
 .ex-type-toggle.wrap-toggle .ex-type-btn { flex: 0 0 auto; }
 select.ex-name-pill {
@@ -302,6 +304,10 @@ select.ex-name-pill:focus { outline: none; }
   display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin-bottom: 12px; box-shadow: none;
 }
 .add-exercise-btn:hover { border-color: var(--ink); color: var(--text); }
+/* Bouton "Configurer un exercice" affiché dans les 4 culs-de-sac "aucun
+   exercice configuré" (Créer×2, Live×2) — une seule classe partagée
+   plutôt que le même style répété en dur à chaque endroit. */
+.add-exercise-btn.configure-exercise-btn { margin-top: 14px; text-transform: none; letter-spacing: 0; font-size: 13px; }
 .save-btn {
   width: 100%; background: var(--ink); color: var(--on-ink); border: none; border-radius: 0; padding: 18px;
   font-family: var(--font); font-size: 15px; font-weight: 800; letter-spacing: -0.2px; cursor: pointer;

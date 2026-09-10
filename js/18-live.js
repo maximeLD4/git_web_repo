@@ -254,7 +254,7 @@ function liveCategoryStepHTML() {
       liveTimelineHTML() +
       planSectionHTML +
       switchHTML +
-      `<div class="empty-state">Aucun exercice de musculation configuré.<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`
+      `<div class="empty-state">Aucun exercice de musculation configuré.<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn configure-exercise-btn" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`
     );
   }
 
@@ -263,7 +263,14 @@ function liveCategoryStepHTML() {
   // la liste d'exercices sans changer d'écran.
   const categoryRowHTML = `
     <div class="live-subcat-row">
-      ${GYM_EXERCISE_CATEGORIES.map((c) => `<button type="button" class="live-subcat-btn ${liveDraftCategory === c.key ? "active" : ""}" data-live-category="${c.key}">${c.label}</button>`).join("")}
+      ${GYM_EXERCISE_CATEGORIES.map((c) => {
+        // Même signal visuel qu'en Créer (voir categoryToggleHTML) : une
+        // catégorie sans le moindre exercice configuré se grise, mais
+        // reste sélectionnable normalement — elle affiche alors l'invite
+        // "Configurer un exercice" comme n'importe quelle autre.
+        const hasConfigs = gymExerciseConfigs.some((cfg) => (cfg.category || "pecs") === c.key);
+        return `<button type="button" class="live-subcat-btn ${liveDraftCategory === c.key ? "active" : ""} ${!hasConfigs ? "needs-setup-btn" : ""}" data-live-category="${c.key}">${c.label}</button>`;
+      }).join("")}
     </div>`;
 
   let exercisesHTML = "";
@@ -277,7 +284,7 @@ function liveCategoryStepHTML() {
     const configs = gymExerciseConfigs.filter((c) => (c.category || "pecs") === liveDraftCategory);
     const inner =
       configs.length === 0
-        ? `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`
+        ? `<div class="empty-state">Aucun exercice configuré dans "${categoryLabel(liveDraftCategory)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn configure-exercise-btn" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`
         : `<div class="live-grid" style="grid-template-columns:1fr 1fr;">
             ${[...configs]
               .sort((a, b) => a.name.localeCompare(b.name))

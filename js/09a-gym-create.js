@@ -391,7 +391,7 @@ function categoryToggleHTML(category) {
         // mais reste sélectionnable normalement — la choisir affiche toujours
         // le bouton "Configurer un exercice" comme aujourd'hui.
         const hasConfigs = gymExerciseConfigs.some((cfg) => (cfg.category || "pecs") === c.key);
-        return `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""} ${!hasConfigs ? "ex-type-btn-needs-setup" : ""}" data-category-btn="${c.key}">${c.label}</button>`;
+        return `<button type="button" class="ex-type-btn ${category === c.key ? "active" : ""} ${!hasConfigs ? "needs-setup-btn" : ""}" data-category-btn="${c.key}">${c.label}</button>`;
       }).join("")}
     </div>`;
 }
@@ -467,13 +467,13 @@ function exerciseCardHTML(ex) {
     // Aucun exercice Muscu configuré nulle part : pas la peine de faire
     // choisir une catégorie d'abord pour découvrir ensuite qu'elle est vide
     // elle aussi — direct vers l'invite à configurer.
-    bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice de musculation configuré.<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-go-settings-gym>${ICONS.plus} Configurer un exercice</button></div>`;
+    bodyHTML = `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice de musculation configuré.<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn configure-exercise-btn" data-go-settings-gym>${ICONS.plus} Configurer un exercice</button></div>`;
   } else if (isMuscu && !category) {
     bodyHTML = categoryToggleHTML(category) + `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Choisis une catégorie pour continuer.</div>`;
   } else if (isMuscu && configsInCategory.length === 0) {
     bodyHTML =
       categoryToggleHTML(category) +
-      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn" style="margin-top:14px; text-transform:none; letter-spacing:0; font-size:13px;" data-go-settings-gym>${ICONS.plus} Configurer un exercice</button></div>`;
+      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn configure-exercise-btn" data-go-settings-gym>${ICONS.plus} Configurer un exercice</button></div>`;
   } else if (isMuscu && !effectiveConfig) {
     bodyHTML =
       categoryToggleHTML(category) +
