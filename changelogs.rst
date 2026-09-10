@@ -28,6 +28,18 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.36.3 - 2026-09-04
+====================
+
+- **Mode Anne : la forme s'assouplit, pas seulement la couleur.** Le
+  vrai problème : l'app est volontairement plate (pas d'arrondi, pas
+  d'ombre, principe de design affiché en tête du CSS) — la recolorer en
+  rose sans toucher à sa forme donnait l'impression d'un filtre posé
+  par-dessus une app normale. Coins nettement arrondis et légère ombre
+  douce à teinte rose remplacent le plat total, uniquement pour ce mode
+  (Jour et Nuit restent inchangés, vérifié). Ça se sent tout de suite plus
+  comme un thème pensé pour ça qu'un simple recolorage.
+
 2.36.2 - 2026-09-04
 ====================
 
