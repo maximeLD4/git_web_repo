@@ -28,6 +28,21 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.37.0 - 2026-09-04
+====================
+
+- **Convertir une séance en plan, et inversement** (Historique de Salle de
+  sport). Les deux formes de données sont en effet quasiment identiques —
+  seuls quelques champs propres à l'exécution réelle changent :
+  - "Convertir en plan" sur une séance effectuée : les séries deviennent
+    des cibles, sans le temps de repos mesuré ni l'horodatage (sans sens
+    comme objectif à venir) — poids/reps et le mode d'incrément sont
+    conservés, la config de boucle d'un exercice de gainage aussi.
+  - "Convertir en séance" sur un plan : ajoute simplement la date du jour.
+  - Comme "Dupliquer" : ouvre un brouillon à revoir avant d'enregistrer,
+    ne touche jamais à l'original (c'est une copie de l'autre côté, pas un
+    déplacement).
+
 2.36.3 - 2026-09-04
 ====================
 

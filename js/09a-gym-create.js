@@ -259,6 +259,58 @@ function duplicatePlan(plan) {
   render();
 }
 
+// Les deux formes de données sont quasiment identiques (une séance a juste
+// une date en plus, et ses séries peuvent porter des traces d'exécution
+// réelle — repos mesuré, horodatage — qu'un plan n'a pas) : passer de l'une
+// à l'autre est donc surtout une question de RETIRER/AJOUTER ces quelques
+// champs, pas une vraie transformation. Comme dupliquer : charge un
+// brouillon à revoir avant d'enregistrer, ne touche jamais à l'original —
+// la séance/le plan de départ reste tel quel, c'est une copie de l'autre
+// côté.
+function convertSessionToPlan(session) {
+  const clonedExercises = JSON.parse(JSON.stringify(session.exercises)).map((ex) => ({
+    id: uid(),
+    name: ex.name,
+    exType: ex.exType,
+    category: ex.category,
+    // On garde le poids/reps (la cible) et le mode d'incrément (utile à
+    // reproduire), mais pas le repos mesuré ni l'horodatage — propres à une
+    // exécution réelle, sans le moindre sens comme objectif à venir.
+    sets: (ex.sets || []).map((s) => ({ id: uid(), weight: s.weight, reps: s.reps, ...(s.weightMode ? { weightMode: s.weightMode } : {}) })),
+    ...(ex.loop ? { loop: { ...ex.loop } } : {}),
+  }));
+  editingSessionId = null;
+  editingPlanId = null;
+  openExerciseIds = {};
+  clonedExercises.forEach((ex) => {
+    openExerciseIds[ex.id] = false;
+  });
+  draft = { kind: "plan", date: todayISO(), label: session.label || formatDateFR(session.date), exercises: clonedExercises, editingPlanId: null };
+  saveJSON(KEYS.draft, draft);
+  tab = "log";
+  render();
+}
+
+// Sens inverse : un plan préparé devient une séance à dater (aujourd'hui
+// par défaut) et à enregistrer comme faite.
+function convertPlanToSession(plan) {
+  const clonedExercises = JSON.parse(JSON.stringify(plan.exercises)).map((ex) => ({
+    ...ex,
+    id: uid(),
+    sets: (ex.sets || []).map((s) => ({ ...s, id: uid() })),
+  }));
+  editingSessionId = null;
+  editingPlanId = null;
+  openExerciseIds = {};
+  clonedExercises.forEach((ex) => {
+    openExerciseIds[ex.id] = false;
+  });
+  draft = { kind: "session", date: todayISO(), label: plan.label || "", exercises: clonedExercises, editingSessionId: null };
+  saveJSON(KEYS.draft, draft);
+  tab = "log";
+  render();
+}
+
 function findExerciseConfig(name) {
   const norm = (name || "").trim().toLowerCase();
   if (!norm) return null;

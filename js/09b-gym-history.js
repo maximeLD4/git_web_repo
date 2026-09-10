@@ -58,6 +58,7 @@ function sessionCardHTML(s) {
            <div class="delete-row">
              <button class="edit-link" data-edit-session="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
+             <button class="edit-link" data-convert-session="${s.id}">${ICONS.stopwatch} Convertir en plan</button>
              <button class="edit-link" data-share-session="${s.id}">${ICONS.up} Partager</button>
              ${upcoming ? `<button class="edit-link" data-mark-done-session="${s.id}">${ICONS.check} Marquer comme faite</button>` : ""}
              <button class="delete-link" data-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
@@ -148,6 +149,7 @@ function planCardHTML(plan) {
            <div class="delete-row">
              <button class="edit-link" data-edit-plan="${plan.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-duplicate-plan="${plan.id}">${ICONS.duplicate} Dupliquer</button>
+             <button class="edit-link" data-convert-plan="${plan.id}">${ICONS.dumbbell} Convertir en séance</button>
              <button class="delete-link" data-delete-plan="${plan.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
@@ -216,6 +218,13 @@ function attachHistoryListeners() {
       ev.stopPropagation();
       const plan = sessionPlans.find((p) => p.id === btn.dataset.duplicatePlan);
       if (plan) duplicatePlan(plan);
+    });
+  });
+  document.querySelectorAll("[data-convert-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const plan = sessionPlans.find((p) => p.id === btn.dataset.convertPlan);
+      if (plan) convertPlanToSession(plan);
     });
   });
   document.querySelectorAll("[data-delete-plan]").forEach((btn) => {
@@ -304,6 +313,13 @@ function attachHistoryListeners() {
       ev.stopPropagation();
       const session = sessions.find((s) => s.id === btn.dataset.duplicateSession);
       if (session) duplicateSession(session);
+    });
+  });
+  document.querySelectorAll("[data-convert-session]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const session = sessions.find((s) => s.id === btn.dataset.convertSession);
+      if (session) convertSessionToPlan(session);
     });
   });
 
