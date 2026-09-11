@@ -679,12 +679,17 @@ select.ex-name-pill:focus { outline: none; }
 .live-timeline-rest { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex-shrink: 0; align-self: center; color: rgba(var(--ink-rgb), 0.62); font-family: var(--font-mono); font-size: 8.5px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 1px; }
 .live-timeline-rest svg { width: 10px; height: 10px; }
 .live-stop-btn { background: var(--ink); color: var(--on-ink); border: none; border-radius: var(--radius); padding: 10px 15px; font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
-.live-body { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+.live-body { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 @keyframes live-slide-in-right { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes live-slide-out-left { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-24px); opacity: 0; } }
 .live-exercise-list-enter { animation: live-slide-in-right 0.22s cubic-bezier(0.4, 0, 0.2, 1); }
 .live-exercise-list-exit { position: fixed; animation: live-slide-out-left 0.18s cubic-bezier(0.4, 0, 0, 1) forwards; pointer-events: none; z-index: 20; }
-.live-grid { flex: 1; display: grid; gap: 9px; align-content: center; }
+/* Seule la liste d'exercices (pas le sélecteur Muscu/Cardio ni la rangée de
+   catégories au-dessus, qui restent fixes) doit défiler quand il y a trop
+   d'exercices pour tenir sur un écran — voir #live-exercise-list, qui
+   enveloppe .live-grid, ci-dessous. */
+.live-grid { display: grid; gap: 9px; align-content: center; }
+#live-exercise-list { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; }
 .live-type-switch { position: relative; display: flex; gap: 6px; background: var(--surface-2); border-radius: var(--radius); padding: 5px; margin-bottom: 12px; flex-shrink: 0; }
 .live-type-thumb { position: absolute; top: 5px; left: 5px; width: calc(50% - 8px); height: calc(100% - 10px); background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-card); transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1); z-index: 0; }
 .live-type-switch-btn { position: relative; z-index: 1; flex: 1; background: none; border: none; border-radius: var(--radius); padding: 12px 8px; font-family: var(--font); font-size: 14px; font-weight: 700; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: color 0.22s ease; }

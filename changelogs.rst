@@ -28,6 +28,17 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.40.1 - 2026-09-04
+====================
+
+- **Ajusté le scroll de Séance en direct (2.38.4) pour qu'il ne porte que
+  sur la liste d'exercices**, pas sur l'écran entier — le sélecteur
+  Muscu/Cardio et la rangée de catégories (Pecs/Dos/Épaules...) restent
+  désormais fixes en toutes circonstances, seule la liste d'exercices
+  en dessous défile quand il y en a trop pour l'écran. Vérifié : le
+  sélecteur reste à une position strictement identique avant/après avoir
+  scrollé la liste.
+
 2.40.0 - 2026-09-04
 ====================
 
