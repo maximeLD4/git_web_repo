@@ -28,6 +28,32 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.39.0 - 2026-09-04
+====================
+
+- **Boutons "en demies/tiers" (Séance/Plan, Jour/Nuit/Anne, Liste/
+  Calendrier, Muscu/Cardio, etc.) désormais vraiment répartis à parts
+  égales et dynamiques** — ils se dimensionnaient auparavant selon leur
+  propre texte, pas selon un vrai partage de la largeur disponible : les
+  proportions pouvaient donc varier d'un écran à l'autre au lieu de rester
+  garanties égales. Vérifié sur 4 largeurs d'écran (320 à 430px) : les
+  boutons restent toujours de largeur strictement identique entre eux, à
+  chaque taille. Les rangées de filtres par catégorie (qui doivent, elles,
+  s'adapter à leur texte et passer à la ligne) n'étaient pas concernées et
+  restent inchangées.
+
+2.38.4 - 2026-09-04
+====================
+
+- **Corrigé : le scroll était bloqué en Séance en direct** dès qu'une
+  catégorie contenait trop d'exercices pour tenir sur un seul écran — les
+  exercices en dessous de la limite étaient inaccessibles, sans le moindre
+  moyen de les atteindre. Deux règles `overflow: hidden` (sans scroll de
+  secours) en étaient la cause. Vérifié avec 20 exercices dans une même
+  catégorie : le 20ᵉ, avant inaccessible, se scrolle et s'affiche
+  maintenant normalement. Aucune régression sur une liste courte, qui
+  reste centrée comme avant.
+
 2.38.3 - 2026-09-04
 ====================
 
