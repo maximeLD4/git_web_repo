@@ -1,6 +1,5 @@
 function runSessionCardHTML(s) {
   const open = !!openRunHistoryIds[s.id];
-  const upcoming = isUpcoming(s);
   const blocksSummary = s.blocks
     .map(
       (b) => `
@@ -11,10 +10,10 @@ function runSessionCardHTML(s) {
     )
     .join("");
   return `
-  <div class="history-card ${upcoming ? "upcoming" : ""}">
+  <div class="history-card">
     <div class="history-head" data-run-toggle="${s.id}">
       <div class="history-head-left">
-        <div class="history-date">${formatDateFR(s.date)}${upcoming ? '<span class="upcoming-badge">À venir</span>' : ""}</div>
+        <div class="history-date">${formatDateFR(s.date)}</div>
         ${s.label ? `<div class="history-label">${s.label}</div>` : ""}
         <div class="history-run-stats">${formatSessionTotalsLine(s.blocks)}</div>
       </div>
@@ -30,7 +29,6 @@ function runSessionCardHTML(s) {
              <button class="edit-link" data-run-edit-session="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-run-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-run-share-session="${s.id}">${ICONS.up} Partager</button>
-             ${upcoming ? `<button class="edit-link" data-run-mark-done-session="${s.id}">${ICONS.check} Marquer comme faite</button>` : ""}
              <button class="delete-link" data-run-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
@@ -50,8 +48,7 @@ function runCalendarViewHTML() {
   const startDow = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(y, m, 0).getDate();
   const monthLabel = firstOfMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const showFuture = runCalendarTimeFilter === "future";
-  const sessionDates = new Set(runSessions.filter((s) => isUpcoming(s) === showFuture).map((s) => s.date));
+  const sessionDates = new Set(runSessions.map((s) => s.date));
   const today = todayISO();
 
   const cells = [];
@@ -64,21 +61,20 @@ function runCalendarViewHTML() {
     cells.push(`
       <button type="button" class="cal-cell ${hasData ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}" data-run-cal-date="${dateStr}">
         <span class="cal-day-num">${d}</span>
-        ${hasData ? `<span class="${showFuture ? "cal-dot-hollow" : "cal-dot"}"></span>` : ""}
+        ${hasData ? `<span class="cal-dot"></span>` : ""}
       </button>`);
   }
 
   let selectedHTML = "";
   if (runSelectedCalendarDate) {
-    const daySessions = runSessions.filter((s) => s.date === runSelectedCalendarDate && isUpcoming(s) === showFuture);
+    const daySessions = runSessions.filter((s) => s.date === runSelectedCalendarDate);
     selectedHTML =
       daySessions.length > 0
         ? `<div class="cal-selected-label">${formatDateFR(runSelectedCalendarDate)}</div>${daySessions.map(runSessionCardHTML).join("")}`
-        : `<div class="empty-state" style="padding: 30px 20px;">Aucune séance ${showFuture ? "prévue" : "effectuée"} ce jour-là.</div>`;
+        : `<div class="empty-state" style="padding: 30px 20px;">Aucune séance effectuée ce jour-là.</div>`;
   }
 
   return `
-    ${timeFilterToggleHTML(showFuture, "run-time-filter")}
     <div class="cal-header">
       <button type="button" class="cal-nav-btn" data-run-cal-prev>${ICONS.back}</button>
       <div class="cal-month-label">${monthLabel}</div>
@@ -116,11 +112,9 @@ function runHistoryTabHTML() {
     return backup + viewToggle + `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
   }
 
-  const upcoming = sorted.filter((s) => isUpcoming(s)).sort((a, b) => (a.date > b.date ? 1 : -1));
-  const past = sorted.filter((s) => !isUpcoming(s));
-  const upcomingHTML = upcoming.length > 0 ? `<div class="session-group-heading">À venir</div>${upcoming.map(runSessionCardHTML).join("")}` : "";
-
-  const weeks = groupRunSessionsByWeek(past);
+  // Toutes les séances sont regroupées par semaine, qu'elles soient datées
+  // dans le passé ou le futur — plus de distinction "à venir" séparée.
+  const weeks = groupRunSessionsByWeek(sorted);
   const weeksHTML = weeks
     .map((week) => {
       let totalKm = 0;
@@ -143,7 +137,7 @@ function runHistoryTabHTML() {
     })
     .join("");
 
-  return backup + viewToggle + upcomingHTML + weeksHTML;
+  return backup + viewToggle + weeksHTML;
 }
 
 
@@ -151,13 +145,6 @@ function attachRunHistoryListeners() {
   document.querySelectorAll("[data-run-history-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
       runHistoryViewMode = btn.dataset.runHistoryView;
-      renderRunContent();
-    });
-  });
-  document.querySelectorAll("[data-run-time-filter]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      runCalendarTimeFilter = btn.dataset.runTimeFilter;
-      runSelectedCalendarDate = null;
       renderRunContent();
     });
   });
@@ -191,13 +178,6 @@ function attachRunHistoryListeners() {
         },
         { confirmLabel: "Supprimer", danger: true }
       );
-    });
-  });
-  document.querySelectorAll("[data-run-mark-done-session]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      markActivityDone("run", btn.dataset.runMarkDoneSession);
-      renderRunContent();
     });
   });
   document.querySelectorAll("[data-run-share-session]").forEach((btn) => {

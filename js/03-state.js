@@ -83,12 +83,10 @@ let gymTopMode = "session";
 let historyViewMode = "calendar"; // "list" | "calendar"
 let calendarMonth = todayISO().slice(0, 7);
 let selectedCalendarDate = null;
-let calendarTimeFilter = "past";
 
 let currentApp = "home"; // "home" | "gym" | "run" | "weight" | "calendar"
 let sharedCalendarMonth = todayISO().slice(0, 7);
 let sharedSelectedDate = null;
-let sharedCalendarTimeFilter = "past"; // "past" | "future"
 
 let runSessions = loadJSON(KEYS.runSessions, []);
 let runLibrary = loadJSON(KEYS.runLibrary, []);
@@ -101,7 +99,6 @@ let runDraftSaveTimer = null;
 let runHistoryViewMode = "calendar"; // "list" | "calendar"
 let runCalendarMonth = todayISO().slice(0, 7);
 let runSelectedCalendarDate = null;
-let runCalendarTimeFilter = "past";
 
 let swimSessions = loadJSON(KEYS.swimSessions, []);
 let swimLibrary = loadJSON(KEYS.swimLibrary, []);
@@ -114,7 +111,6 @@ let swimDraftSaveTimer = null;
 let swimHistoryViewMode = "calendar";
 let swimCalendarMonth = todayISO().slice(0, 7);
 let swimSelectedCalendarDate = null;
-let swimCalendarTimeFilter = "past";
 
 let bikeSessions = loadJSON(KEYS.bikeSessions, []);
 let bikeLibrary = loadJSON(KEYS.bikeLibrary, []);
@@ -127,7 +123,6 @@ let bikeDraftSaveTimer = null;
 let bikeHistoryViewMode = "calendar";
 let bikeCalendarMonth = todayISO().slice(0, 7);
 let bikeSelectedCalendarDate = null;
-let bikeCalendarTimeFilter = "past";
 
 const app = document.getElementById("app");
 let scannerStream = null;

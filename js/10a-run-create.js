@@ -573,11 +573,9 @@ function attachRunLogActionsBarListeners() {
     errorSlot.innerHTML = "";
 
     const wasEditing = !!runEditingSessionId;
-    const existingSession = wasEditing ? runSessions.find((s) => s.id === runEditingSessionId) : null;
-    const planned = existingSession ? isUpcoming(existingSession) : dateEl.value > todayISO();
     const otherRunCount = runSessions.filter((s) => s.id !== runEditingSessionId).length;
     const sessionLabel = labelEl.value.trim() || `Séance ${otherRunCount + 1}`;
-    const session = { id: runEditingSessionId || uid(), date: dateEl.value, label: sessionLabel, blocks, planned };
+    const session = { id: runEditingSessionId || uid(), date: dateEl.value, label: sessionLabel, blocks };
     if (wasEditing) {
       runSessions = runSessions.map((s) => (s.id === runEditingSessionId ? session : s));
     } else {

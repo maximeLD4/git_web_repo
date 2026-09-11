@@ -5,9 +5,11 @@ function getExerciseHistory(exerciseName) {
   if (!norm) return [];
   const occurrences = [];
   sessions.forEach((session) => {
-    // On ne compte que les séances effectuées : une séance "prévue" ne doit
-    // pas fausser le suivi de progression.
-    if (isUpcoming(session)) return;
+    // On ne compte que les séances dont la date n'est pas dans le futur :
+    // une séance datée à venir ne doit pas fausser le suivi de progression,
+    // même si elle n'a plus de statut "prévue" à proprement parler (voir
+    // la suppression de cette notion — la date suffit à elle seule ici).
+    if (session.date > todayISO()) return;
     (session.exercises || []).forEach((ex) => {
       if ((ex.exType || "muscu") !== "muscu") return;
       if ((ex.name || "").trim().toLowerCase() !== norm) return;

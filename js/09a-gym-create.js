@@ -1169,7 +1169,6 @@ function attachLogActionsBarListeners() {
 
     const wasEditing = !!editingSessionId;
     const existingSession = wasEditing ? sessions.find((s) => s.id === editingSessionId) : null;
-    const planned = existingSession ? isUpcoming(existingSession) : dateEl.value > todayISO();
     const otherCount = sessions.filter((s) => s.id !== editingSessionId).length;
     const sessionLabel = labelEl.value.trim() || `Séance ${otherCount + 1}`;
     const session = {
@@ -1177,7 +1176,6 @@ function attachLogActionsBarListeners() {
       date: dateEl.value,
       label: sessionLabel,
       exercises: cleaned,
-      planned,
       ...(existingSession && existingSession.durationSec != null ? { durationSec: existingSession.durationSec } : {}),
     };
     if (wasEditing) {

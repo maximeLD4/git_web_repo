@@ -386,11 +386,9 @@ function attachBikeLogActionsBarListeners() {
     errorSlot.innerHTML = "";
 
     const wasEditing = !!bikeEditingSessionId;
-    const existingSession = wasEditing ? bikeSessions.find((s) => s.id === bikeEditingSessionId) : null;
-    const planned = existingSession ? isUpcoming(existingSession) : dateEl.value > todayISO();
     const otherCount = bikeSessions.filter((s) => s.id !== bikeEditingSessionId).length;
     const sessionLabel = labelEl.value.trim() || `Séance ${otherCount + 1}`;
-    const session = { id: bikeEditingSessionId || uid(), date: dateEl.value, label: sessionLabel, blocks, planned };
+    const session = { id: bikeEditingSessionId || uid(), date: dateEl.value, label: sessionLabel, blocks };
     if (wasEditing) {
       bikeSessions = bikeSessions.map((s) => (s.id === bikeEditingSessionId ? session : s));
     } else {

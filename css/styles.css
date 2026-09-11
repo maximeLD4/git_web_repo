@@ -466,18 +466,11 @@ select.ex-name-pill:focus { outline: none; }
 .cal-cell.today .cal-day-num { text-decoration: underline; text-underline-offset: 3px; }
 .cal-dot { width: 4px; height: 4px; border-radius: var(--radius); background: var(--accent); }
 .cal-selected-label { font-family: var(--font-mono); font-weight: 600; font-size: 9.5px; color: var(--text-dim); letter-spacing: 0.16em; text-transform: uppercase; margin: 0 0 12px; }
-.cal-dot-hollow { width: 4px; height: 4px; border-radius: var(--radius); border: 1.4px solid var(--accent); background: none; }
-.session-group-heading { font-family: var(--font-mono); font-weight: 600; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-dim); margin: 8px 2px 10px; }
-.upcoming-badge { display: inline-block; font-family: var(--font-mono); font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--timer-ink); background: var(--yellow); border-radius: var(--radius); padding: 4px 9px; margin-left: 8px; vertical-align: middle; }
 .source-badge { display: inline-block; font-family: var(--font-mono); font-size: 8.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; border-radius: var(--radius); padding: 4px 9px; margin-left: 8px; vertical-align: middle; }
 .cal-dot-row { display: flex; gap: 2px; }
 .cal-dot-mini { width: 4px; height: 4px; border-radius: var(--radius); display: inline-block; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 12px; font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin: -2px 0 16px; align-items: center; }
 .cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.time-filter-toggle { display: flex; background: var(--surface-2); border-radius: var(--radius); padding: 4px; gap: 4px; margin-bottom: 16px; }
-.time-filter-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: var(--radius); font-family: var(--font); font-size: 12.5px; font-weight: 700; color: var(--text-dim); background: none; border: none; cursor: pointer; }
-.time-filter-btn.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-card); }
-.history-card.upcoming { border: 1.5px dashed var(--yellow); }
 
 /* ========== MODALES (confirmation, alerte) ========== */
 #custom-modal-root:empty { display: none; }
@@ -971,12 +964,11 @@ html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 .home-wordmark, .live-exercise-name, .cal-month-label, .weight-stat-value,
 .perf-record-value, .tile-count { text-transform: none; }
 .header-sub, .home-section-label, .perf-group-title, .cal-selected-label,
-.session-group-heading, .week-range, .live-stepper-label { font-weight: 600; }
+.week-range, .live-stepper-label { font-weight: 600; }
 
 /* ---------- Sélection : un bloc encre plein, jamais une pilule ---------- */
 .tab-btn.active, .ex-type-btn.active, .live-subcat-btn.active, .weight-chip.active,
 .increment-switch-btn.active { background: var(--action); color: var(--on-ink); border-color: var(--action); }
-.time-filter-btn.active { background: var(--ink); color: var(--on-ink); }
 .live-type-thumb { background: var(--ink); }
 .live-type-switch-btn.active { color: var(--on-ink); }
 .live-type-switch { background: var(--surface-2); padding: 0; gap: 0; }
@@ -1021,7 +1013,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .cal-cell { border-radius: var(--radius); border-width: 2px; }
 .cal-cell.selected { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
 .cal-cell.selected .cal-dot-mini { box-shadow: 0 0 0 1px var(--on-ink); }
-.cal-dot-mini, .cal-dot, .cal-dot-hollow { border-radius: var(--radius); width: 5px; height: 5px; }
+.cal-dot-mini, .cal-dot { border-radius: var(--radius); width: 5px; height: 5px; }
 
 /* ---------- Barres de séries : colonnes franches ---------- */
 .set-bar { border-radius: var(--radius); }
@@ -1050,8 +1042,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 
 /* ---------- Libellés de section : le gris capitales suffit ---------- */
 .home-section-label::after, .perf-group-title::after { display: none; }
-.home-section-label, .perf-group-title, .cal-selected-label,
-.session-group-heading { color: var(--text-dim); }
+.home-section-label, .perf-group-title, .cal-selected-label { color: var(--text-dim); }
 .week-header { border-bottom: none; padding-bottom: 4px; }
 .live-timeline { border-bottom: none; padding-bottom: 12px; }
 
@@ -1068,7 +1059,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 
 /* ---------- Creux : rails et champs en gris de fond ---------- */
 .rep-stepper, .live-stepper, .set-main input, select.set-weight,
-.time-filter-toggle, .live-type-switch, .live-weight-select { background: var(--surface-2); }
+.live-type-switch, .live-weight-select { background: var(--surface-2); }
 /* ...et ce qui se pose dedans reste du papier, sinon le bouton disparaît. */
 .rep-stepper .rep-step-btn, .live-stepper .live-stepper-btn { background: var(--surface); }
 
@@ -1172,7 +1163,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 /* ---------- 4. Sélection : le bloc encre claque ---------- */
 .live-type-thumb { transition: transform 0.24s var(--snap); }
 .toggle-switch-knob { transition: transform 0.18s steps(2); }
-.ex-type-btn, .live-subcat-btn, .weight-chip, .tab-btn, .time-filter-btn {
+.ex-type-btn, .live-subcat-btn, .weight-chip, .tab-btn {
   transition: background 0.12s linear, color 0.12s linear;
 }
 .live-btn:active { transition: none; }
@@ -1227,8 +1218,6 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .flash { color: var(--blue); }
 .edit-banner { background: var(--yellow); color: var(--ink); }
 .edit-banner button { color: var(--ink); }
-.history-card.upcoming { border: none; background: color-mix(in oklab, var(--yellow) 18%, var(--surface)); }
-.upcoming-badge { background: var(--ink); color: var(--yellow); }
 .live-rest-hero { background: var(--yellow); }
 .live-rest-hero-label, .live-rest-hero-value { color: var(--ink); }
 .live-rest-hero-active { background: var(--ink); }
@@ -1246,8 +1235,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    texte repasse en encre. Seul `!important` atteint un style inline. */
 #app.theme-calendar .history-label,
 #app.theme-calendar .source-badge,
-#app.theme-calendar .history-run-stats,
-#app.theme-calendar .upcoming-badge { color: var(--text) !important; }
+#app.theme-calendar .history-run-stats { color: var(--text) !important; }
 
 
 /* ---------- En-tête de module : le signe et le libellé sur la même ligne ----------
@@ -1311,7 +1299,6 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    ce qui recule ou stagne. Le glyphe continue de porter la direction. */
 .trend-up { color: var(--text); }
 .trend-down, .trend-flat { color: var(--text-dim); }
-.upcoming-badge { background: var(--ink); color: var(--yellow); }
 
 /* 3. Séance en cours : la tuile s'inverse — aplat encre, type et cercle jaunes.
    Le voyant clignote en jaune, le rouge n'existant plus dans la palette. */

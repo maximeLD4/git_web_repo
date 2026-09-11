@@ -3,7 +3,6 @@ function renderSharedCalendarApp() {
   app.className = "theme-calendar";
   sharedCalendarMonth = todayISO().slice(0, 7);
   sharedSelectedDate = null;
-  sharedCalendarTimeFilter = "past";
   const total = sessions.length + runSessions.length + swimSessions.length + bikeSessions.length;
   app.innerHTML = `
     <div class="header">
@@ -145,7 +144,6 @@ function sharedSessionPreviewHTML(s, type) {
              <button class="edit-link" data-shared-edit-type="${type}" data-shared-edit-id="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-shared-duplicate-type="${type}" data-shared-duplicate-id="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-shared-share-type="${type}" data-shared-share-id="${s.id}">${ICONS.up} Partager</button>
-             ${isUpcoming(s) ? `<button class="edit-link" data-shared-mark-done-type="${type}" data-shared-mark-done-id="${s.id}">${ICONS.check} Marquer comme faite</button>` : ""}
              <button class="delete-link" data-shared-delete-type="${type}" data-shared-delete-id="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
@@ -159,15 +157,12 @@ function sharedCalendarViewHTML() {
   const startDow = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(y, m, 0).getDate();
   const monthLabel = firstOfMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const showFuture = sharedCalendarTimeFilter === "future";
   const dateSets = {};
   ACTIVITY_META.forEach((a) => {
-    const list = getActivitySessions(a.key).filter((s) => isUpcoming(s) === showFuture);
+    const list = getActivitySessions(a.key);
     dateSets[a.key] = new Set(list.map((s) => s.date));
   });
   const today = todayISO();
-
-  const timeToggle = timeFilterToggleHTML(showFuture, "shared-time-filter");
 
   const cells = [];
   for (let i = 0; i < startDow; i++) cells.push("<div class=\"cal-cell empty\"></div>");
@@ -179,7 +174,7 @@ function sharedCalendarViewHTML() {
     const dots = ACTIVITY_META.map((a) => {
       if (!dateSets[a.key].has(dateStr)) return "";
       hasAny = true;
-      return `<span class="cal-dot-mini" style="${showFuture ? `background:none;border:1.4px solid ${a.color};` : `background:${a.color};`}"></span>`;
+      return `<span class="cal-dot-mini" style="background:${a.color};"></span>`;
     }).join("");
     cells.push(`
       <button type="button" class="cal-cell ${hasAny ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}" data-shared-cal-date="${dateStr}">
@@ -192,11 +187,11 @@ function sharedCalendarViewHTML() {
   if (sharedSelectedDate) {
     const perType = ACTIVITY_META.map((a) => ({
       key: a.key,
-      list: getActivitySessions(a.key).filter((s) => s.date === sharedSelectedDate && isUpcoming(s) === showFuture),
+      list: getActivitySessions(a.key).filter((s) => s.date === sharedSelectedDate),
     }));
     const anyData = perType.some((t) => t.list.length > 0);
     if (!anyData) {
-      selectedHTML = `<div class="empty-state" style="padding: 30px 20px;">Aucune activité ${showFuture ? "prévue" : "effectuée"} ce jour-là.</div>`;
+      selectedHTML = `<div class="empty-state" style="padding: 30px 20px;">Aucune activité effectuée ce jour-là.</div>`;
     } else {
       selectedHTML =
         `<div class="cal-selected-label">${formatDateFR(sharedSelectedDate)}</div>` +
@@ -205,7 +200,6 @@ function sharedCalendarViewHTML() {
   }
 
   return `
-    ${timeToggle}
     <div class="cal-header">
       <button type="button" class="cal-nav-btn" data-shared-cal-prev>${ICONS.back}</button>
       <div class="cal-month-label">${monthLabel}</div>
@@ -225,34 +219,11 @@ function renderSharedCalendarContent() {
   attachSharedCalendarListeners();
 }
 
-function markActivityDone(type, id) {
-  if (type === "gym" || type === "gainage") {
-    sessions = sessions.map((s) => (s.id === id ? { ...s, planned: false } : s));
-    saveJSON(KEYS.sessions, sessions);
-  } else if (type === "run") {
-    runSessions = runSessions.map((s) => (s.id === id ? { ...s, planned: false } : s));
-    saveJSON(KEYS.runSessions, runSessions);
-  } else if (type === "swim") {
-    swimSessions = swimSessions.map((s) => (s.id === id ? { ...s, planned: false } : s));
-    saveJSON(KEYS.swimSessions, swimSessions);
-  } else {
-    bikeSessions = bikeSessions.map((s) => (s.id === id ? { ...s, planned: false } : s));
-    saveJSON(KEYS.bikeSessions, bikeSessions);
-  }
-}
-
 function attachSharedCalendarListeners() {
   const prev = document.querySelector("[data-shared-cal-prev]");
   const next = document.querySelector("[data-shared-cal-next]");
   if (prev) prev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftSharedCalendarMonth(-1); renderSharedCalendarContent(); }));
   if (next) next.addEventListener("click", () => animateCalendarMonthChange(1, () => { shiftSharedCalendarMonth(1); renderSharedCalendarContent(); }));
-  document.querySelectorAll("[data-shared-time-filter]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      sharedCalendarTimeFilter = btn.dataset.sharedTimeFilter;
-      sharedSelectedDate = null;
-      renderSharedCalendarContent();
-    });
-  });
   document.querySelectorAll("[data-shared-cal-date]").forEach((cell) => {
     cell.addEventListener("click", () => {
       const d = cell.dataset.sharedCalDate;
@@ -285,13 +256,6 @@ function attachSharedCalendarListeners() {
       const type = btn.dataset.sharedShareType;
       const session = getActivitySessions(type).find((s) => s.id === btn.dataset.sharedShareId);
       if (session) exportSingleSession(type, session);
-    });
-  });
-  document.querySelectorAll("[data-shared-mark-done-type]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      markActivityDone(btn.dataset.sharedMarkDoneType, btn.dataset.sharedMarkDoneId);
-      renderSharedCalendarContent();
     });
   });
   document.querySelectorAll("[data-shared-delete-type]").forEach((btn) => {

@@ -1,6 +1,5 @@
 function bikeSessionCardHTML(s) {
   const open = !!openBikeHistoryIds[s.id];
-  const upcoming = isUpcoming(s);
   const blocksSummary = s.blocks
     .map(
       (b) => `
@@ -11,10 +10,10 @@ function bikeSessionCardHTML(s) {
     )
     .join("");
   return `
-  <div class="history-card ${upcoming ? "upcoming" : ""}">
+  <div class="history-card">
     <div class="history-head" data-bike-toggle="${s.id}">
       <div class="history-head-left">
-        <div class="history-date">${formatDateFR(s.date)}${upcoming ? '<span class="upcoming-badge">À venir</span>' : ""}</div>
+        <div class="history-date">${formatDateFR(s.date)}</div>
         ${s.label ? `<div class="history-label">${s.label}</div>` : ""}
         <div class="history-run-stats">${formatBikeSessionTotalsLine(s.blocks)}</div>
       </div>
@@ -30,7 +29,6 @@ function bikeSessionCardHTML(s) {
              <button class="edit-link" data-bike-edit-session="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-bike-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-bike-share-session="${s.id}">${ICONS.up} Partager</button>
-             ${upcoming ? `<button class="edit-link" data-bike-mark-done-session="${s.id}">${ICONS.check} Marquer comme faite</button>` : ""}
              <button class="delete-link" data-bike-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
@@ -50,8 +48,7 @@ function bikeCalendarViewHTML() {
   const startDow = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(y, m, 0).getDate();
   const monthLabel = firstOfMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const showFuture = bikeCalendarTimeFilter === "future";
-  const sessionDates = new Set(bikeSessions.filter((s) => isUpcoming(s) === showFuture).map((s) => s.date));
+  const sessionDates = new Set(bikeSessions.map((s) => s.date));
   const today = todayISO();
 
   const cells = [];
@@ -64,21 +61,20 @@ function bikeCalendarViewHTML() {
     cells.push(`
       <button type="button" class="cal-cell ${hasData ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}" data-bike-cal-date="${dateStr}">
         <span class="cal-day-num">${d}</span>
-        ${hasData ? `<span class="${showFuture ? "cal-dot-hollow" : "cal-dot"}"></span>` : ""}
+        ${hasData ? `<span class="cal-dot"></span>` : ""}
       </button>`);
   }
 
   let selectedHTML = "";
   if (bikeSelectedCalendarDate) {
-    const daySessions = bikeSessions.filter((s) => s.date === bikeSelectedCalendarDate && isUpcoming(s) === showFuture);
+    const daySessions = bikeSessions.filter((s) => s.date === bikeSelectedCalendarDate);
     selectedHTML =
       daySessions.length > 0
         ? `<div class="cal-selected-label">${formatDateFR(bikeSelectedCalendarDate)}</div>${daySessions.map(bikeSessionCardHTML).join("")}`
-        : `<div class="empty-state" style="padding: 30px 20px;">Aucune séance ${showFuture ? "prévue" : "effectuée"} ce jour-là.</div>`;
+        : `<div class="empty-state" style="padding: 30px 20px;">Aucune séance effectuée ce jour-là.</div>`;
   }
 
   return `
-    ${timeFilterToggleHTML(showFuture, "bike-time-filter")}
     <div class="cal-header">
       <button type="button" class="cal-nav-btn" data-bike-cal-prev>${ICONS.back}</button>
       <div class="cal-month-label">${monthLabel}</div>
@@ -115,12 +111,7 @@ function bikeHistoryTabHTML() {
   if (sorted.length === 0) {
     return backup + viewToggle + `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
   }
-  const upcoming = sorted.filter((s) => isUpcoming(s)).sort((a, b) => (a.date > b.date ? 1 : -1));
-  const past = sorted.filter((s) => !isUpcoming(s));
-  const showHeadings = upcoming.length > 0 && past.length > 0;
-  const upcomingHTML = upcoming.length > 0 ? (showHeadings ? `<div class="session-group-heading">À venir</div>` : "") + upcoming.map(bikeSessionCardHTML).join("") : "";
-  const pastHTML = past.length > 0 ? (showHeadings ? `<div class="session-group-heading">Effectuées</div>` : "") + past.map(bikeSessionCardHTML).join("") : "";
-  return backup + viewToggle + upcomingHTML + pastHTML;
+  return backup + viewToggle + sorted.map(bikeSessionCardHTML).join("");
 }
 
 
@@ -128,13 +119,6 @@ function attachBikeHistoryListeners() {
   document.querySelectorAll("[data-bike-history-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
       bikeHistoryViewMode = btn.dataset.bikeHistoryView;
-      renderBikeContent();
-    });
-  });
-  document.querySelectorAll("[data-bike-time-filter]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      bikeCalendarTimeFilter = btn.dataset.bikeTimeFilter;
-      bikeSelectedCalendarDate = null;
       renderBikeContent();
     });
   });
@@ -168,13 +152,6 @@ function attachBikeHistoryListeners() {
         },
         { confirmLabel: "Supprimer", danger: true }
       );
-    });
-  });
-  document.querySelectorAll("[data-bike-mark-done-session]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      markActivityDone("bike", btn.dataset.bikeMarkDoneSession);
-      renderBikeContent();
     });
   });
   document.querySelectorAll("[data-bike-share-session]").forEach((btn) => {

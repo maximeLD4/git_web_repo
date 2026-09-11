@@ -28,6 +28,29 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.40.0 - 2026-09-04
+====================
+
+- **Supprimé la distinction "Effectuée" / "À venir"**, devenue redondante
+  depuis l'arrivée des Plans — partout où elle existait (Salle de sport,
+  Course à pied, Natation, Vélo, calendrier partagé) :
+  - Plus de bascule Effectuées/À venir sur les vues calendrier, plus de
+    regroupement séparé dans les listes, plus de bouton "Marquer comme
+    faite", plus de badge "À venir" sur les cartes.
+  - **La date reste totalement libre** : on peut toujours créer une séance
+    à une date future, elle n'a simplement plus aucun traitement spécial —
+    testé, le champ `planned` n'existe même plus sur les séances
+    enregistrées.
+  - Performance continue d'exclure les séances datées dans le futur du
+    suivi de progression (question de cohérence des stats, pas un reliquat
+    de la fonctionnalité supprimée) — testé avec une séance à 999kg datée
+    en 2027, bien exclue du calcul.
+  - Nettoyage en cascade : fonctions `isUpcoming()`, `timeFilterToggleHTML()`
+    et `markActivityDone()` supprimées, 5 variables d'état devenues mortes
+    retirées, CSS mort correspondant retiré.
+  - Testé de bout en bout sur les 4 sports et le calendrier partagé, sans
+    erreur.
+
 2.39.0 - 2026-09-04
 ====================
 

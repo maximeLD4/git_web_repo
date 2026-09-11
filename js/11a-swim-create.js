@@ -511,11 +511,9 @@ function attachSwimLogActionsBarListeners() {
     errorSlot.innerHTML = "";
 
     const wasEditing = !!swimEditingSessionId;
-    const existingSession = wasEditing ? swimSessions.find((s) => s.id === swimEditingSessionId) : null;
-    const planned = existingSession ? isUpcoming(existingSession) : dateEl.value > todayISO();
     const otherCount = swimSessions.filter((s) => s.id !== swimEditingSessionId).length;
     const sessionLabel = labelEl.value.trim() || `Séance ${otherCount + 1}`;
-    const session = { id: swimEditingSessionId || uid(), date: dateEl.value, label: sessionLabel, blocks, planned };
+    const session = { id: swimEditingSessionId || uid(), date: dateEl.value, label: sessionLabel, blocks };
     if (wasEditing) {
       swimSessions = swimSessions.map((s) => (s.id === swimEditingSessionId ? session : s));
     } else {
