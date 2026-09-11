@@ -188,6 +188,19 @@ function gymSettingsFormHTML() {
   `;
 }
 
+// Si on est arrivé ici via "Configurer un exercice" depuis Séance en
+// direct, renvoie exactement là-bas (pas un Live "frais" qui repartirait
+// de zéro) plutôt que vers Paramètres ou l'Accueil. Utilisé aussi bien en
+// quittant après avoir enregistré qu'en revenant en arrière sans rien
+// ajouter — dans les deux cas, Live est là où on veut retourner.
+function returnFromSettingsToLiveIfNeeded() {
+  if (!liveConfigReturnTarget) return false;
+  liveConfigReturnTarget = false;
+  currentApp = "live";
+  renderLiveApp(false);
+  return true;
+}
+
 function renderGymSettingsApp() {
   app.className = "theme-gym";
   app.innerHTML = `
@@ -211,6 +224,7 @@ function renderGymSettingsApp() {
       else gymSettingsFormOpen = false;
       renderGymSettingsContent();
     } else {
+      if (returnFromSettingsToLiveIfNeeded()) return;
       currentApp = "settings";
       render();
     }
@@ -481,6 +495,7 @@ function attachGymSettingsListeners() {
     }
     saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
     gymSettingsFormOpen = false;
+    if (returnFromSettingsToLiveIfNeeded()) return;
     renderGymSettingsContent();
   });
   if (gymSettingsFocusTarget === "weight") {
@@ -577,6 +592,7 @@ function attachGainageSettingsListeners() {
     }
     saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
     gainageSettingsFormOpen = false;
+    if (returnFromSettingsToLiveIfNeeded()) return;
     renderGymSettingsContent();
   });
   nameInput.focus();

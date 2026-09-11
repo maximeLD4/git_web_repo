@@ -134,6 +134,11 @@ let scannerStream = null;
 let scannerExtractedWeights = [];
 let scannerReturnTarget = null;
 let calendarReturnTarget = null; // true si on doit revenir au calendrier partagé après avoir édité une séance depuis là (au lieu du menu principal ou de rester sur l'onglet Créer)
+// true si on doit revenir à Séance en direct (exactement là où on était —
+// même exercice, même catégorie) après être passé par Paramètres pour
+// configurer un exercice manquant, plutôt que de rester sur Paramètres ou
+// de repartir de zéro sur Live (voir le bouton "Configurer un exercice").
+let liveConfigReturnTarget = false;
 let calendarReturnDate = null; // date de la séance éditée, pour la re-sélectionner au retour dans le calendrier
 let openSharedCalendarIds = {}; // réduit/déplié des séances dans le calendrier partagé (par défaut : réduit)
 let performanceSelectedExerciseId = null;

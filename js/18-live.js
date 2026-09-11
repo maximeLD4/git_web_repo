@@ -1357,7 +1357,27 @@ function attachLiveNavigationListeners(content) {
     goSettingsBtn.addEventListener("click", () => {
       // La séance en cours (si il y en a une) reste intacte en arrière-plan
       // (voir la reprise automatique dans renderLiveApp) — configurer un
-      // exercice puis revenir en Live la retrouve telle quelle.
+      // exercice puis revenir en Live la retrouve telle quelle. Le drapeau
+      // ci-dessous permet en plus de revenir exactement à l'écran où on
+      // était (même type/catégorie), pas à un Live "frais" repartant de
+      // zéro (voir renderGymSettingsApp, qui le consulte).
+      liveConfigReturnTarget = true;
+      // Ouvre directement le formulaire d'ajout plutôt que la simple liste
+      // — pré-rempli avec le type (Muscu/Gainage) et, pour Muscu, la
+      // catégorie qu'on cherchait déjà à utiliser en Live : pas la peine de
+      // re-choisir tout ça une seconde fois une fois sur Paramètres.
+      if (liveDraftType === "cardio" && liveDraftCategory === GAINAGE_CATEGORY.key) {
+        gymSettingsMode = "gainage";
+        gainageSettingsFormOpen = true;
+        gainageSettingsEditingConfigId = null;
+        gainageSettingsFormDraft = { name: "" };
+      } else {
+        gymSettingsMode = "muscu";
+        gymSettingsFormOpen = true;
+        gymSettingsEditingConfigId = null;
+        gymSettingsFormDraft = { name: "", category: liveDraftCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false };
+        gymSettingsFocusTarget = "name";
+      }
       currentApp = "settings-gym";
       render();
     });

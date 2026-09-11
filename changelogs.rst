@@ -28,6 +28,32 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.38.3 - 2026-09-04
+====================
+
+- **"Configurer un exercice" depuis une catégorie Muscu vide ouvre
+  directement le formulaire d'ajout, catégorie déjà sélectionnée** (ex.
+  Muscu > Épaules sans exercice → le formulaire s'ouvre avec "Épaules"
+  déjà choisie) — plus besoin de re-choisir Muscu puis la catégorie une
+  seconde fois une fois sur Paramètres. Combiné au retour automatique vers
+  Live (2.38.2), le nouvel exercice est immédiatement utilisable, sans
+  aucun clic superflu. Testé de bout en bout.
+  - Même logique prête pour le Gainage par sécurité, bien qu'elle ne
+    puisse plus se déclencher dans l'état actuel de l'app : Gainage a
+    toujours un exercice générique disponible (voir 2.34.2), donc plus
+    jamais de cul-de-sac à ce niveau.
+
+2.38.2 - 2026-09-04
+====================
+
+- **"Configurer un exercice" depuis Séance en direct ramène exactement là
+  où on était** une fois l'exercice enregistré (même type, même
+  catégorie) — au lieu de rester sur Paramètres ou de repartir d'un Live
+  "frais" sur l'écran par défaut. Fonctionne aussi en revenant en arrière
+  sans avoir ajouté d'exercice. Vérifié : après avoir configuré
+  "Tractions" depuis la catégorie Dos, on retombe pile sur Dos avec
+  "Tractions" déjà dans la liste, prêt à sélectionner.
+
 2.38.1 - 2026-09-04
 ====================
 
