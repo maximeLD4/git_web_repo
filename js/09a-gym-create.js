@@ -351,8 +351,12 @@ function renderGymApp() {
   // Rattrapage silencieux : si un brouillon d'une session précédente (avant
   // cette restructuration, ou après une fermeture en plein milieu) a un
   // "kind" différent du mode affiché, on aligne le mode sur lui plutôt que
-  // de laisser les deux se contredire à l'écran.
-  if (draft.kind && draft.kind !== gymTopMode) gymTopMode = draft.kind;
+  // de laisser les deux se contredire à l'écran. Seulement sur l'onglet
+  // Créer : après avoir enregistré et redirigé vers Historique, le
+  // brouillon vient d'être vidé (kind revenu à "session" par défaut) et ne
+  // doit plus dicter le mode qu'on vient tout juste de choisir explicitement
+  // pour cette redirection (voir le bouton "Enregistrer").
+  if (tab === "log" && draft.kind && draft.kind !== gymTopMode) gymTopMode = draft.kind;
   const isPlanMode = gymTopMode === "plan";
   app.innerHTML = `
     <div class="header">
@@ -1146,12 +1150,14 @@ function attachLogActionsBarListeners() {
       }
       saveJSON(KEYS.sessionPlans, sessionPlans);
       clearDraft();
+      // Redirige vers la liste des plans plutôt que de rester sur "Créer"
+      // avec un nouveau brouillon vide — on vient de finir, la suite
+      // logique est de voir ce qu'on vient d'enregistrer, pas de recommencer.
+      tab = "history";
+      gymTopMode = "plan";
       render();
-      document.getElementById("flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditingPlan ? "Plan modifié" : "Plan enregistré"}</div>`;
-      setTimeout(() => {
-        const f = document.getElementById("flash-slot");
-        if (f) f.innerHTML = "";
-      }, 1800);
+      // Même remarque que côté séance : "flash-slot" n'existe plus une fois
+      // sur Historique, la liste affichée sert déjà de confirmation.
       return;
     }
 
@@ -1188,12 +1194,16 @@ function attachLogActionsBarListeners() {
       returnToCalendar();
       return;
     }
+    // Même logique que pour un plan : direction la liste des séances plutôt
+    // que de rester sur "Créer" avec un brouillon vide fraîchement rouvert.
+    tab = "history";
+    gymTopMode = "session";
+    historyViewMode = "list";
     render();
-    document.getElementById("flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
-    setTimeout(() => {
-      const f = document.getElementById("flash-slot");
-      if (f) f.innerHTML = "";
-    }, 1800);
+    // "flash-slot" vit dans la barre d'actions de Créer (voir
+    // logActionsBarContentHTML) — on vient de la quitter pour Historique,
+    // elle n'existe donc plus dans le DOM. La liste qui s'affiche à
+    // l'instant sert déjà de confirmation visuelle, pas besoin du message.
   });
 }
 

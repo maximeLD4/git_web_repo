@@ -405,12 +405,9 @@ function attachBikeLogActionsBarListeners() {
       returnToCalendar();
       return;
     }
+    bikeTab = "history";
+    bikeHistoryViewMode = "list";
     renderBikeApp();
-    document.getElementById("bike-flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
-    setTimeout(() => {
-      const f = document.getElementById("bike-flash-slot");
-      if (f) f.innerHTML = "";
-    }, 1800);
   });
 }
 

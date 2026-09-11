@@ -592,12 +592,11 @@ function attachRunLogActionsBarListeners() {
       returnToCalendar();
       return;
     }
+    // Direction la liste des séances plutôt que de rester sur "Créer" avec
+    // un nouveau brouillon vide (même logique que pour Salle de sport).
+    runTab = "history";
+    runHistoryViewMode = "list";
     renderRunApp();
-    document.getElementById("run-flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
-    setTimeout(() => {
-      const f = document.getElementById("run-flash-slot");
-      if (f) f.innerHTML = "";
-    }, 1800);
   });
 }
 

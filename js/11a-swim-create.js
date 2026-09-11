@@ -530,12 +530,9 @@ function attachSwimLogActionsBarListeners() {
       returnToCalendar();
       return;
     }
+    swimTab = "history";
+    swimHistoryViewMode = "list";
     renderSwimApp();
-    document.getElementById("swim-flash-slot").innerHTML = `<div class="flash">${ICONS.check} ${wasEditing ? "Séance modifiée" : "Séance enregistrée"}</div>`;
-    setTimeout(() => {
-      const f = document.getElementById("swim-flash-slot");
-      if (f) f.innerHTML = "";
-    }, 1800);
   });
 }
 

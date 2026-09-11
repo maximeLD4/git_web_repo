@@ -28,6 +28,45 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.38.1 - 2026-09-04
+====================
+
+- **Séance en direct : la carte de la séance s'ouvre directement à
+  l'arrivée sur la liste**, au lieu de rester repliée — un vrai récap
+  immédiat (exercices, séries) sans avoir à taper dessus.
+
+2.38.0 - 2026-09-04
+====================
+
+- **Même correctif de redirection étendu à toute l'app**, après avoir
+  audité systématiquement tous les points de sauvegarde :
+  - Course à pied, Natation, Vélo : enregistrer une séance mène maintenant
+    à la liste des séances, plus à un nouveau brouillon vide.
+  - Séance en direct : terminer et confirmer une séance mène à la liste
+    des séances de Salle de sport (au lieu de l'Accueil) — la séance qu'on
+    vient de finir se voit tout de suite.
+  - Vérifié au passage que les autres points de sauvegarde (exercices
+    configurés dans Paramètres, marquer une séance comme faite, Poids)
+    redirigeaient déjà correctement — rien à changer là.
+  - Testé de bout en bout sur les 4 flux modifiés, sans erreur.
+
+2.37.1 - 2026-09-04
+====================
+
+- **Redirection après enregistrement** (Salle de sport) : enregistrer une
+  séance mène maintenant à la liste des séances, enregistrer un plan mène
+  à la liste des plans — au lieu de rester sur "Créer" avec un nouveau
+  brouillon vide.
+  - Corrigé au passage un bug trouvé en testant : la redirection
+    déclenchait une erreur silencieuse (un message de confirmation
+    cherchait un élément qui n'existe que sur l'onglet Créer, plus
+    disponible une fois sur Historique) — retiré, la liste affichée à
+    l'instant sert déjà de confirmation visuelle.
+  - Corrigé aussi : le mode Séance/Plan pouvait se faire écraser par erreur
+    juste après la redirection à cause d'une logique de rattrapage
+    interne — cette logique ne s'applique désormais qu'à l'onglet Créer,
+    là où elle a un sens.
+
 2.37.0 - 2026-09-04
 ====================
 

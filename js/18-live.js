@@ -1238,7 +1238,18 @@ function finishLiveSession() {
     liveActiveExerciseId = null;
     liveDraftRestSec = null;
 
-    goHome();
+    // Direction la liste des séances de Salle de sport plutôt que l'Accueil
+    // — même logique que pour "Enregistrer" depuis Créer : la séance qu'on
+    // vient de finir doit se voir tout de suite, pas se deviner. On ouvre en
+    // plus directement sa carte (au lieu de la laisser repliée dans la
+    // liste) pour un vrai récap immédiat : exercices, séries, tout y est
+    // sans avoir à re-taper dessus.
+    currentApp = "gym";
+    tab = "history";
+    gymTopMode = "session";
+    historyViewMode = "list";
+    openHistoryIds[session.id] = true;
+    render();
   });
 }
 
