@@ -28,6 +28,18 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.40.2 - 2026-09-04
+====================
+
+- **Même mécanisme que 2.38.2/2.38.3 (préremplissage + retour exact),
+  appliqué au bouton "Configurer un exercice" de l'onglet Créer** — jusque
+  là, seul Séance en direct en bénéficiait ; Créer se contentait d'un
+  simple aller vers Paramètres sans revenir automatiquement. Désormais :
+  catégorie déjà sélectionnée dans le formulaire (ex. "Épaules"), et
+  retour exact sur Créer une fois enregistré, brouillon intact, nouvel
+  exercice immédiatement sélectionnable dans la carte d'où il a été
+  demandé. Testé de bout en bout.
+
 2.40.1 - 2026-09-04
 ====================
 

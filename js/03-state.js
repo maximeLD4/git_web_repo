@@ -134,6 +134,11 @@ let calendarReturnTarget = null; // true si on doit revenir au calendrier partag
 // configurer un exercice manquant, plutôt que de rester sur Paramètres ou
 // de repartir de zéro sur Live (voir le bouton "Configurer un exercice").
 let liveConfigReturnTarget = false;
+// Même principe, pour le bouton équivalent dans Créer (Salle de sport) —
+// revient sur l'onglet Créer plutôt que de rester sur Paramètres, le
+// brouillon en cours (préservé par ailleurs) redevient donc visible tel
+// quel juste après.
+let gymCreateConfigReturnTarget = false;
 let calendarReturnDate = null; // date de la séance éditée, pour la re-sélectionner au retour dans le calendrier
 let openSharedCalendarIds = {}; // réduit/déplié des séances dans le calendrier partagé (par défaut : réduit)
 let performanceSelectedExerciseId = null;

@@ -201,6 +201,20 @@ function returnFromSettingsToLiveIfNeeded() {
   return true;
 }
 
+// Même principe, pour le bouton "Configurer un exercice" équivalent dans
+// Créer (Salle de sport) — le brouillon en cours est déjà préservé par
+// ailleurs (scheduleDraftSave), un simple retour normal sur l'onglet Créer
+// suffit donc à le retrouver tel quel, pas besoin d'un rendu "non frais"
+// comme pour Live.
+function returnFromSettingsToGymCreateIfNeeded() {
+  if (!gymCreateConfigReturnTarget) return false;
+  gymCreateConfigReturnTarget = false;
+  currentApp = "gym";
+  tab = "log";
+  render();
+  return true;
+}
+
 function renderGymSettingsApp() {
   app.className = "theme-gym";
   app.innerHTML = `
@@ -225,6 +239,7 @@ function renderGymSettingsApp() {
       renderGymSettingsContent();
     } else {
       if (returnFromSettingsToLiveIfNeeded()) return;
+      if (returnFromSettingsToGymCreateIfNeeded()) return;
       currentApp = "settings";
       render();
     }
@@ -496,6 +511,7 @@ function attachGymSettingsListeners() {
     saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
     gymSettingsFormOpen = false;
     if (returnFromSettingsToLiveIfNeeded()) return;
+    if (returnFromSettingsToGymCreateIfNeeded()) return;
     renderGymSettingsContent();
   });
   if (gymSettingsFocusTarget === "weight") {
@@ -593,6 +609,7 @@ function attachGainageSettingsListeners() {
     saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
     gainageSettingsFormOpen = false;
     if (returnFromSettingsToLiveIfNeeded()) return;
+    if (returnFromSettingsToGymCreateIfNeeded()) return;
     renderGymSettingsContent();
   });
   nameInput.focus();

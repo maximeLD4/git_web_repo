@@ -529,7 +529,7 @@ function exerciseCardHTML(ex) {
   } else if (isMuscu && configsInCategory.length === 0) {
     bodyHTML =
       categoryToggleHTML(category) +
-      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn configure-exercise-btn" data-go-settings-gym>${ICONS.plus} Configurer un exercice</button></div>`;
+      `<div class="empty-state" style="padding:16px; margin-bottom:10px;">Aucun exercice configuré dans "${categoryLabel(category)}".<br>Configure-en un pour commencer.<button type="button" class="add-exercise-btn configure-exercise-btn" data-go-settings-gym data-target-category="${category}">${ICONS.plus} Configurer un exercice</button></div>`;
   } else if (isMuscu && !effectiveConfig) {
     bodyHTML =
       categoryToggleHTML(category) +
@@ -812,7 +812,18 @@ function attachLogListeners() {
       goSettingsBtn.addEventListener("click", () => {
         // Le brouillon en cours est déjà sauvegardé au fil de la saisie (voir
         // scheduleDraftSave) — configurer un exercice puis revenir sur Créer
-        // le retrouve tel quel.
+        // le retrouve tel quel. gymCreateConfigReturnTarget assure ce retour
+        // (voir returnFromSettingsToLiveIfNeeded, son équivalent Live).
+        gymCreateConfigReturnTarget = true;
+        // Ouvre directement le formulaire d'ajout, catégorie déjà choisie si
+        // on en avait une (ex. "aucun exercice dans Épaules") — même logique
+        // que pour le bouton équivalent en Séance en direct.
+        const targetCategory = goSettingsBtn.dataset.targetCategory || "";
+        gymSettingsMode = "muscu";
+        gymSettingsFormOpen = true;
+        gymSettingsEditingConfigId = null;
+        gymSettingsFormDraft = { name: "", category: targetCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false };
+        gymSettingsFocusTarget = "name";
         currentApp = "settings-gym";
         render();
       });
