@@ -41,7 +41,7 @@ function sessionCardHTML(s) {
     )
     .join("");
   const durationLabel = getSessionDurationSeconds(s) != null ? `${formatLiveDuration(getSessionDurationSeconds(s))} · ` : "";
-  return `
+  const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-toggle="${s.id}">
       <div class="history-head-left">
@@ -66,6 +66,10 @@ function sessionCardHTML(s) {
         : ""
     }
   </div>`;
+  // Enveloppé pour le glissé-pour-supprimer (voir wrapSwipeToDeleteRow) —
+  // fonctionne que la carte soit repliée ou dépliée, contrairement au
+  // bouton "Supprimer" ci-dessus qui n'existe que carte ouverte.
+  return wrapSwipeToDeleteRow(s.id, cardHTML);
 }
 
 function shiftCalendarMonth(delta) {
@@ -132,7 +136,7 @@ function planCardHTML(plan) {
   const exHTML = plan.exercises
     .map((ex) => `<div class="history-ex-name">${ex.name} <span style="color:var(--text-dim); font-weight:600;">· ${planExerciseSummary(ex)}</span></div>`)
     .join("");
-  return `
+  const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-toggle="${plan.id}">
       <div class="history-head-left">
@@ -155,6 +159,7 @@ function planCardHTML(plan) {
         : ""
     }
   </div>`;
+  return wrapSwipeToDeleteRow(plan.id, cardHTML);
 }
 
 function plansListHTML() {
@@ -204,6 +209,37 @@ function historyTabHTML() {
 
 
 function attachHistoryListeners() {
+  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
+    // Le calendrier ne montre jamais que des séances ; en liste, le mode
+    // du grand sélecteur du haut (Séance/Plan) dit lequel des deux on
+    // regarde — les deux se ressemblent trop pour se fier à autre chose.
+    const isSession = historyViewMode === "calendar" || gymTopMode === "session";
+    if (isSession) {
+      showConfirm(
+        "Supprimer définitivement cette séance ? Cette action est irréversible.",
+        () => {
+          animateCardRemoval(cardEl, () => {
+            sessions = sessions.filter((s) => s.id !== id);
+            saveJSON(KEYS.sessions, sessions);
+            renderContent();
+          });
+        },
+        { confirmLabel: "Supprimer", danger: true }
+      );
+    } else {
+      showConfirm(
+        "Supprimer définitivement ce plan ? Cette action est irréversible.",
+        () => {
+          animateCardRemoval(cardEl, () => {
+            sessionPlans = sessionPlans.filter((p) => p.id !== id);
+            saveJSON(KEYS.sessionPlans, sessionPlans);
+            renderContent();
+          });
+        },
+        { confirmLabel: "Supprimer", danger: true }
+      );
+    }
+  });
   document.querySelectorAll("[data-edit-plan]").forEach((btn) => {
     btn.addEventListener("click", (ev) => {
       ev.stopPropagation();

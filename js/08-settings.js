@@ -393,9 +393,11 @@ function attachGymSettingsListeners() {
       showConfirm(
         "Supprimer cet exercice configuré ? Les séances déjà enregistrées ne sont pas affectées.",
         () => {
-          gymExerciseConfigs = gymExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteConfig);
-          saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
-          renderGymSettingsContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            gymExerciseConfigs = gymExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteConfig);
+            saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
+            renderGymSettingsContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );
@@ -548,9 +550,11 @@ function attachGainageSettingsListeners() {
       showConfirm(
         "Supprimer cet exercice de gainage configuré ? Les séances déjà enregistrées ne sont pas affectées.",
         () => {
-          gainageExerciseConfigs = gainageExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteGainageConfig);
-          saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
-          renderGymSettingsContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            gainageExerciseConfigs = gainageExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteGainageConfig);
+            saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+            renderGymSettingsContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );

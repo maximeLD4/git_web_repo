@@ -11,7 +11,7 @@ function bikeSessionCardHTML(s) {
   </div>`
     )
     .join("");
-  return `
+  const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-bike-toggle="${s.id}">
       <div class="history-head-left">
@@ -36,6 +36,7 @@ function bikeSessionCardHTML(s) {
         : ""
     }
   </div>`;
+  return wrapSwipeToDeleteRow(s.id, cardHTML);
 }
 
 function shiftBikeCalendarMonth(delta) {
@@ -118,6 +119,19 @@ function bikeHistoryTabHTML() {
 
 
 function attachBikeHistoryListeners() {
+  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
+    showConfirm(
+      "Supprimer définitivement cette séance ? Cette action est irréversible.",
+      () => {
+        animateCardRemoval(cardEl, () => {
+          bikeSessions = bikeSessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.bikeSessions, bikeSessions);
+          renderBikeContent();
+        });
+      },
+      { confirmLabel: "Supprimer", danger: true }
+    );
+  });
   document.querySelectorAll("[data-bike-history-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
       bikeHistoryViewMode = btn.dataset.bikeHistoryView;

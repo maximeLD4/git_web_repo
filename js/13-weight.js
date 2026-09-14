@@ -69,7 +69,7 @@ function weightTabHTML() {
       : sorted
           .map(
             (e) => `
-      <div class="weight-entry-row">
+      <div class="weight-entry-row" data-id="${e.id}">
         <div class="weight-entry-date">${formatDateFR(e.date)}</div>
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="weight-entry-value">${e.weight} kg</div>
@@ -103,15 +103,20 @@ function attachWeightListeners() {
     const val = parseFloat(valueEl.value);
     if (valueEl.value === "" || isNaN(val)) return;
     weights = weights.filter((e) => e.date !== dateEl.value);
-    weights.push({ id: uid(), date: dateEl.value, weight: val });
+    const newEntry = { id: uid(), date: dateEl.value, weight: val };
+    weights.push(newEntry);
     saveJSON(KEYS.weights, weights);
     renderWeightContent();
+    const newRow = document.querySelector(`.weight-entry-row[data-id="${newEntry.id}"]`);
+    if (newRow) newRow.classList.add("set-row-enter");
   });
   document.querySelectorAll("[data-delete-weight]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      weights = weights.filter((e) => e.id !== btn.dataset.deleteWeight);
-      saveJSON(KEYS.weights, weights);
-      renderWeightContent();
+      animateCardRemoval(btn.closest(".weight-entry-row"), () => {
+        weights = weights.filter((e) => e.id !== btn.dataset.deleteWeight);
+        saveJSON(KEYS.weights, weights);
+        renderWeightContent();
+      });
     });
   });
 }

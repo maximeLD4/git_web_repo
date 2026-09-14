@@ -28,6 +28,70 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.48.0 - 2026-09-04
+====================
+
+- **Glisser vers la gauche pour supprimer une séance ou un plan**, sur les
+  6 listes concernées : Salle de sport (séance et plan), Course à pied,
+  Natation, Vélo, et le calendrier partagé. Glisser une carte révèle un
+  bouton rouge "Supprimer" en dessous ; le tapoter déclenche la même
+  confirmation qu'avant. Fonctionne aussi bien sur une carte repliée que
+  dépliée — jusque là, le bouton "Supprimer" n'existait que carte ouverte.
+  Un tap normal (sans glisser) continue de déplier/replier la carte comme
+  avant, sans aucun conflit entre les deux gestes.
+  - Testé sur les 6 listes avec un vrai geste de souris simulé (pas un
+    simple clic programmatique) : glissement, révélation, confirmation,
+    suppression, tout fonctionne de bout en bout.
+
+- **Corrigé : passer de "Séance" à "Plan" (et inversement) pendant la
+  construction effaçait tout ce qui avait été saisi.** Les deux formes
+  étant quasiment identiques (même principe que "Convertir"), le
+  changement de mode transforme désormais ce qui est déjà là plutôt que de
+  le jeter — exercices, libellé et date conservés ; seuls les champs
+  propres à une exécution réelle (repos mesuré, horodatage) sont retirés
+  en passant vers un plan. Plus besoin de la fenêtre d'avertissement, plus
+  rien n'est perdu. Corrigé au passage un risque plus subtil trouvé en
+  testant : la fonction relit maintenant l'état réel du formulaire plutôt
+  que d'utiliser un brouillon jusqu'à 350ms en retard, pour ne jamais
+  perdre les toutes dernières frappes.
+
+2.47.0 - 2026-09-04
+====================
+
+- **"Dupliquer" (séance ou plan) a maintenant la même capsule que
+  "Enregistrer"** — vers le bas, pas latéralement comme "Convertir" (on ne
+  bascule pas de catégorie, juste vers l'espace de travail Créer). Avant,
+  dupliquer était un simple saut d'onglet sec, incohérent avec la
+  conversion qui, elle, en bénéficiait déjà.
+  - Branché sur les 5 endroits où on peut dupliquer : Salle de sport
+    (séance et plan), Course à pied, Natation, Vélo.
+  - Testé les 5 : capsule affichée avec le bon texte, vol vers le bas
+    confirmé, navigation différée jusqu'à la fin de l'animation, brouillon
+    bien prérempli à l'arrivée sur Créer.
+
+2.46.0 - 2026-09-04
+====================
+
+- **Passage en revue de l'app pour repérer où une petite animation aide à
+  la compréhension, et généralisation des mécanismes déjà construits :**
+  - Dupliquer un exercice dans Créer a maintenant la même animation
+    d'entrée qu'en ajouter un (jusque là, seul l'ajout en bénéficiait).
+  - Ajouter/supprimer une série individuelle (dans un exercice, en Créer) :
+    nouvelle animation légère et rapide, volontairement plus discrète
+    qu'une carte entière puisque c'est un geste très fréquent.
+  - Ajouter/supprimer une pesée : même traitement.
+  - Ajouter/supprimer un bloc dans Course à pied, Natation et Vélo : ces 3
+    sports n'avaient jamais eu le traitement que Salle de sport avait déjà
+    depuis un moment — corrigé, même comportement partout désormais.
+  - Supprimer un exercice configuré (Muscu et Gainage) dans Paramètres :
+    branché sur le mécanisme de disparition déjà construit pour les
+    séances/plans (2.45.0).
+  - Vérifié au passage que replier/déplier un exercice avait déjà sa
+    propre animation — rien à faire là.
+  - Testé chacun des 6 points individuellement : entrées/sorties
+    correctement déclenchées, données bien mises à jour une fois
+    l'animation terminée, aucune erreur.
+
 2.45.0 - 2026-09-04
 ====================
 

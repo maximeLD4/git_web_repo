@@ -124,7 +124,7 @@ function sharedSessionPreviewHTML(s, type) {
     statsLine = `<div class="history-run-stats" style="color:${color};">${formatTotals(s.blocks)}</div>`;
   }
 
-  return `
+  const cardHTML = `
   <div class="history-card" style="border-color: rgba(${rgb},0.35);">
     <div class="history-head" data-shared-toggle="${toggleKey}">
       <div class="history-head-left">
@@ -149,6 +149,10 @@ function sharedSessionPreviewHTML(s, type) {
         : ""
     }
   </div>`;
+  // L'id du glissé embarque aussi le type (gym/gainage/run/swim/bike) —
+  // plusieurs listes différentes cohabitent ici, un simple id de séance ne
+  // suffirait pas à savoir laquelle supprimer (voir attachSharedCalendarListeners).
+  return wrapSwipeToDeleteRow(toggleKey, cardHTML);
 }
 
 function sharedCalendarViewHTML() {
@@ -220,6 +224,36 @@ function renderSharedCalendarContent() {
 }
 
 function attachSharedCalendarListeners() {
+  initSwipeToDelete(document.getElementById("content"), (swipeId, cardEl) => {
+    // swipeId embarque "type:id" (voir sharedSessionPreviewHTML) — plusieurs
+    // listes différentes cohabitent dans ce calendrier, contrairement aux
+    // autres écrans où l'id seul suffit.
+    const sep = swipeId.indexOf(":");
+    const type = swipeId.slice(0, sep);
+    const id = swipeId.slice(sep + 1);
+    showConfirm(
+      "Supprimer définitivement cette activité ? Cette action est irréversible.",
+      () => {
+        animateCardRemoval(cardEl, () => {
+          if (type === "gym" || type === "gainage") {
+            sessions = sessions.filter((s) => s.id !== id);
+            saveJSON(KEYS.sessions, sessions);
+          } else if (type === "run") {
+            runSessions = runSessions.filter((s) => s.id !== id);
+            saveJSON(KEYS.runSessions, runSessions);
+          } else if (type === "swim") {
+            swimSessions = swimSessions.filter((s) => s.id !== id);
+            saveJSON(KEYS.swimSessions, swimSessions);
+          } else {
+            bikeSessions = bikeSessions.filter((s) => s.id !== id);
+            saveJSON(KEYS.bikeSessions, bikeSessions);
+          }
+          renderSharedCalendarContent();
+        });
+      },
+      { confirmLabel: "Supprimer", danger: true }
+    );
+  });
   const prev = document.querySelector("[data-shared-cal-prev]");
   const next = document.querySelector("[data-shared-cal-next]");
   if (prev) prev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftSharedCalendarMonth(-1); renderSharedCalendarContent(); }));

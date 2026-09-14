@@ -287,6 +287,12 @@ select.ex-name-pill:focus { outline: none; }
 .sets-header .spacer { width: 18px; flex-shrink: 0; }
 .sets-header span:not(.spacer) { flex: 1; font-family: var(--font-mono); font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); text-align: center; font-weight: 600; }
 .set-row { padding: 8px 0; border-bottom: 1px solid var(--border); }
+/* Petite entrée pour une série qu'on vient d'ajouter — plus discrète et
+   rapide que celle d'une carte d'exercice entière (voir
+   exercise-card-enter) : ajouter une série est un geste bien plus fréquent,
+   qui ne doit surtout pas donner l'impression de ralentir la saisie. */
+@keyframes set-row-fade-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.set-row-enter { animation: set-row-fade-in 0.16s ease; }
 .sets-list .set-row:last-child { border-bottom: none; padding-bottom: 2px; }
 .set-main { display: flex; align-items: flex-start; gap: 8px; margin: 0 16px 8px 18px; }
 .set-num { width: 18px; flex-shrink: 0; font-family: var(--font-mono); font-weight: 600; font-size: 10px; color: rgba(var(--ink-rgb), 0.62); text-align: center; }
@@ -509,6 +515,14 @@ select.ex-name-pill:focus { outline: none; }
   100% { box-shadow: 0 0 0 2px rgba(var(--yellow-rgb), 0); }
 }
 .history-card.just-landed { animation: history-card-land 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), history-card-glow-fade 1.6s ease 0.3s forwards; }
+/* ---------- Glisser pour supprimer ---------- */
+.swipe-row { position: relative; overflow: hidden; border-radius: var(--radius); margin-bottom: 10px; }
+.swipe-row .history-card { margin-bottom: 0; position: relative; z-index: 1; touch-action: pan-y; background: var(--surface); }
+.swipe-delete-reveal {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 84px;
+  background: var(--danger); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer;
+}
 /* Disparition d'une carte supprimée — s'efface sur place (hauteur, opacité,
    léger rétrécissement) plutôt que de simplement disparaître d'un coup au
    rechargement de la liste. Voir animateCardRemoval dans 02-utils.js, qui

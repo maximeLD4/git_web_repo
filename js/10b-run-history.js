@@ -11,7 +11,7 @@ function runSessionCardHTML(s) {
   </div>`
     )
     .join("");
-  return `
+  const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-run-toggle="${s.id}">
       <div class="history-head-left">
@@ -36,6 +36,7 @@ function runSessionCardHTML(s) {
         : ""
     }
   </div>`;
+  return wrapSwipeToDeleteRow(s.id, cardHTML);
 }
 
 function shiftRunCalendarMonth(delta) {
@@ -144,6 +145,19 @@ function runHistoryTabHTML() {
 
 
 function attachRunHistoryListeners() {
+  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
+    showConfirm(
+      "Supprimer définitivement cette séance ? Cette action est irréversible.",
+      () => {
+        animateCardRemoval(cardEl, () => {
+          runSessions = runSessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.runSessions, runSessions);
+          renderRunContent();
+        });
+      },
+      { confirmLabel: "Supprimer", danger: true }
+    );
+  });
   document.querySelectorAll("[data-run-history-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
       runHistoryViewMode = btn.dataset.runHistoryView;

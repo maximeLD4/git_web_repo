@@ -163,8 +163,10 @@ function duplicateRunSession(session) {
   runEditingSessionId = null;
   runDraft = { date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
   saveJSON(KEYS.runDraft, runDraft);
-  runTab = "log";
-  renderRunApp();
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication de la séance", session.label || formatDateFR(session.date), () => {
+    runTab = "log";
+    renderRunApp();
+  });
 }
 
 function renderRunApp() {
@@ -521,7 +523,10 @@ function attachRunLogListeners() {
       }
       runDraft.blocks = blocks.filter((b) => b.id !== card.dataset.id);
       saveJSON(KEYS.runDraft, runDraft);
-      renderRunContent();
+      // Même traitement que Salle de sport (voir exercise-card-exit) : une
+      // petite disparition sur place, plutôt qu'un bloc qui saute d'un coup.
+      card.classList.add("exercise-card-exit");
+      setTimeout(renderRunContent, 200);
     });
 
     card.querySelectorAll("[data-block-type]").forEach((btn) => {
@@ -555,6 +560,7 @@ function attachRunLogActionsBarListeners() {
     saveJSON(KEYS.runDraft, runDraft);
     renderContentPreservingScroll(renderRunContent, () => {
       const newCard = document.querySelector(`.exercise-card[data-id="${newBlock.id}"]`);
+      if (newCard) newCard.classList.add("exercise-card-enter");
       scrollCardBottomIntoView(newCard);
     });
   });

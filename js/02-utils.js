@@ -340,6 +340,145 @@ function animateCardRemoval(card, onComplete) {
   setTimeout(onComplete, 320);
 }
 
+// ---------- Glisser pour supprimer (séances, plans...) ----------
+// Une seule carte "ouverte" (glissée, bouton Supprimer révélé) à la fois,
+// peu importe l'écran — on ferme l'ancienne avant d'en ouvrir une autre.
+let swipeOpenCard = null;
+let swipeGlobalCloserAttached = false;
+
+function closeSwipeCard(card) {
+  if (!card) return;
+  card.style.transform = "";
+  card.classList.remove("swipe-open");
+  if (swipeOpenCard === card) swipeOpenCard = null;
+}
+
+// Un tap n'importe où en dehors de la carte actuellement ouverte la
+// referme — attaché une seule fois pour de bon (pas à chaque rendu, sinon
+// les écouteurs s'empileraient indéfiniment au fil des re-rendus).
+function ensureSwipeGlobalCloser() {
+  if (swipeGlobalCloserAttached) return;
+  swipeGlobalCloserAttached = true;
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (swipeOpenCard && document.body.contains(swipeOpenCard) && !swipeOpenCard.closest(".swipe-row")?.contains(e.target)) {
+        closeSwipeCard(swipeOpenCard);
+      }
+    },
+    true
+  );
+}
+
+// Enveloppe le HTML d'une carte existante dans la structure nécessaire au
+// glissé : un bouton "Supprimer" rouge en dessous, révélé en glissant la
+// carte elle-même vers la gauche par-dessus. `cardHTML` doit contenir un
+// unique ".history-card" ; `id` sert à le retrouver et à savoir laquelle
+// supprimer une fois le bouton révélé tapoté (voir initSwipeToDelete).
+function wrapSwipeToDeleteRow(id, cardHTML) {
+  return `
+  <div class="swipe-row">
+    <div class="swipe-delete-reveal" data-swipe-delete-reveal>${ICONS.trash}<span>Supprimer</span></div>
+    ${cardHTML.replace('class="history-card', `data-swipe-id="${id}" class="history-card`)}
+  </div>`;
+}
+
+// Active le geste sur toutes les cartes d'un conteneur donné (enveloppées
+// via wrapSwipeToDeleteRow ci-dessus). `onDeleteTap(id, cardEl)` est
+// appelé au tap sur le bouton révélé — à charge de l'appelant de gérer la
+// confirmation et la suppression réelle, propres à chaque écran de liste.
+function initSwipeToDelete(container, onDeleteTap) {
+  ensureSwipeGlobalCloser();
+  const REVEAL = 84;
+  container.querySelectorAll(".swipe-row").forEach((row) => {
+    const card = row.querySelector(".history-card[data-swipe-id]");
+    const reveal = row.querySelector("[data-swipe-delete-reveal]");
+    if (!card || !reveal) return;
+    const id = card.dataset.swipeId;
+
+    reveal.addEventListener("click", () => onDeleteTap(id, card));
+
+    let startX = 0,
+      startY = 0,
+      baseX = 0,
+      dragging = false,
+      horizontal = null,
+      justDragged = false;
+
+    card.addEventListener("pointerdown", (e) => {
+      startX = e.clientX;
+      startY = e.clientY;
+      baseX = card.classList.contains("swipe-open") ? -REVEAL : 0;
+      dragging = true;
+      horizontal = null;
+      card.style.transition = "none";
+    });
+
+    card.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (horizontal === null) {
+        // Pas assez de mouvement pour trancher horizontal/vertical : on
+        // attend, sans rien empêcher (le scroll vertical natif doit rester
+        // parfaitement fluide tant qu'on n'est pas sûr que c'est un glissé
+        // latéral).
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        horizontal = Math.abs(dx) > Math.abs(dy);
+        if (!horizontal) {
+          dragging = false;
+          return;
+        }
+      }
+      if (!horizontal) return;
+      e.preventDefault();
+      const x = Math.min(0, Math.max(-REVEAL - 24, baseX + dx));
+      card.style.transform = `translateX(${x}px)`;
+    });
+
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      card.style.transition = "";
+      if (horizontal) {
+        justDragged = true;
+        const dx = (e.clientX ?? startX) - startX;
+        const x = baseX + dx;
+        if (x < -REVEAL / 2) {
+          if (swipeOpenCard && swipeOpenCard !== card) closeSwipeCard(swipeOpenCard);
+          card.style.transform = `translateX(${-REVEAL}px)`;
+          card.classList.add("swipe-open");
+          swipeOpenCard = card;
+        } else {
+          closeSwipeCard(card);
+        }
+      }
+    }
+    card.addEventListener("pointerup", endDrag);
+    card.addEventListener("pointercancel", endDrag);
+
+    // En capture, avant le clic normal (ex. data-toggle qui déplie/replie) :
+    // un tap qui suit un glissement ne doit pas AUSSI déplier la carte, et
+    // un tap sur une carte déjà ouverte (glissée) doit la refermer plutôt
+    // que basculer son état d'ouverture habituel.
+    card.addEventListener(
+      "click",
+      (e) => {
+        if (justDragged) {
+          justDragged = false;
+          e.stopPropagation();
+          e.preventDefault();
+        } else if (card.classList.contains("swipe-open")) {
+          e.stopPropagation();
+          e.preventDefault();
+          closeSwipeCard(card);
+        }
+      },
+      true
+    );
+  });
+}
+
 function formatDateFR(iso) {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });

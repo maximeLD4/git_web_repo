@@ -95,8 +95,10 @@ function duplicateBikeSession(session) {
   bikeEditingSessionId = null;
   bikeDraft = { date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
   saveJSON(KEYS.bikeDraft, bikeDraft);
-  bikeTab = "log";
-  renderBikeApp();
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication de la séance", session.label || formatDateFR(session.date), () => {
+    bikeTab = "log";
+    renderBikeApp();
+  });
 }
 
 function renderBikeApp() {
@@ -338,7 +340,8 @@ function attachBikeLogListeners() {
       }
       bikeDraft.blocks = blocks.filter((b) => b.id !== card.dataset.id);
       saveJSON(KEYS.bikeDraft, bikeDraft);
-      renderBikeContent();
+      card.classList.add("exercise-card-exit");
+      setTimeout(renderBikeContent, 200);
     });
 
     card.querySelector("[data-drag-handle]").addEventListener("pointerdown", (e) => startDragBikeBlock(e, card));
@@ -357,6 +360,7 @@ function attachBikeLogActionsBarListeners() {
     saveJSON(KEYS.bikeDraft, bikeDraft);
     renderContentPreservingScroll(renderBikeContent, () => {
       const newCard = document.querySelector(`.exercise-card[data-id="${newBlock.id}"]`);
+      if (newCard) newCard.classList.add("exercise-card-enter");
       scrollCardBottomIntoView(newCard);
     });
   });

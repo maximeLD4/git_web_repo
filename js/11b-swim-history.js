@@ -11,7 +11,7 @@ function swimSessionCardHTML(s) {
   </div>`
     )
     .join("");
-  return `
+  const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-swim-toggle="${s.id}">
       <div class="history-head-left">
@@ -36,6 +36,7 @@ function swimSessionCardHTML(s) {
         : ""
     }
   </div>`;
+  return wrapSwipeToDeleteRow(s.id, cardHTML);
 }
 
 function shiftSwimCalendarMonth(delta) {
@@ -118,6 +119,19 @@ function swimHistoryTabHTML() {
 
 
 function attachSwimHistoryListeners() {
+  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
+    showConfirm(
+      "Supprimer définitivement cette séance ? Cette action est irréversible.",
+      () => {
+        animateCardRemoval(cardEl, () => {
+          swimSessions = swimSessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.swimSessions, swimSessions);
+          renderSwimContent();
+        });
+      },
+      { confirmLabel: "Supprimer", danger: true }
+    );
+  });
   document.querySelectorAll("[data-swim-history-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
       swimHistoryViewMode = btn.dataset.swimHistoryView;

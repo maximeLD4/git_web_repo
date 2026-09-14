@@ -235,8 +235,16 @@ function duplicateSession(session) {
   });
   draft = { kind: "session", date: todayISO(), label: session.label || "", exercises: clonedExercises, editingSessionId: null };
   saveJSON(KEYS.draft, draft);
-  tab = "log";
-  render();
+  // Même capsule que pour "Enregistrer" (voir playSaveTravelAnimation) —
+  // dupliquer amène aussi vers Créer avec un nouveau brouillon prêt à
+  // revoir, ça mérite le même genre de signal plutôt qu'un simple saut
+  // d'onglet sec. Vers le bas comme un enregistrement (pas latéral comme
+  // une conversion) : on ne bascule pas de catégorie, juste vers l'espace
+  // de travail.
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication de la séance", session.label || formatDateFR(session.date), () => {
+    tab = "log";
+    render();
+  });
 }
 
 // Équivalent de duplicateSession, pour un plan — donne un nouveau plan
@@ -255,8 +263,10 @@ function duplicatePlan(plan) {
   });
   draft = { kind: "plan", date: todayISO(), label: (plan.label || "") + " (copie)", exercises: clonedExercises, editingPlanId: null };
   saveJSON(KEYS.draft, draft);
-  tab = "log";
-  render();
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication du plan", plan.label || "", () => {
+    tab = "log";
+    render();
+  });
 }
 
 // Les deux formes de données sont quasiment identiques (une séance a juste
@@ -407,25 +417,49 @@ function renderGymApp() {
 // brouillon non enregistré est en cours (peu importe si c'est une édition
 // ou une nouvelle saisie), on prévient avant de l'effacer — changer de mode
 // n'a de sens qu'en repartant d'une ardoise vierge pour l'autre mode.
+// Basculer entre Séance et Plan PENDANT la construction ne doit plus tout
+// effacer : les deux formes sont quasiment identiques (voir
+// convertSessionToPlan/convertPlanToSession, le même principe) — on
+// transforme donc ce qui est déjà saisi plutôt que de le jeter.
 function switchGymTopMode(newMode) {
   if (gymTopMode === newMode) return;
-  const hasUnsavedDraft = draft.exercises && draft.exercises.length > 0;
-  const applySwitch = () => {
-    gymTopMode = newMode;
-    clearDraft();
-    draft.kind = newMode;
-    saveJSON(KEYS.draft, draft);
-    renderGymApp();
+  gymTopMode = newMode;
+  // On relit l'état actuel du DOM directement (comme scheduleDraftSave),
+  // plutôt que de se fier à `draft` qui peut être jusqu'à 350ms en retard
+  // sur la toute dernière frappe (voir son délai) — pas question de perdre
+  // une saisie toute récente juste parce qu'elle n'avait pas encore eu le
+  // temps d'être enregistrée.
+  const dateEl = document.getElementById("log-date");
+  const labelEl = document.getElementById("log-label");
+  const currentExercises = serializeExercisesFromDOM();
+  const transformedExercises = currentExercises.map((ex) => {
+    if (newMode !== "plan") return ex;
+    // En passant vers un plan : retire le repos mesuré et l'horodatage de
+    // chaque série — propres à une exécution réelle, sans le moindre sens
+    // comme cible à venir (même logique que la conversion).
+    return {
+      ...ex,
+      sets: (ex.sets || []).map((s) => {
+        const { restSec, timestamp, ...rest } = s;
+        return rest;
+      }),
+    };
+  });
+  // On ne garde pas l'identifiant d'édition de l'ancien côté : basculer de
+  // mode prépare quelque chose de NOUVEAU à partir de ce qu'on avait, ça ne
+  // continue pas d'éditer l'original (même principe que "Convertir").
+  draft = {
+    kind: newMode,
+    date: dateEl ? dateEl.value : draft.date,
+    label: labelEl ? labelEl.value : draft.label,
+    exercises: transformedExercises,
+    editingSessionId: null,
+    editingPlanId: null,
   };
-  if (hasUnsavedDraft) {
-    showConfirm(
-      "Changer de mode effacera la séance/le plan en cours de saisie (non enregistré). Continuer ?",
-      applySwitch,
-      { confirmLabel: "Changer", danger: true }
-    );
-  } else {
-    applySwitch();
-  }
+  editingSessionId = null;
+  editingPlanId = null;
+  saveJSON(KEYS.draft, draft);
+  renderGymApp();
 }
 
 function renderContent() {
@@ -1072,22 +1106,32 @@ function attachLogListeners() {
       exs.splice(index + 1, 0, clone);
       draft.exercises = exs;
       saveJSON(KEYS.draft, draft);
-      renderContent();
+      // Même traitement que "Ajouter un exercice" (voir plus bas) : la copie
+      // mérite la même petite entrée, plutôt que d'apparaître d'un coup sec.
+      renderContentPreservingScroll(renderContent, () => {
+        const newCard = document.querySelector(`.exercise-card[data-id="${clone.id}"]`);
+        if (newCard) newCard.classList.add("exercise-card-enter");
+      });
     });
     card.querySelectorAll("[data-remove-set]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const exs = serializeExercisesFromDOM();
         const target = exs.find((e) => e.id === card.dataset.id);
         if (target.sets.length <= 1) return;
-        // Contrairement à la Séance en direct, on ne cumule pas ici le repos
-        // de la série supprimée sur la suivante — trop ambigu dans un écran
-        // d'édition manuelle où l'ordre peut lui-même avoir été modifié à la
-        // main (voir "Monter"/"Descendre"). Le repos attaché à la série
-        // supprimée disparaît donc avec elle, pour le moment.
-        target.sets = target.sets.filter((s) => s.id !== btn.dataset.removeSet);
-        draft.exercises = exs;
-        saveJSON(KEYS.draft, draft);
-        renderContent();
+        // Même petite disparition sur place que pour une séance/un plan
+        // supprimés (voir animateCardRemoval) — juste réutilisée ici pour
+        // une ligne plutôt qu'une carte entière.
+        animateCardRemoval(btn.closest(".set-row"), () => {
+          // Contrairement à la Séance en direct, on ne cumule pas ici le repos
+          // de la série supprimée sur la suivante — trop ambigu dans un écran
+          // d'édition manuelle où l'ordre peut lui-même avoir été modifié à la
+          // main (voir "Monter"/"Descendre"). Le repos attaché à la série
+          // supprimée disparaît donc avec elle, pour le moment.
+          target.sets = target.sets.filter((s) => s.id !== btn.dataset.removeSet);
+          draft.exercises = exs;
+          saveJSON(KEYS.draft, draft);
+          renderContent();
+        });
       });
     });
     const addSetBtn = card.querySelector("[data-add-set]");
@@ -1097,12 +1141,13 @@ function attachLogListeners() {
         const exerciseId = card.dataset.id;
         const target = exs.find((e) => e.id === exerciseId);
         const lastSet = target.sets[target.sets.length - 1];
-        target.sets.push({
+        const newSet = {
           id: uid(),
           weight: lastSet ? lastSet.weight : "",
           reps: lastSet ? lastSet.reps : "",
           weightMode: lastSet ? lastSet.weightMode : "off",
-        });
+        };
+        target.sets.push(newSet);
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
         // On retrouve la carte par son id après le rendu (l'ancienne
@@ -1111,6 +1156,8 @@ function attachLogListeners() {
         renderContentPreservingScroll(renderContent, () => {
           const updatedCard = document.querySelector(`.exercise-card[data-id="${exerciseId}"]`);
           scrollCardBottomIntoView(updatedCard);
+          const newRow = document.querySelector(`.set-row[data-id="${newSet.id}"]`);
+          if (newRow) newRow.classList.add("set-row-enter");
         });
       });
     }

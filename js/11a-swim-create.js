@@ -127,8 +127,10 @@ function duplicateSwimSession(session) {
   swimEditingSessionId = null;
   swimDraft = { date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
   saveJSON(KEYS.swimDraft, swimDraft);
-  swimTab = "log";
-  renderSwimApp();
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication de la séance", session.label || formatDateFR(session.date), () => {
+    swimTab = "log";
+    renderSwimApp();
+  });
 }
 
 function renderSwimApp() {
@@ -448,7 +450,8 @@ function attachSwimLogListeners() {
       }
       swimDraft.blocks = blocks.filter((b) => b.id !== card.dataset.id);
       saveJSON(KEYS.swimDraft, swimDraft);
-      renderSwimContent();
+      card.classList.add("exercise-card-exit");
+      setTimeout(renderSwimContent, 200);
     });
 
     card.querySelectorAll("[data-block-type]").forEach((btn) => {
@@ -482,6 +485,7 @@ function attachSwimLogActionsBarListeners() {
     saveJSON(KEYS.swimDraft, swimDraft);
     renderContentPreservingScroll(renderSwimContent, () => {
       const newCard = document.querySelector(`.exercise-card[data-id="${newBlock.id}"]`);
+      if (newCard) newCard.classList.add("exercise-card-enter");
       scrollCardBottomIntoView(newCard);
     });
   });
