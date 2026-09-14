@@ -32,6 +32,14 @@ let firebaseSyncTimer = null;
 // puis jamais rouverte en étant en ligne resterait silencieusement absente
 // du cloud (toujours en sécurité en local, mais jamais synchronisée).
 let firebaseDirtyKeys = new Set(loadJSON(KEYS.firebaseDirtyKeys, []));
+// Compteur par clé, incrémenté à chaque modification (voir scheduleFirebaseSync)
+// — permet à un envoi de savoir si la donnée a de nouveau changé PENDANT
+// qu'il était lui-même en vol, auquel cas il ne doit surtout pas retirer
+// cette clé des clés "à synchroniser" (voir pushToFirebase) : sans ce
+// suivi, une modification faite pendant l'envoi précédent pourrait se
+// retrouver marquée "synchronisée" alors qu'elle n'a jamais réellement
+// été envoyée.
+let firebaseKeyVersions = {};
 
 function persistFirebaseDirtyKeys() {
   saveJSON(KEYS.firebaseDirtyKeys, Array.from(firebaseDirtyKeys));
@@ -41,10 +49,31 @@ function scheduleFirebaseSync(key) {
   if (!currentUser) return;
   if (key && FIREBASE_SYNC_MAP[key]) {
     firebaseDirtyKeys.add(key);
+    firebaseKeyVersions[key] = (firebaseKeyVersions[key] || 0) + 1;
     persistFirebaseDirtyKeys();
   }
   clearTimeout(firebaseSyncTimer);
-  firebaseSyncTimer = setTimeout(pushToFirebase, 1500);
+  firebaseSyncTimer = setTimeout(requestFirebasePush, 1500);
+}
+
+// Jamais deux envois en vol en même temps : sur une connexion lente, un
+// envoi démarré tôt pourrait sinon arriver au serveur APRÈS un envoi
+// démarré plus tard (contenant des données plus fraîches), et l'écraser
+// silencieusement avec une version plus ancienne. On sérialise donc : si un
+// envoi est déjà en cours, celui-ci se contente de redéclencher un nouveau
+// cycle juste après, plutôt que de partir en parallèle.
+let firebasePushInFlight = null;
+function requestFirebasePush() {
+  if (firebasePushInFlight) {
+    firebasePushInFlight.then(() => {
+      if (firebaseDirtyKeys.size > 0) requestFirebasePush();
+    });
+    return firebasePushInFlight;
+  }
+  firebasePushInFlight = pushToFirebase().finally(() => {
+    firebasePushInFlight = null;
+  });
+  return firebasePushInFlight;
 }
 
 function pushToFirebase() {
@@ -63,6 +92,13 @@ function pushToFirebase() {
   // onAuthStateChanged) : sans cet ordre, le rapatriement pourrait écraser
   // localement des données pas encore renvoyées, les faisant disparaître.
   const keysToSync = Array.from(firebaseDirtyKeys);
+  // Capture la version de chaque clé AU MOMENT où on part avec elle — pas
+  // après coup, sinon une modification survenue pile pendant l'envoi
+  // pourrait être confondue avec celle qu'on est justement en train d'envoyer.
+  const versionsAtStart = {};
+  keysToSync.forEach((k) => {
+    versionsAtStart[k] = firebaseKeyVersions[k] || 0;
+  });
   return Promise.all(
     keysToSync.map((key) => {
       const mapping = FIREBASE_SYNC_MAP[key];
@@ -72,8 +108,15 @@ function pushToFirebase() {
         .ref("users/" + currentUser.uid + "/" + mapping.path)
         .set(mapping.getValue())
         .then(() => {
-          firebaseDirtyKeys.delete(key);
-          persistFirebaseDirtyKeys();
+          // Ne retire cette clé des "à synchroniser" que si rien de plus
+          // récent n'est arrivé entre-temps — sinon on laisse volontairement
+          // la trace, pour qu'un prochain cycle la reprenne et l'envoie à
+          // son tour (voir requestFirebasePush, qui redéclenche justement
+          // tant qu'il reste des clés marquées).
+          if ((firebaseKeyVersions[key] || 0) === versionsAtStart[key]) {
+            firebaseDirtyKeys.delete(key);
+            persistFirebaseDirtyKeys();
+          }
         })
         .catch((err) => {
           console.error("Synchronisation cloud impossible pour " + mapping.path + " (les données restent sauvegardées localement, on retentera plus tard) :", err);
@@ -87,7 +130,7 @@ function pushToFirebase() {
 // revient, pour ne pas attendre une prochaine modification quelconque avant
 // de rattraper ce qui n'avait pas pu partir hors-ligne.
 window.addEventListener("online", () => {
-  if (currentUser && firebaseDirtyKeys.size > 0) pushToFirebase();
+  if (currentUser && firebaseDirtyKeys.size > 0) requestFirebasePush();
 });
 
 // Délai limite volontaire : contrairement à une requête réseau classique
@@ -281,9 +324,70 @@ function logoutUser() {
   firebase.auth().signOut();
 }
 
+// Vide tous les "tiroirs" de données personnelles (en mémoire ET en local)
+// avant de faire confiance au cloud pour un compte qu'on n'a encore jamais
+// vu sur CET appareil précis — voir onAuthStateChanged ci-dessus. N'efface
+// jamais rien côté Firebase : uniquement le cache local de l'appareil, qui
+// pourrait appartenir à quelqu'un d'autre.
+function resetLocalDomainDataForNewAccount() {
+  sessions = [];
+  runSessions = [];
+  swimSessions = [];
+  bikeSessions = [];
+  library = [];
+  runLibrary = [];
+  swimLibrary = [];
+  bikeLibrary = [];
+  gymExerciseConfigs = [];
+  gainageExerciseConfigs = [];
+  sessionPlans = [];
+  weights = [];
+  // Ces "tiroirs" ne sont jamais synchronisés vers le cloud (voir
+  // FIREBASE_SYNC_MAP) mais restent des données personnelles en cours —
+  // un brouillon ou une séance en direct de la personne précédente n'ont
+  // pas plus leur place ici qu'un historique déjà enregistré.
+  draft = { date: todayISO(), label: "", exercises: [], kind: "session" };
+  runDraft = { date: todayISO(), label: "", blocks: [emptyBlock()] };
+  swimDraft = { date: todayISO(), label: "", blocks: [emptySwimBlock()] };
+  bikeDraft = { date: todayISO(), label: "", blocks: [emptyBikeBlock()] };
+  liveSession = null;
+  firebaseDirtyKeys = new Set();
+  persistFirebaseDirtyKeys();
+  saveJSONLocalOnly(KEYS.sessions, sessions);
+  saveJSONLocalOnly(KEYS.runSessions, runSessions);
+  saveJSONLocalOnly(KEYS.swimSessions, swimSessions);
+  saveJSONLocalOnly(KEYS.bikeSessions, bikeSessions);
+  saveJSONLocalOnly(KEYS.library, library);
+  saveJSONLocalOnly(KEYS.runLibrary, runLibrary);
+  saveJSONLocalOnly(KEYS.swimLibrary, swimLibrary);
+  saveJSONLocalOnly(KEYS.bikeLibrary, bikeLibrary);
+  saveJSONLocalOnly(KEYS.gymExerciseConfigs, gymExerciseConfigs);
+  saveJSONLocalOnly(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+  saveJSONLocalOnly(KEYS.sessionPlans, sessionPlans);
+  saveJSONLocalOnly(KEYS.weights, weights);
+  saveJSONLocalOnly(KEYS.draft, draft);
+  saveJSONLocalOnly(KEYS.runDraft, runDraft);
+  saveJSONLocalOnly(KEYS.swimDraft, swimDraft);
+  saveJSONLocalOnly(KEYS.bikeDraft, bikeDraft);
+  saveJSONLocalOnly(KEYS.liveSession, liveSession);
+}
+
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     currentUser = user;
+    // Les clés locales (gymlog:sessions, gymlog:weights...) ne sont pas
+    // propres à un compte — un appareil partagé entre deux profils (ex.
+    // un couple) pourrait donc afficher, ou pire renvoyer vers le cloud,
+    // les données de l'autre personne si la récupération ci-dessous
+    // n'aboutit pas à temps (hors-ligne). On ne repart à vide QUE si
+    // l'identifiant du compte a changé depuis la dernière connexion sur
+    // cet appareil — pour ne surtout pas priver le MÊME utilisateur de
+    // son propre cache hors-ligne à chaque réouverture.
+    const lastUid = loadJSON(KEYS.lastUid, null);
+    if (lastUid !== user.uid) {
+      resetLocalDomainDataForNewAccount();
+      saveJSONLocalOnly(KEYS.lastUid, user.uid);
+    }
     renderAuthLoadingScreen("Récupération de tes données...");
     // Ordre volontaire et important : on pousse D'ABORD tout ce qui serait
     // resté en attente d'une session précédente (voir persistFirebaseDirtyKeys
@@ -293,7 +397,7 @@ firebase.auth().onAuthStateChanged((user) => {
     // cette séance pas encore renvoyée avec une version plus ancienne du
     // cloud — elle aurait alors disparu, comme observé en pratique.
     const flushPending = firebaseDirtyKeys.size > 0
-      ? withTimeout(pushToFirebase(), 3000, () => {
+      ? withTimeout(requestFirebasePush(), 3000, () => {
           console.warn("Envoi des données en attente trop long (probablement hors-ligne) — le rapatriement se fait quand même, on retentera l'envoi plus tard.");
         })
       : Promise.resolve();

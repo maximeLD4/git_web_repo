@@ -4,22 +4,6 @@ function categoryLabel(key) {
   return found ? found.label : key;
 }
 
-function weightChipAreaHTML(config) {
-  if (!config || !config.baseWeights || config.baseWeights.length === 0) return "";
-  const bases = [...config.baseWeights].sort((a, b) => a - b);
-  const maxInc = config.maxIncrement || 0;
-  const baseChips = bases.map((w) => `<button type="button" class="weight-chip" data-base-chip="${w}">${w}kg</button>`).join("");
-  let incRow = "";
-  if (maxInc > 0) {
-    const incs = [];
-    for (let i = 0; i <= maxInc; i++) incs.push(i);
-    incRow = `<div class="weight-chip-row increments">${incs
-      .map((i) => `<button type="button" class="weight-chip increment" data-inc-chip="${i}">${i === 0 ? "+0" : "+" + i}</button>`)
-      .join("")}</div>`;
-  }
-  return `<div class="weight-chip-label">${ICONS.gear} Poids rapide (${config.name})</div><div class="weight-chip-row">${baseChips}</div>${incRow}`;
-}
-
 function renderSettingsApp() {
   app.className = "theme-settings";
   app.innerHTML = `

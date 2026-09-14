@@ -29,8 +29,7 @@ function renderLiveApp(freshEntry) {
           <div class="live-header-chrono live-header-chrono-big" id="live-chrono">00:00</div>
         </div>
         <div class="live-header-actions">
-          <button type="button" class="live-cancel-btn" data-live-cancel>Annuler</button>
-          <button type="button" class="live-stop-btn" data-live-stop>${ICONS.check} Fin</button>
+          <button type="button" class="live-stop-btn" data-live-stop>${ICONS.check} Terminer</button>
         </div>
       </div>
       <div class="live-body" id="live-content"></div>
@@ -51,8 +50,7 @@ function renderLiveApp(freshEntry) {
     }
     renderLiveApp();
   });
-  document.querySelector("[data-live-stop]").addEventListener("click", finishLiveSession);
-  document.querySelector("[data-live-cancel]").addEventListener("click", cancelLiveSession);
+  document.querySelector("[data-live-stop]").addEventListener("click", endLiveSession);
   startLiveChrono();
   ensureLiveRestTicking();
   renderLiveStep();
@@ -1161,27 +1159,12 @@ function autoFinishLiveSetIfInProgress() {
   }
 }
 
-function cancelLiveSession() {
-  showConfirm(
-    "Annuler ? La séance sera définitivement perdues.",
-    () => {
-      clearInterval(liveChronoInterval);
-      clearInterval(liveRestChronoInterval);
-      liveSession = null;
-      saveJSON(KEYS.liveSession, null);
-      liveStep = "category";
-      liveDraftType = "";
-      liveDraftCategory = "";
-      liveDraftName = "";
-      liveActiveExerciseId = null;
-      liveDraftRestSec = null;
-      goHome();
-    },
-    { confirmLabel: "Annuler la séance", danger: true }
-  );
-}
-
-function finishLiveSession() {
+// Un seul point d'entrée pour finir l'entraînement (au lieu de deux
+// boutons en permanence visibles, "Annuler" et "Fin", qui demandaient de
+// déjà savoir ce qu'on voulait faire du résultat avant même d'agir) : on
+// tape "Terminer", puis seulement ensuite on choisit quoi faire de ce qui
+// a été fait cette fois-ci — enregistrer, supprimer, ou reprendre.
+function endLiveSession() {
   // Comme pour changer d'exercice ou revenir en arrière : si une série est
   // encore en cours ("Débuter" tapé, "Finir" pas encore), on la finalise
   // d'abord — sinon, pour le cardio notamment, elle serait enregistrée avec
@@ -1190,67 +1173,108 @@ function finishLiveSession() {
   autoFinishLiveSetIfInProgress();
   const cleaned = (liveSession.exercises || []).filter((e) => e.sets.length > 0);
   if (cleaned.length === 0) {
-    // Rien d'enregistré cette fois-ci : on quitte simplement, sans créer de
-    // séance vide.
-    clearInterval(liveChronoInterval);
-    clearInterval(liveRestChronoInterval);
-    liveSession = null;
-    saveJSON(KEYS.liveSession, null);
-    liveDraftRestSec = null;
-    goHome();
+    // Rien d'enregistré cette fois-ci : rien à choisir non plus, on quitte
+    // directement sans proposer un choix qui n'aurait pas de sens.
+    discardLiveSession();
     return;
   }
-  showConfirm("Terminer et enregistrer cette séance ?", () => {
-    closeCurrentLiveSegment();
-    const totalDurationSec = liveSession.startedAt ? Math.round((Date.now() - liveSession.startedAt) / 1000) : null;
-    // Additionne, pour chaque exercice, la somme de ses segments de temps
-    // (utile en cas de reprise multiple d'un même exercice en superset).
-    const withDurations = cleaned.map((ex) => {
-      const norm = ex.name.trim().toLowerCase();
-      const totalMs = (liveSession.segments || [])
-        .filter((s) => s.name.trim().toLowerCase() === norm && s.end !== null)
-        .reduce((sum, s) => sum + (s.end - s.start), 0);
-      return { ...ex, durationSec: Math.round(totalMs / 1000) };
-    });
+  showEndWorkoutChoice(cleaned);
+}
 
-    const otherCount = sessions.length;
-    const session = {
-      id: uid(),
-      date: liveSession.date,
-      label: liveSession.label || `Séance ${otherCount + 1}`,
-      exercises: withDurations,
-      planned: false,
-      durationSec: totalDurationSec,
-    };
-    sessions = [session, ...sessions];
-    library = Array.from(new Set([...library, ...cleaned.map((e) => e.name)])).sort((a, b) => a.localeCompare(b));
-    saveJSON(KEYS.sessions, sessions);
-    saveJSON(KEYS.library, library);
-
-    clearInterval(liveChronoInterval);
-    clearInterval(liveRestChronoInterval);
-    liveSession = null;
-    saveJSON(KEYS.liveSession, null);
-    liveStep = "category";
-    liveDraftType = "";
-    liveDraftCategory = "";
-    liveDraftName = "";
-    liveActiveExerciseId = null;
-    liveDraftRestSec = null;
-
-    // Direction la liste des séances de Salle de sport plutôt que l'Accueil
-    // — même logique que pour "Enregistrer" depuis Créer : la séance qu'on
-    // vient de finir doit se voir tout de suite, pas se deviner. On ouvre en
-    // plus directement sa carte (au lieu de la laisser repliée dans la
-    // liste) pour un vrai récap immédiat : exercices, séries, tout y est
-    // sans avoir à re-taper dessus.
-    currentApp = "gym";
-    tab = "history";
-    gymTopMode = "session";
-    historyViewMode = "list";
-    openHistoryIds[session.id] = true;
-    render();
+function showEndWorkoutChoice(cleaned) {
+  const root = document.getElementById("custom-modal-root");
+  root.innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal-box">
+        <div class="modal-message">Terminer l'entraînement ?</div>
+        <div class="modal-actions modal-actions-stack">
+          <button type="button" class="save-btn" data-end-save>${ICONS.check} Enregistrer la séance</button>
+          <button type="button" class="modal-btn danger" data-end-discard>Supprimer sans enregistrer</button>
+          <button type="button" class="modal-btn modal-cancel" data-end-continue>Continuer l'entraînement</button>
+        </div>
+      </div>
+    </div>`;
+  const close = () => {
+    root.innerHTML = "";
+  };
+  root.querySelector("[data-end-save]").addEventListener("click", () => {
+    close();
+    saveLiveSessionAndFinish(cleaned);
   });
+  root.querySelector("[data-end-discard]").addEventListener("click", () => {
+    close();
+    discardLiveSession();
+  });
+  root.querySelector("[data-end-continue]").addEventListener("click", close);
+}
+
+// Remet tout à zéro et quitte, sans rien enregistrer — utilisé aussi bien
+// quand il n'y a rien à sauver que sur le choix explicite "Supprimer" du
+// menu de fin (voir showEndWorkoutChoice, où ce choix suffit déjà comme
+// confirmation : pas besoin d'un second "Es-tu sûr ?" par-dessus).
+function discardLiveSession() {
+  clearInterval(liveChronoInterval);
+  clearInterval(liveRestChronoInterval);
+  liveSession = null;
+  saveJSON(KEYS.liveSession, null);
+  liveStep = "category";
+  liveDraftType = "";
+  liveDraftCategory = "";
+  liveDraftName = "";
+  liveActiveExerciseId = null;
+  liveDraftRestSec = null;
+  goHome();
+}
+
+function saveLiveSessionAndFinish(cleaned) {
+  closeCurrentLiveSegment();
+  const totalDurationSec = liveSession.startedAt ? Math.round((Date.now() - liveSession.startedAt) / 1000) : null;
+  // Additionne, pour chaque exercice, la somme de ses segments de temps
+  // (utile en cas de reprise multiple d'un même exercice en superset).
+  const withDurations = cleaned.map((ex) => {
+    const norm = ex.name.trim().toLowerCase();
+    const totalMs = (liveSession.segments || [])
+      .filter((s) => s.name.trim().toLowerCase() === norm && s.end !== null)
+      .reduce((sum, s) => sum + (s.end - s.start), 0);
+    return { ...ex, durationSec: Math.round(totalMs / 1000) };
+  });
+
+  const otherCount = sessions.length;
+  const session = {
+    id: uid(),
+    date: liveSession.date,
+    label: liveSession.label || `Séance ${otherCount + 1}`,
+    exercises: withDurations,
+    durationSec: totalDurationSec,
+  };
+  sessions = [session, ...sessions];
+  library = Array.from(new Set([...library, ...cleaned.map((e) => e.name)])).sort((a, b) => a.localeCompare(b));
+  saveJSON(KEYS.sessions, sessions);
+  saveJSON(KEYS.library, library);
+
+  clearInterval(liveChronoInterval);
+  clearInterval(liveRestChronoInterval);
+  liveSession = null;
+  saveJSON(KEYS.liveSession, null);
+  liveStep = "category";
+  liveDraftType = "";
+  liveDraftCategory = "";
+  liveDraftName = "";
+  liveActiveExerciseId = null;
+  liveDraftRestSec = null;
+
+  // Direction la liste des séances de Salle de sport plutôt que l'Accueil
+  // — même logique que pour "Enregistrer" depuis Créer : la séance qu'on
+  // vient de finir doit se voir tout de suite, pas se deviner. On ouvre en
+  // plus directement sa carte (au lieu de la laisser repliée dans la
+  // liste) pour un vrai récap immédiat : exercices, séries, tout y est
+  // sans avoir à re-taper dessus.
+  currentApp = "gym";
+  tab = "history";
+  gymTopMode = "session";
+  historyViewMode = "list";
+  openHistoryIds[session.id] = true;
+  render();
 }
 
 function attachLiveStepListeners() {

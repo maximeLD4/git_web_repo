@@ -1,5 +1,6 @@
 /* ---------- storage helpers (fully local, no account, no server) ---------- */
 const KEYS = {
+  lastUid: "gymlog:last-uid",
   colorMode: "gymlog:color-mode",
   sessions: "gymlog:sessions",
   library: "gymlog:library",

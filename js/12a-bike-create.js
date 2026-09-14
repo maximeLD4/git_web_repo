@@ -1,14 +1,3 @@
-function computeBikeTriangle(durationVal, distanceVal, speedVal) {
-  const d = parseFloat(durationVal), dist = parseFloat(distanceVal), sp = parseFloat(speedVal);
-  const dOk = durationVal !== "" && !isNaN(d);
-  const distOk = distanceVal !== "" && !isNaN(dist) && dist > 0;
-  const spOk = speedVal !== "" && !isNaN(sp) && sp > 0;
-  const result = { duration: durationVal, distance: distanceVal, speed: speedVal };
-  if (dOk && distOk && !spOk) result.speed = String(round2((dist * 60) / d));
-  else if (dOk && spOk && !distOk) result.distance = String(round2((sp * d) / 60));
-  else if (distOk && spOk && !dOk) result.duration = String(round2((dist / sp) * 60));
-  return result;
-}
 function bikeBlockHasData(b) {
   return !!(b.duration || b.distance || b.speed);
 }

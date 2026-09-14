@@ -28,6 +28,71 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.42.0 - 2026-09-04
+====================
+
+- **Séance en direct : un seul bouton "Terminer" au lieu de "Annuler" et
+  "Fin" en permanence côte à côte.** Avant, il fallait déjà savoir ce
+  qu'on voulait faire du résultat (garder ou jeter) rien que pour choisir
+  le bon bouton. Désormais : un tap sur "Terminer" propose "Enregistrer la
+  séance", "Supprimer sans enregistrer" ou "Continuer l'entraînement" — la
+  décision se prend après, pas avant. Aucun tap supplémentaire pour le cas
+  courant (terminer et enregistrer reste un aller direct, comme avant).
+  Rien n'a changé si aucun exercice n'a été fait cette fois-ci : ça quitte
+  toujours directement, sans proposer un choix inutile.
+  - Testé les 4 cas (rien fait, continuer, enregistrer, supprimer) : tous
+    se comportent exactement comme prévu.
+  - Nettoyé au passage un `planned: false` oublié lors de la suppression de
+    la fonctionnalité "à venir" (2.40.0) — sans effet, juste un résidu.
+
+2.41.0 - 2026-09-04
+====================
+
+- **Audit de la sauvegarde/synchro — deux vrais problèmes trouvés et
+  corrigés :**
+  - **Isolation entre profils sur un appareil partagé.** Les clés locales
+    (séances, poids, brouillon en cours, séance en direct) n'étaient liées
+    à aucun compte précis. Sur un appareil partagé entre deux personnes, si
+    la récupération cloud dépassait le délai de 3s au moment où une
+    deuxième personne se connectait (mauvaise connexion), l'app pouvait
+    afficher — ou pire, repousser vers le cloud — les données de la
+    première personne. L'app retient désormais qui s'est connecté en
+    dernier sur cet appareil, et vide tout dès qu'un compte différent se
+    connecte, sans jamais priver la même personne de son propre cache
+    hors-ligne quand elle revient. Testé.
+  - **Perte silencieuse possible lors d'un envoi cloud en cours.** Le
+    système retirait une donnée de la liste "à synchroniser" dès qu'un
+    envoi réussissait — même si cette donnée avait encore changé PENDANT
+    que cet envoi était en vol (connexion lente). Cette modification-là
+    pouvait ne jamais partir vers le cloud, sans la moindre erreur. Corrigé
+    avec un vrai suivi de version par donnée : un envoi ne marque une
+    donnée "synchronisée" que si rien de plus récent n'est arrivé entre
+    temps ; sinon un nouveau cycle la reprend automatiquement. Les envois
+    sont aussi désormais strictement séquentiels (jamais deux en vol en
+    même temps), pour éviter qu'un envoi plus ancien n'écrase un envoi plus
+    récent en arrivant après lui. Testé avec un Firebase simulé lent : plus
+    aucun chevauchement, la donnée la plus fraîche est bien celle qui finit
+    par être confirmée.
+
+2.40.3 - 2026-09-04
+====================
+
+- **Audit complet de la navigation et nettoyage des utilitaires
+  dépréciés :**
+  - Navigation : vérifié que les 4 mécanismes de "retour à l'endroit
+    d'origine" (calendrier, Live, Créer, scanner) se remettent bien à zéro
+    une fois consommés et se composent correctement entre eux sans
+    s'écraser. Rien à corriger.
+  - Supprimé 3 fonctions mortes (`computeBikeTriangle`,
+    `computeSwimTriangle`, `weightChipAreaHTML` — d'anciens mécanismes
+    superflus depuis longtemps), 1 variable d'état morte
+    (`liveDraftWeight`), et toute une famille CSS orpheline (`.home-row`
+    et ses variantes — un ancien style de liste pour l'Accueil remplacé
+    depuis par les tuiles actuelles — plus `.live-header-title`,
+    `.live-post-set`, `.performance-counter-anim`, `.weight-chip-area`).
+  - Testé sur les 9 écrans principaux + les formulaires concernés
+    (Vélo, Natation, Réglages-exercice) : aucune erreur.
+
 2.40.2 - 2026-09-04
 ====================
 

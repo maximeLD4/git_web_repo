@@ -1,14 +1,3 @@
-function computeSwimTriangle(durationVal, distanceVal, paceVal) {
-  const d = parseFloat(durationVal), dist = parseFloat(distanceVal), p = parseFloat(paceVal);
-  const dOk = durationVal !== "" && !isNaN(d);
-  const distOk = distanceVal !== "" && !isNaN(dist) && dist > 0;
-  const pOk = paceVal !== "" && !isNaN(p) && p > 0;
-  const result = { duration: durationVal, distance: distanceVal, pace: paceVal };
-  if (dOk && distOk && !pOk) result.pace = String(round2((d * 100) / dist));
-  else if (dOk && pOk && !distOk) result.distance = String(round2((d * 100) / p));
-  else if (distOk && pOk && !dOk) result.duration = String(round2((p * dist) / 100));
-  return result;
-}
 function formatSwimPaceDisplay(paceStr) {
   const val = parseFloat(paceStr);
   if (!paceStr || isNaN(val) || val <= 0) return null;
