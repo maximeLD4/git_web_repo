@@ -231,9 +231,11 @@ function attachHistoryListeners() {
       showConfirm(
         "Supprimer définitivement ce plan ? Cette action est irréversible.",
         () => {
-          sessionPlans = sessionPlans.filter((p) => p.id !== btn.dataset.deletePlan);
-          saveJSON(KEYS.sessionPlans, sessionPlans);
-          renderContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            sessionPlans = sessionPlans.filter((p) => p.id !== btn.dataset.deletePlan);
+            saveJSON(KEYS.sessionPlans, sessionPlans);
+            renderContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );
@@ -270,9 +272,11 @@ function attachHistoryListeners() {
       showConfirm(
         "Supprimer définitivement cette séance ? Cette action est irréversible.",
         () => {
-          sessions = sessions.filter((s) => s.id !== btn.dataset.deleteSession);
-          saveJSON(KEYS.sessions, sessions);
-          renderContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            sessions = sessions.filter((s) => s.id !== btn.dataset.deleteSession);
+            saveJSON(KEYS.sessions, sessions);
+            renderContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );

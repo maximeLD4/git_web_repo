@@ -485,7 +485,13 @@ select.ex-name-pill:focus { outline: none; }
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28); pointer-events: none; max-width: min(320px, calc(100vw - 52px));
 }
 .save-capsule.arrive { opacity: 1; transform: translate(-50%, -50%) scale(1); transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.18s ease; }
-.save-capsule.travel { opacity: 0; transform: translate(-50%, 90vh) scale(0.6); transition: transform 0.42s cubic-bezier(0.5, 0, 0.75, 0.1), opacity 0.4s ease 0.08s; }
+/* Direction du "vol" : vers le bas par défaut (là où vit une liste, voir
+   playSaveTravelAnimation), ou latéralement pour la conversion séance ↔
+   plan (voir playConvertTravelAnimation), qui reprend le sens du grand
+   sélecteur du haut — Séances à gauche, Plans à droite. */
+.save-capsule.travel-down { opacity: 0; transform: translate(-50%, 90vh) scale(0.6); transition: transform 0.42s cubic-bezier(0.5, 0, 0.75, 0.1), opacity 0.4s ease 0.08s; }
+.save-capsule.travel-right { opacity: 0; transform: translate(80vw, -50%) scale(0.6); transition: transform 0.42s cubic-bezier(0.5, 0, 0.75, 0.1), opacity 0.4s ease 0.08s; }
+.save-capsule.travel-left { opacity: 0; transform: translate(-80vw, -50%) scale(0.6); transition: transform 0.42s cubic-bezier(0.5, 0, 0.75, 0.1), opacity 0.4s ease 0.08s; }
 .save-capsule-icon { width: 30px; height: 30px; flex-shrink: 0; border-radius: var(--radius); background: rgba(var(--on-ink-rgb), 0.16); display: flex; align-items: center; justify-content: center; }
 .save-capsule-title { font-weight: 700; font-size: 13.5px; }
 .save-capsule-subtitle { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(var(--on-ink-rgb), 0.72); margin-top: 2px; }
@@ -503,6 +509,20 @@ select.ex-name-pill:focus { outline: none; }
   100% { box-shadow: 0 0 0 2px rgba(var(--yellow-rgb), 0); }
 }
 .history-card.just-landed { animation: history-card-land 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), history-card-glow-fade 1.6s ease 0.3s forwards; }
+/* Disparition d'une carte supprimée — s'efface sur place (hauteur, opacité,
+   léger rétrécissement) plutôt que de simplement disparaître d'un coup au
+   rechargement de la liste. Voir animateCardRemoval dans 02-utils.js, qui
+   fige d'abord la hauteur réelle en style inline avant d'ajouter cette
+   classe (une transition ne peut pas partir de "auto"). */
+.history-card.card-removing {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.26s ease, transform 0.3s cubic-bezier(0.4, 0, 0.6, 1), margin-bottom 0.3s ease, border-width 0.3s ease;
+  height: 0 !important;
+  opacity: 0;
+  transform: scale(0.95);
+  margin-bottom: 0 !important;
+  border-width: 0 !important;
+  pointer-events: none;
+}
 
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(var(--ink-rgb), 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 26px; backdrop-filter: blur(5px); animation: modal-fade-in 0.18s ease; }

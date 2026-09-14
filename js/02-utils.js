@@ -294,7 +294,7 @@ function showAlert(message) {
 // `justLandedItemId` plus bas) a donc le temps de s'installer dessous avant que
 // la capsule ne s'efface, pour que les deux se répondent au lieu de se succéder
 // sèchement.
-function playSaveTravelAnimation(iconHTML, title, subtitle, onMidpoint) {
+function playSaveTravelAnimation(iconHTML, title, subtitle, onMidpoint, direction = "down") {
   const el = document.createElement("div");
   el.className = "save-capsule";
   el.innerHTML = `
@@ -310,12 +310,34 @@ function playSaveTravelAnimation(iconHTML, title, subtitle, onMidpoint) {
   requestAnimationFrame(() => el.classList.add("arrive"));
   setTimeout(() => {
     el.classList.remove("arrive");
-    el.classList.add("travel");
+    el.classList.add("travel-" + direction);
     setTimeout(() => {
       if (onMidpoint) onMidpoint();
     }, 160);
     setTimeout(() => el.remove(), 480);
   }, 420);
+}
+
+// Petite animation de disparition avant de retirer réellement une carte de
+// la liste (séance, plan...) — pour que supprimer se sente différent d'un
+// simple rechargement de liste, sans reprendre l'animation de création
+// (2.43.0/2.44.0) : ici la carte s'efface sur PLACE, elle ne voyage nulle
+// part. `card` peut être introuvable (déjà retirée, structure imprévue) :
+// dans ce cas on appelle `onComplete` tout de suite, sans planter.
+function animateCardRemoval(card, onComplete) {
+  if (!card) {
+    onComplete();
+    return;
+  }
+  const height = card.getBoundingClientRect().height;
+  card.style.height = height + "px";
+  card.style.overflow = "hidden";
+  // Force le navigateur à "figer" cette hauteur avant d'ajouter la classe
+  // qui déclenche la transition — sinon, posée dans le même tick, il n'y
+  // aurait rien à animer (déjà dans son état final au tout premier rendu).
+  card.getBoundingClientRect();
+  requestAnimationFrame(() => card.classList.add("card-removing"));
+  setTimeout(onComplete, 320);
 }
 
 function formatDateFR(iso) {

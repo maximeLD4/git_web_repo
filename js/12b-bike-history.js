@@ -148,9 +148,11 @@ function attachBikeHistoryListeners() {
       showConfirm(
         "Supprimer définitivement cette séance ? Cette action est irréversible.",
         () => {
-          bikeSessions = bikeSessions.filter((s) => s.id !== btn.dataset.bikeDeleteSession);
-          saveJSON(KEYS.bikeSessions, bikeSessions);
-          renderBikeContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            bikeSessions = bikeSessions.filter((s) => s.id !== btn.dataset.bikeDeleteSession);
+            saveJSON(KEYS.bikeSessions, bikeSessions);
+            renderBikeContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );

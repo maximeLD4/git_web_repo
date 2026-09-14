@@ -287,8 +287,14 @@ function convertSessionToPlan(session) {
   });
   draft = { kind: "plan", date: todayISO(), label: session.label || formatDateFR(session.date), exercises: clonedExercises, editingPlanId: null };
   saveJSON(KEYS.draft, draft);
-  tab = "log";
-  render();
+  // Glisse vers la droite — le sens du grand sélecteur du haut, Plans à
+  // droite — plutôt que le vol vers le bas utilisé pour "Enregistrer"
+  // (voir playSaveTravelAnimation) : ici on ne range rien dans une liste,
+  // on bascule d'un côté à l'autre.
+  playSaveTravelAnimation(ICONS.stopwatch, "Conversion en plan", session.label || formatDateFR(session.date), () => {
+    tab = "log";
+    render();
+  }, "right");
 }
 
 // Sens inverse : un plan préparé devient une séance à dater (aujourd'hui
@@ -307,8 +313,11 @@ function convertPlanToSession(plan) {
   });
   draft = { kind: "session", date: todayISO(), label: plan.label || "", exercises: clonedExercises, editingSessionId: null };
   saveJSON(KEYS.draft, draft);
-  tab = "log";
-  render();
+  // Sens inverse du convertisseur ci-dessus : vers la gauche (Séances).
+  playSaveTravelAnimation(ICONS.dumbbell, "Conversion en séance", plan.label || "", () => {
+    tab = "log";
+    render();
+  }, "left");
 }
 
 function findExerciseConfig(name) {

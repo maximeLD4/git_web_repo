@@ -148,9 +148,11 @@ function attachSwimHistoryListeners() {
       showConfirm(
         "Supprimer définitivement cette séance ? Cette action est irréversible.",
         () => {
-          swimSessions = swimSessions.filter((s) => s.id !== btn.dataset.swimDeleteSession);
-          saveJSON(KEYS.swimSessions, swimSessions);
-          renderSwimContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            swimSessions = swimSessions.filter((s) => s.id !== btn.dataset.swimDeleteSession);
+            saveJSON(KEYS.swimSessions, swimSessions);
+            renderSwimContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );

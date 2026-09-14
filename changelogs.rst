@@ -28,6 +28,34 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.45.0 - 2026-09-04
+====================
+
+- **Supprimer une séance ou un plan a maintenant sa propre petite
+  animation de disparition**, bien distincte de celles de création
+  (2.43.0/2.44.0) — la carte s'efface sur place (rétrécit, s'estompe)
+  plutôt que de simplement disparaître d'un coup au rechargement de la
+  liste, une fois la confirmation validée.
+  - Branché sur les 6 endroits où on peut supprimer une séance/un plan :
+    Salle de sport (séance et plan), Course à pied, Natation, Vélo, et le
+    calendrier partagé.
+  - Testé les 6 : la carte se fige à sa vraie hauteur avant de rétrécir
+    (une animation ne peut pas partir d'une hauteur "automatique"), puis
+    la donnée est bien retirée une fois l'animation terminée.
+
+2.44.0 - 2026-09-04
+====================
+
+- **La capsule de sauvegarde (2.43.0) peut désormais voler horizontalement,
+  utilisée pour la conversion séance ↔ plan.** Convertir une séance en plan
+  fait s'envoler la capsule vers la **droite** (le côté "Plans" du grand
+  sélecteur du haut) ; convertir un plan en séance fait l'inverse, vers la
+  **gauche**. La fonction commune (`playSaveTravelAnimation`) accepte
+  maintenant une direction (bas par défaut, gauche ou droite) — les appels
+  existants (Enregistrer une séance/un plan) n'ont pas eu besoin de changer.
+  Testé dans les deux sens : bonne direction, bon texte, bon atterrissage
+  sur Créer avec le brouillon prêt à revoir.
+
 2.43.2 - 2026-09-04
 ====================
 

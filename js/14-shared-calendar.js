@@ -266,20 +266,22 @@ function attachSharedCalendarListeners() {
       showConfirm(
         "Supprimer définitivement cette activité ? Cette action est irréversible.",
         () => {
-          if (type === "gym" || type === "gainage") {
-            sessions = sessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.sessions, sessions);
-          } else if (type === "run") {
-            runSessions = runSessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.runSessions, runSessions);
-          } else if (type === "swim") {
-            swimSessions = swimSessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.swimSessions, swimSessions);
-          } else {
-            bikeSessions = bikeSessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.bikeSessions, bikeSessions);
-          }
-          renderSharedCalendarContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            if (type === "gym" || type === "gainage") {
+              sessions = sessions.filter((s) => s.id !== id);
+              saveJSON(KEYS.sessions, sessions);
+            } else if (type === "run") {
+              runSessions = runSessions.filter((s) => s.id !== id);
+              saveJSON(KEYS.runSessions, runSessions);
+            } else if (type === "swim") {
+              swimSessions = swimSessions.filter((s) => s.id !== id);
+              saveJSON(KEYS.swimSessions, swimSessions);
+            } else {
+              bikeSessions = bikeSessions.filter((s) => s.id !== id);
+              saveJSON(KEYS.bikeSessions, bikeSessions);
+            }
+            renderSharedCalendarContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );

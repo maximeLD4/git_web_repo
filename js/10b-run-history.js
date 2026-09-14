@@ -174,9 +174,11 @@ function attachRunHistoryListeners() {
       showConfirm(
         "Supprimer définitivement cette séance ? Cette action est irréversible.",
         () => {
-          runSessions = runSessions.filter((s) => s.id !== btn.dataset.runDeleteSession);
-          saveJSON(KEYS.runSessions, runSessions);
-          renderRunContent();
+          animateCardRemoval(btn.closest(".history-card"), () => {
+            runSessions = runSessions.filter((s) => s.id !== btn.dataset.runDeleteSession);
+            saveJSON(KEYS.runSessions, runSessions);
+            renderRunContent();
+          });
         },
         { confirmLabel: "Supprimer", danger: true }
       );
