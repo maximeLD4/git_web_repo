@@ -28,6 +28,60 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.43.2 - 2026-09-04
+====================
+
+- **Corrigé un vrai bug important : toutes les fenêtres de confirmation de
+  l'app (Terminer, Déconnexion, suppression d'une séance/d'un plan,
+  alertes...) étaient invisibles.** La règle CSS qui centre et fixe ces
+  fenêtres à l'écran (`.modal-backdrop`) avait disparu par erreur —
+  vraisemblablement supprimée par inadvertance lors d'un nettoyage de code
+  mort précédent. Sans elle, la fenêtre se créait bien dans la page mais
+  s'affichait tout en bas, hors de l'écran visible : au clic, absolument
+  rien ne semblait se passer, aucune erreur ne s'affichait.
+  - Trouvé en comparant la position réellement calculée de la fenêtre
+    (poussée en bas de la page) à ce qu'elle devrait être (fixée, centrée,
+    par-dessus tout) — la vraie cause n'avait aucun rapport avec Séance en
+    direct elle-même, contrairement à ma première piste (2.43.1), qui
+    n'était pas fausse mais ne visait pas le bon problème.
+  - Vérifié que la fenêtre s'affiche de nouveau normalement pour : Terminer
+    l'entraînement, Déconnexion, suppression d'une séance — dans les 3
+    modes de couleur (Jour, Nuit, Anne).
+
+2.43.1 - 2026-09-04
+====================
+
+- **Corrigé : "Finir la série" pouvait rester totalement inopérant après
+  être passé par le menu "Terminer" (2.42.0).** Cause trouvée : taper
+  "Terminer" finalisait silencieusement la série en cours (et arrêtait une
+  éventuelle boucle Gainage) immédiatement — même si on choisissait ensuite
+  "Continuer l'entraînement". L'écran restait alors affiché sur un état qui
+  n'existait déjà plus en interne, rendant "Finir la série" totalement
+  inerte au clic suivant (aucune erreur, juste plus rien à finir). Corrigé
+  en ne finalisant la série/la boucle qu'au moment de vraiment enregistrer,
+  jamais avant — "Continuer l'entraînement" ne modifie donc plus rien du
+  tout. Testé le scénario exact (série en cours → Terminer → Continuer →
+  Finir la série) : la série reste bien "en cours" après "Continuer", et
+  "Finir" fonctionne de nouveau normalement.
+
+2.43.0 - 2026-09-04
+====================
+
+- **Enregistrer une séance a maintenant sa propre animation, distincte
+  d'une suppression.** Jusque là, enregistrer et supprimer se ressemblaient
+  trop — même saut sec et instantané d'un écran à l'autre. Désormais, une
+  petite capsule (icône, nom de la séance, nombre d'exercices) apparaît
+  par-dessus l'écran juste après avoir confirmé, puis "s'envole" vers le
+  bas pendant que l'écran change en dessous vers la liste ; la carte qui
+  vient d'arriver s'y pose avec une légère animation d'entrée et un
+  surlignage qui s'efface tout seul, pour qu'on la repère sans effort.
+  - Branché sur les 4 sports (Salle de sport, Course à pied, Natation,
+    Vélo) et sur les plans, aussi bien depuis Créer que depuis Séance en
+    direct (bouton "Enregistrer" du menu "Terminer").
+  - Testé de bout en bout sur les 4 sports + plans : capsule visible juste
+    après le clic (avant même que la navigation n'ait lieu), bonne carte
+    mise en valeur à l'arrivée, aucune erreur.
+
 2.42.0 - 2026-09-04
 ====================
 

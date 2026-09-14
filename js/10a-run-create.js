@@ -591,10 +591,14 @@ function attachRunLogActionsBarListeners() {
       return;
     }
     // Direction la liste des séances plutôt que de rester sur "Créer" avec
-    // un nouveau brouillon vide (même logique que pour Salle de sport).
-    runTab = "history";
-    runHistoryViewMode = "list";
-    renderRunApp();
+    // un nouveau brouillon vide (même logique que pour Salle de sport),
+    // avec la même capsule qui s'envole pour bien montrer où elle atterrit.
+    justLandedItemId = session.id;
+    playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
+      runTab = "history";
+      runHistoryViewMode = "list";
+      renderRunApp();
+    });
   });
 }
 

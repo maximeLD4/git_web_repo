@@ -284,6 +284,40 @@ function showAlert(message) {
     root.innerHTML = "";
   });
 }
+// Enregistrer une séance ne doit pas "sentir" comme la supprimer — visuellement,
+// les deux ne sont aujourd'hui qu'un même genre de saut instantané d'un écran à
+// l'autre. Cette petite capsule matérialise la séance qu'on vient de créer,
+// apparaît par-dessus l'écran, puis "s'envole" vers le bas — exactement là où
+// vit la liste vers laquelle on navigue — avant de disparaître. `onMidpoint`
+// est appelé pendant qu'elle s'envole (pas après) : le nouvel écran (liste,
+// avec la carte qui vient d'arriver déjà mise en valeur — voir
+// `justLandedItemId` plus bas) a donc le temps de s'installer dessous avant que
+// la capsule ne s'efface, pour que les deux se répondent au lieu de se succéder
+// sèchement.
+function playSaveTravelAnimation(iconHTML, title, subtitle, onMidpoint) {
+  const el = document.createElement("div");
+  el.className = "save-capsule";
+  el.innerHTML = `
+    <div class="save-capsule-icon">${iconHTML}</div>
+    <div class="save-capsule-text">
+      <div class="save-capsule-title">${title}</div>
+      ${subtitle ? `<div class="save-capsule-subtitle">${subtitle}</div>` : ""}
+    </div>`;
+  document.body.appendChild(el);
+  // Un frame d'écart avant d'ajouter la classe qui déclenche la transition
+  // d'entrée — sinon, posée dès la création de l'élément, elle n'aurait rien
+  // à animer (déjà dans son état final au premier rendu du navigateur).
+  requestAnimationFrame(() => el.classList.add("arrive"));
+  setTimeout(() => {
+    el.classList.remove("arrive");
+    el.classList.add("travel");
+    setTimeout(() => {
+      if (onMidpoint) onMidpoint();
+    }, 160);
+    setTimeout(() => el.remove(), 480);
+  }, 420);
+}
+
 function formatDateFR(iso) {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });

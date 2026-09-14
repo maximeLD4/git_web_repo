@@ -1164,11 +1164,12 @@ function attachLogActionsBarListeners() {
       // Redirige vers la liste des plans plutôt que de rester sur "Créer"
       // avec un nouveau brouillon vide — on vient de finir, la suite
       // logique est de voir ce qu'on vient d'enregistrer, pas de recommencer.
-      tab = "history";
-      gymTopMode = "plan";
-      render();
-      // Même remarque que côté séance : "flash-slot" n'existe plus une fois
-      // sur Historique, la liste affichée sert déjà de confirmation.
+      justLandedItemId = plan.id;
+      playSaveTravelAnimation(ICONS.check, wasEditingPlan ? "Plan modifié" : "Plan enregistré", `${cleaned.length} exercice${cleaned.length !== 1 ? "s" : ""}`, () => {
+        tab = "history";
+        gymTopMode = "plan";
+        render();
+      });
       return;
     }
 
@@ -1205,14 +1206,16 @@ function attachLogActionsBarListeners() {
     }
     // Même logique que pour un plan : direction la liste des séances plutôt
     // que de rester sur "Créer" avec un brouillon vide fraîchement rouvert.
-    tab = "history";
-    gymTopMode = "session";
-    historyViewMode = "list";
-    render();
-    // "flash-slot" vit dans la barre d'actions de Créer (voir
-    // logActionsBarContentHTML) — on vient de la quitter pour Historique,
-    // elle n'existe donc plus dans le DOM. La liste qui s'affiche à
-    // l'instant sert déjà de confirmation visuelle, pas besoin du message.
+    // La capsule qui s'envole (voir playSaveTravelAnimation) fait le lien
+    // visuel entre "j'enregistre" et "la voilà dans la liste" — sans ça,
+    // enregistrer et supprimer se ressemblent trop (même saut sec d'écran).
+    justLandedItemId = session.id;
+    playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${cleaned.length} exercice${cleaned.length !== 1 ? "s" : ""}`, () => {
+      tab = "history";
+      gymTopMode = "session";
+      historyViewMode = "list";
+      render();
+    });
   });
 }
 

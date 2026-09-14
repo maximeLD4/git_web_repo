@@ -517,9 +517,12 @@ function attachSwimLogActionsBarListeners() {
       returnToCalendar();
       return;
     }
-    swimTab = "history";
-    swimHistoryViewMode = "list";
-    renderSwimApp();
+    justLandedItemId = session.id;
+    playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
+      swimTab = "history";
+      swimHistoryViewMode = "list";
+      renderSwimApp();
+    });
   });
 }
 

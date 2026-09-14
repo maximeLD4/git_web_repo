@@ -25,6 +25,8 @@ function setBarsHTML(ex, colorOverride) {
 
 function sessionCardHTML(s) {
   const open = !!openHistoryIds[s.id];
+  const justLanded = justLandedItemId === s.id;
+  if (justLanded) justLandedItemId = null;
   const exHTML = s.exercises
     .map(
       (ex) => `
@@ -40,7 +42,7 @@ function sessionCardHTML(s) {
     .join("");
   const durationLabel = getSessionDurationSeconds(s) != null ? `${formatLiveDuration(getSessionDurationSeconds(s))} · ` : "";
   return `
-  <div class="history-card">
+  <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-toggle="${s.id}">
       <div class="history-head-left">
         <div class="history-date">${formatDateFR(s.date)}</div>
@@ -125,11 +127,13 @@ function planExerciseSummary(ex) {
 
 function planCardHTML(plan) {
   const open = !!openHistoryIds[plan.id];
+  const justLanded = justLandedItemId === plan.id;
+  if (justLanded) justLandedItemId = null;
   const exHTML = plan.exercises
     .map((ex) => `<div class="history-ex-name">${ex.name} <span style="color:var(--text-dim); font-weight:600;">· ${planExerciseSummary(ex)}</span></div>`)
     .join("");
   return `
-  <div class="history-card">
+  <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-toggle="${plan.id}">
       <div class="history-head-left">
         <div class="history-date">${plan.label}</div>

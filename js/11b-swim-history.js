@@ -1,5 +1,7 @@
 function swimSessionCardHTML(s) {
   const open = !!openSwimHistoryIds[s.id];
+  const justLanded = justLandedItemId === s.id;
+  if (justLanded) justLandedItemId = null;
   const blocksSummary = s.blocks
     .map(
       (b) => `
@@ -10,7 +12,7 @@ function swimSessionCardHTML(s) {
     )
     .join("");
   return `
-  <div class="history-card">
+  <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-swim-toggle="${s.id}">
       <div class="history-head-left">
         <div class="history-date">${formatDateFR(s.date)}</div>

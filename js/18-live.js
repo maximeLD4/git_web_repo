@@ -1165,12 +1165,13 @@ function autoFinishLiveSetIfInProgress() {
 // tape "Terminer", puis seulement ensuite on choisit quoi faire de ce qui
 // a été fait cette fois-ci — enregistrer, supprimer, ou reprendre.
 function endLiveSession() {
-  // Comme pour changer d'exercice ou revenir en arrière : si une série est
-  // encore en cours ("Débuter" tapé, "Finir" pas encore), on la finalise
-  // d'abord — sinon, pour le cardio notamment, elle serait enregistrée avec
-  // sa durée à 0 (placeholder jamais complété, voir applyFinishLiveSet).
-  liveSession.loop = null;
-  autoFinishLiveSetIfInProgress();
+  // On ne touche à rien tant que le choix n'est pas fait — ni la série en
+  // cours, ni une éventuelle boucle Gainage active : les finaliser dès ici
+  // laisserait l'écran affiché figé sur un état qui n'existe déjà plus en
+  // interne si on choisit "Continuer l'entraînement" juste après (le
+  // bouton "Finir la série" n'aurait alors plus rien à finir). Voir
+  // saveLiveSessionAndFinish, qui s'en charge au bon moment : seulement
+  // quand on choisit vraiment d'enregistrer.
   const cleaned = (liveSession.exercises || []).filter((e) => e.sets.length > 0);
   if (cleaned.length === 0) {
     // Rien d'enregistré cette fois-ci : rien à choisir non plus, on quitte
@@ -1205,7 +1206,13 @@ function showEndWorkoutChoice(cleaned) {
     close();
     discardLiveSession();
   });
-  root.querySelector("[data-end-continue]").addEventListener("click", close);
+  root.querySelector("[data-end-continue]").addEventListener("click", () => {
+    close();
+    // Rien n'a été modifié entre-temps (voir endLiveSession) — un simple
+    // re-rendu suffit, plutôt par prudence que par nécessité, pour être
+    // certain que l'écran reflète toujours fidèlement l'état réel.
+    renderLiveStep();
+  });
 }
 
 // Remet tout à zéro et quitte, sans rien enregistrer — utilisé aussi bien
@@ -1227,6 +1234,12 @@ function discardLiveSession() {
 }
 
 function saveLiveSessionAndFinish(cleaned) {
+  // C'est ICI (pas dans endLiveSession, voir son commentaire) qu'on
+  // finalise une série encore en cours et qu'on arrête une éventuelle
+  // boucle Gainage active — seulement au moment où on valide vraiment
+  // l'enregistrement, jamais avant.
+  liveSession.loop = null;
+  autoFinishLiveSetIfInProgress();
   closeCurrentLiveSegment();
   const totalDurationSec = liveSession.startedAt ? Math.round((Date.now() - liveSession.startedAt) / 1000) : null;
   // Additionne, pour chaque exercice, la somme de ses segments de temps
@@ -1268,13 +1281,18 @@ function saveLiveSessionAndFinish(cleaned) {
   // vient de finir doit se voir tout de suite, pas se deviner. On ouvre en
   // plus directement sa carte (au lieu de la laisser repliée dans la
   // liste) pour un vrai récap immédiat : exercices, séries, tout y est
-  // sans avoir à re-taper dessus.
-  currentApp = "gym";
-  tab = "history";
-  gymTopMode = "session";
-  historyViewMode = "list";
+  // sans avoir à re-taper dessus. La capsule qui s'envole (voir
+  // playSaveTravelAnimation) fait le lien visuel entre "je termine" et "la
+  // voilà dans la liste" plutôt qu'un simple saut sec d'écran.
   openHistoryIds[session.id] = true;
-  render();
+  justLandedItemId = session.id;
+  playSaveTravelAnimation(ICONS.check, session.label, `${withDurations.length} exercice${withDurations.length !== 1 ? "s" : ""}`, () => {
+    currentApp = "gym";
+    tab = "history";
+    gymTopMode = "session";
+    historyViewMode = "list";
+    render();
+  });
 }
 
 function attachLiveStepListeners() {

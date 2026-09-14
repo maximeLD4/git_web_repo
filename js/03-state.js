@@ -189,6 +189,11 @@ let liveJustAddedLogIndex = null;
 // l'animation d'entrée de la liste d'exercices ne rejoue pas à chaque
 // interaction sans rapport (ex. premier appui sur une puce de la frise).
 let liveCategoryJustChanged = false;
+// Id de la séance/du plan qui vient tout juste d'être enregistré(e) — lu une
+// seule fois par la carte concernée (voir sessionCardHTML et équivalents) pour
+// jouer son animation d'arrivée dans la liste, puis effacé aussitôt pour ne
+// jamais la rejouer sur un rendu ultérieur du même écran.
+let justLandedItemId = null;
 
 // Garde globale : aucune valeur physique ne peut être négative (poids, reps, distance,
 // durée, vitesse, allure...). S'applique à tous les champs numériques, présents et futurs,
