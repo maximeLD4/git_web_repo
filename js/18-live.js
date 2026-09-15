@@ -209,7 +209,7 @@ function liveCategoryStepHTML() {
     // exercices de gainage nommés/configurés — voir plus bas.
     const allCardioCats = [...CARDIO_CATEGORIES, GAINAGE_CATEGORY];
     const categoriesHTML = `
-      <div class="live-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="live-grid live-cardio-categories" style="grid-template-columns:1fr 1fr;">
         ${allCardioCats.map((c) => `<button type="button" class="live-btn ${liveDraftCategory === c.key ? "active" : ""}" data-live-cardio-category="${c.key}">${c.label}</button>`).join("")}
       </div>`;
     let gainageListHTML = "";
@@ -400,6 +400,11 @@ function liveMuscuSetFormHTML(activeExercise) {
   const weightOptions = weightList.length
     ? weightList.map((w) => `<option value="${w}" ${liveDraftBaseWeight === w ? "selected" : ""}>${w}kg</option>`).join("")
     : `<option value="">—</option>`;
+  // Tout en bas de la liste déroulante plutôt qu'un bouton à part : c'est
+  // exactement là qu'on regarde quand le poids qu'on cherche n'y est pas —
+  // voir attachLiveSetFormListeners, qui intercepte cette valeur spéciale
+  // avant qu'elle ne soit traitée comme un poids.
+  const editConfigOptionHTML = config ? `<option value="__edit_config__">⚙ Modifier les poids…</option>` : "";
   const finalWeight = liveDraftBaseWeight !== null ? liveDraftBaseWeight + (liveDraftWeightMode === "on" ? increment : 0) : null;
 
   return `
@@ -417,7 +422,7 @@ function liveMuscuSetFormHTML(activeExercise) {
         </div>
         <div class="live-stepper-group">
           <div class="live-stepper-label">Poids</div>
-          <select class="live-weight-select" id="live-weight-select" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
+          <select class="live-weight-select" id="live-weight-select" ${weightList.length === 0 && !config ? "disabled" : ""}>${weightOptions}${editConfigOptionHTML}</select>
           ${
             hasIncrement
               ? `<button type="button" class="increment-switch-btn live-increment-btn ${liveDraftWeightMode === "on" ? "active" : ""}" data-live-toggle-increment>${liveDraftWeightMode === "on" ? "+" + increment + "kg" : "Standard"}</button>`
@@ -1290,7 +1295,6 @@ function saveLiveSessionAndFinish(cleaned) {
     currentApp = "gym";
     tab = "history";
     gymTopMode = "session";
-    historyViewMode = "list";
     render();
   });
 }
@@ -1483,6 +1487,33 @@ function attachLivePlanListeners(content) {
 
 // Champs de saisie d'une série (reps, poids/incrément, distance) — tout ce
 // qui ajuste liveDraft* sans valider quoi que ce soit.
+// Tapé depuis l'option "Modifier les poids…" tout en bas du menu déroulant
+// (voir liveMuscuSetFormHTML) — ouvre directement le formulaire d'édition
+// de CET exercice, pré-rempli avec ses valeurs actuelles, pour corriger un
+// palier manquant ou activer l'incrément auto sans quitter la séance.
+function goEditLiveExerciseConfig() {
+  const config = findExerciseConfig(liveDraftName);
+  if (!config) return;
+  // Même retour que "Configurer un exercice" (voir
+  // returnFromSettingsToLiveIfNeeded) — mais ici on ÉDITE un exercice déjà
+  // configuré plutôt que d'en créer un nouveau, pré-rempli avec ses
+  // valeurs actuelles comme le ferait un tap depuis la liste de Paramètres.
+  liveConfigReturnTarget = true;
+  gymSettingsMode = "muscu";
+  gymSettingsFormOpen = true;
+  gymSettingsEditingConfigId = config.id;
+  gymSettingsFormDraft = {
+    name: config.name,
+    category: GYM_EXERCISE_CATEGORIES.some((c) => c.key === config.category) ? config.category : "pecs",
+    baseWeights: [...config.baseWeights],
+    maxIncrement: config.maxIncrement || 0,
+    autoIncrement: config.autoIncrement || false,
+  };
+  gymSettingsFocusTarget = "name";
+  currentApp = "settings-gym";
+  render();
+}
+
 function attachLiveSetFormListeners(content) {
   const repsMinus = content.querySelector("[data-live-reps-minus]");
   const repsPlus = content.querySelector("[data-live-reps-plus]");
@@ -1492,6 +1523,10 @@ function attachLiveSetFormListeners(content) {
   const weightSelect = content.querySelector("#live-weight-select");
   if (weightSelect) {
     weightSelect.addEventListener("change", () => {
+      if (weightSelect.value === "__edit_config__") {
+        goEditLiveExerciseConfig();
+        return;
+      }
       liveDraftBaseWeight = weightSelect.value === "" ? null : parseFloat(weightSelect.value);
       renderLiveApp();
     });

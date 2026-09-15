@@ -162,17 +162,55 @@ function animateCalendarMonthChange(delta, renderFn) {
   }
 }
 
+// Empêche le contenu défilant de passer sous une barre d'actions fixe
+// (voir #log-actions-bar / #settings-actions-bar) — sur une fenêtre assez
+// haute, la marge basse réservée par le CSS (dans .content) suffit toujours
+// puisqu'on doit défiler jusqu'au bout pour l'atteindre. Mais si la liste
+// est courte (peu d'éléments) ET la fenêtre basse (petit écran ou fenêtre
+// PC redimensionnée), le contenu peut tenir ENTIÈREMENT sans le moindre
+// défilement — cette marge interne ne sert alors à rien, elle ne "pousse"
+// jamais rien puisqu'il n'y a rien à faire défiler. Réduire la hauteur
+// PROPRE du conteneur (via une marge EXTÉRIEURE) garantit l'espacement
+// dans tous les cas, qu'on défile ou non.
+function reserveSpaceForFixedBar(contentEl, actionsBarEl) {
+  if (!contentEl || !actionsBarEl || actionsBarEl.style.display === "none") {
+    if (contentEl) contentEl.style.marginBottom = "";
+    return;
+  }
+  requestAnimationFrame(() => {
+    const gap = window.innerHeight - actionsBarEl.getBoundingClientRect().top;
+    if (gap > 0) contentEl.style.marginBottom = gap + "px";
+  });
+}
+
 function positionLogActionsBar() {
+  ensureLogActionsBarResizeListener();
   const actionsBar = document.getElementById("log-actions-bar");
   const tabbarEl = document.querySelector(".tabbar");
   const spacer = document.getElementById("log-bottom-spacer");
   if (!actionsBar || !tabbarEl) return;
   if (actionsBar.style.display === "none") {
     if (spacer) spacer.style.height = "0";
-    return;
+  } else {
+    actionsBar.style.bottom = tabbarEl.offsetHeight + "px";
+    if (spacer) spacer.style.height = actionsBar.offsetHeight + 16 + "px";
   }
-  actionsBar.style.bottom = tabbarEl.offsetHeight + "px";
-  if (spacer) spacer.style.height = actionsBar.offsetHeight + 16 + "px";
+  reserveSpaceForFixedBar(document.getElementById("content"), actionsBar);
+}
+
+// Sans ça, ouvrir le clavier (en tapant dans un champ de la liste) change
+// la hauteur utile de l'écran SANS jamais redéclencher positionLogActionsBar
+// — jusque là seulement appelée au rendu — laissant la barre et la cale
+// calculées pour l'ancienne hauteur. `visualViewport` (repli sur `resize`
+// si absent) reflète justement ce que le clavier fait à l'écran visible,
+// contrairement à `window.innerHeight` qui ne bouge pas toujours pareil.
+// Attaché une seule fois pour de bon, pas à chaque rendu.
+let logActionsBarResizeListenerAttached = false;
+function ensureLogActionsBarResizeListener() {
+  if (logActionsBarResizeListenerAttached) return;
+  logActionsBarResizeListenerAttached = true;
+  const target = window.visualViewport || window;
+  target.addEventListener("resize", () => positionLogActionsBar());
 }
 
 function loadJSON(key, fallback) {

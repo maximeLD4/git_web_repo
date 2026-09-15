@@ -41,6 +41,14 @@ function renderSettingsContent() {
       <button type="button" class="ex-type-btn ${colorMode === "night" ? "active" : ""}" data-color-mode="night">${ICONS.moon} Nuit</button>
       <button type="button" class="ex-type-btn ${colorMode === "anne" ? "active" : ""}" data-color-mode="anne">${ICONS.heart} Anne</button>
     </div>
+    <div class="home-section-label" style="margin: 20px 0 10px;">Sauvegarde</div>
+    <div class="backup-row">
+      <button class="backup-btn" id="export-btn">${ICONS.up} Exporter</button>
+      <button class="backup-btn" id="import-btn">${ICONS.down} Importer</button>
+      <input type="file" id="import-file" accept="application/json" style="display:none">
+    </div>
+    <div class="sync-status">Dernier export : ${formatRelativeTime(loadJSON(KEYS.lastExport, null))} · Dernier import : ${formatRelativeTime(loadJSON(KEYS.lastImport, null))}</div>
+    <div class="backup-note">Cette sauvegarde inclut toutes tes activités (muscu, course, natation, vélo), tes plans préparés et tes exercices configurés — un seul fichier pour tout ton historique. Pour le retrouver sur un autre appareil : exporte ici, envoie-toi le fichier (AirDrop, mail, cloud…), puis importe-le là-bas.</div>
   `;
   document.querySelector("[data-open-settings]").addEventListener("click", () => {
     currentApp = "settings-gym";
@@ -57,6 +65,40 @@ function renderSettingsContent() {
       // doivent, elles aussi, refléter le nouveau mode tout de suite.
       renderSettingsApp();
     });
+  });
+
+  // Sauvegarde/restauration : vivait avant en 4 exemplaires identiques (un
+  // par sport, voir les changelogs) — export/import portent de toute façon
+  // sur la totalité des données, jamais sur un seul sport. Un seul
+  // exemplaire ici, dans Réglages, plutôt que dupliqué partout pour rien.
+  const exportBtn = document.getElementById("export-btn");
+  const importBtn = document.getElementById("import-btn");
+  const importFile = document.getElementById("import-file");
+
+  exportBtn.addEventListener("click", async () => {
+    await exportBackup();
+    renderSettingsContent();
+  });
+
+  importBtn.addEventListener("click", () => importFile.click());
+  importFile.addEventListener("change", () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try {
+        data = JSON.parse(reader.result);
+        if (!isValidImportPayload(data)) throw new Error("format invalide");
+      } catch (e) {
+        showAlert("Ce fichier ne semble pas être une sauvegarde ou une séance GymLog valide.");
+        importFile.value = "";
+        return;
+      }
+      handleImportedFile(data, renderSettingsContent);
+      importFile.value = "";
+    };
+    reader.readAsText(file);
   });
 }
 
@@ -261,6 +303,13 @@ function renderGymSettingsContent() {
           ? `<button class="add-exercise-btn" id="add-gainage-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice de gainage</button>`
           : `<button class="add-exercise-btn" id="add-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice</button>`;
     }
+    // Sur une liste courte ET une fenêtre basse (petit écran, fenêtre PC
+    // redimensionnée...), le contenu peut tenir en entier sans le moindre
+    // défilement — la marge basse réservée par le CSS ne sert alors à
+    // rien puisqu'il n'y a rien à faire défiler pour l'atteindre. Réduire
+    // la hauteur propre du conteneur garantit l'espacement dans tous les
+    // cas (voir reserveSpaceForFixedBar).
+    reserveSpaceForFixedBar(document.getElementById("content"), actionsBar);
   }
 
   attachGymSettingsListeners();

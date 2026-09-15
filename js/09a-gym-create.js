@@ -1269,7 +1269,6 @@ function attachLogActionsBarListeners() {
     playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${cleaned.length} exercice${cleaned.length !== 1 ? "s" : ""}`, () => {
       tab = "history";
       gymTopMode = "session";
-      historyViewMode = "list";
       render();
     });
   });

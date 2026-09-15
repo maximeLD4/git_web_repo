@@ -28,6 +28,153 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.55.1 - 2026-09-04
+====================
+
+- **Trouvé le vrai bug (2.55.0 visait le mauvais problème) : sur une
+  fenêtre de navigateur PC assez basse (petit écran, fenêtre
+  redimensionnée), la liste d'exercices configurés dans Paramètres pouvait
+  chevaucher le bouton "Ajouter un exercice", dès l'ouverture de l'écran,
+  sans même avoir besoin de scroller.** Cause réelle : la marge basse
+  réservée pour cette barre vivait DANS la zone qui défile — elle ne
+  compte que si on doit scroller jusqu'au bout pour l'atteindre. Sur une
+  liste courte qui tient déjà entièrement à l'écran, rien ne force à
+  scroller, donc cette marge ne servait jamais à rien.
+  - Corrigé en réduisant directement la hauteur propre du conteneur (une
+    marge extérieure plutôt qu'un espace réservé à l'intérieur), qui
+    garantit l'écart quel que soit le nombre d'exercices ou la hauteur de
+    la fenêtre. Appliqué à Paramètres et à Créer (mêmes fondations).
+  - Merci d'avoir insisté et précisé le contexte (PC, dès l'ouverture) —
+    ça a permis de trouver la vraie cause après plusieurs pistes qui
+    ciblaient le mauvais scénario.
+  - Testé à plusieurs hauteurs de fenêtre (900 à 350px) : plus aucun
+    chevauchement visible, vérifié à l'écran. Aucune régression sur les
+    écrans principaux ni sur le flux d'enregistrement complet.
+
+2.55.0 - 2026-09-04
+====================
+
+- **Corrigé un vrai bug invisible en test automatisé : la barre fixe
+  "Ajouter un exercice"/"Enregistrer" (Créer, sur les 4 sports) pouvait se
+  retrouver mal positionnée après l'ouverture du clavier** (en tapant dans
+  un champ de la liste), la faisant chevaucher la liste d'exercices en
+  dessous. Cause trouvée : le mécanisme qui positionne cette barre
+  (`positionLogActionsBar`) n'était appelé qu'au rendu de l'écran, jamais
+  quand le clavier change la hauteur utile visible — rien ne le
+  redéclenchait ensuite. Corrigé avec un écouteur sur le changement de
+  viewport (`visualViewport`, plus fiable que `window` pour ça), qui
+  repositionne automatiquement la barre dès que ça se produit.
+  - Auparavant, j'avais exploré une correction différente (une marge basse
+    recalculée à la main) avant de découvrir qu'un mécanisme dédié à ce
+    problème existait déjà dans le code (`positionLogActionsBar` + une
+    "cale" invisible) — je l'ai retirée pour ne pas faire doublon, et j'ai
+    corrigé le vrai mécanisme existant à la place.
+  - Testé : la position se casse volontiers avec une valeur fausse, puis
+    se corrige bien d'elle-même dès qu'un changement de viewport est
+    détecté. Aucune régression sur les 11 écrans principaux.
+
+2.54.2 - 2026-09-04
+====================
+
+- **Encore mieux placé : "Modifier les poids" est maintenant une option
+  tout en bas de la liste déroulante des poids elle-même**, plutôt qu'un
+  bouton à côté (2.54.1) — exactement là où on regarde quand le poids
+  qu'on cherche n'y est pas. La sélectionner ouvre directement l'édition
+  de l'exercice, puis revient pile où on était, comme avant.
+  - Le menu reste ouvrable même si aucun poids n'est encore configuré du
+    tout pour cet exercice — sinon cette option serait inatteignable.
+  - Testé : options correctes, sélection fonctionnelle, retour avec le
+    nouveau palier disponible, et le cas "aucun poids configuré" reste
+    bien accessible.
+
+2.54.1 - 2026-09-04
+====================
+
+- **Déplacé le bouton d'édition de configuration (2.54.0) à côté du
+  libellé "Poids"** plutôt que collé au nom de l'exercice — c'est
+  précisément là qu'on regarde quand un palier manque ou qu'on veut
+  activer l'incrément auto, plus logique qu'à côté du titre. Toujours
+  aussi fonctionnel, juste mieux placé.
+
+2.54.0 - 2026-09-04
+====================
+
+- **Un exercice déjà configuré manque parfois quelque chose une fois en
+  train de l'utiliser en Séance en direct** (un palier de poids, activer
+  l'incrément auto...) — jusque là, il fallait quitter la séance en cours,
+  aller dans Paramètres, chercher l'exercice, l'éditer, puis revenir
+  manuellement. Un petit bouton ⚙️ apparaît maintenant à côté du nom de
+  l'exercice pendant sa saisie, ouvrant directement son formulaire
+  d'édition pré-rempli avec ses valeurs actuelles (même mécanisme que
+  "Configurer un exercice" — voir 2.38.2/2.38.3). Une fois enregistré, on
+  revient pile sur cet exercice en Séance en direct, série en cours et
+  historique intacts.
+  - Testé avec et sans série déjà loguée pour cet exercice : les deux
+    scénarios préservent correctement l'état en cours.
+
+2.53.0 - 2026-09-04
+====================
+
+- **Le glisser-pour-supprimer ne s'active plus que carte repliée.** Une
+  fois dépliée pour voir le détail (exercices, séries...), le bloc devient
+  trop grand pour qu'un glissement reste un geste naturel — le bouton
+  "Supprimer" reprend alors sa place dans la rangée d'actions, à côté de
+  Modifier/Dupliquer/Convertir/Partager, et le glissé est désactivé sur
+  cette carte tant qu'elle reste ouverte.
+  - Concerné : Salle de sport (séance et plan), Course à pied, Natation,
+    Vélo, calendrier partagé.
+  - Même confirmation et même animation de disparition dans les deux cas
+    (glissé ou bouton) — la logique de suppression est désormais partagée
+    entre les deux plutôt que dupliquée.
+  - Testé les 6 écrans + un clic réel sur "Supprimer" une fois déplié,
+    avec confirmation et suppression effective : tout fonctionne comme
+    prévu, aucune régression.
+
+2.52.0 - 2026-09-04
+====================
+
+- **Consolidé Export/Import de sauvegarde, dupliqué à l'identique dans 4
+  modules de sport** (Salle de sport, Course, Natation, Vélo) — même
+  genre de doublon que les calendriers individuels retirés en 2.51.0 :
+  chaque bouton "Exporter"/"Importer" faisait, mot pour mot, exactement la
+  même chose (sauvegarder/restaurer la totalité des données de l'app,
+  jamais un seul sport en particulier), rien ne justifiait 4 exemplaires.
+  - Une seule section "Sauvegarde" désormais, dans Réglages, réutilisant
+    telles quelles les fonctions déjà partagées — rien changé côté logique
+    d'export/import elle-même.
+  - Testé : le bouton est bien présent dans Réglages, absent des 4 sports,
+    et un export réel depuis Réglages déclenche bien le téléchargement.
+
+2.51.0 - 2026-09-04
+====================
+
+- **Retiré la vue calendrier individuelle de chaque module de sport**
+  (Salle de sport, Course à pied, Natation, Vélo) — ces modules ne
+  proposent plus qu'une simple liste des activités effectuées, sans la
+  bascule Liste/Calendrier qui complexifiait l'écran pour un usage
+  redondant avec le calendrier partagé.
+  - **En contrepartie, ajouté un filtre par sport dans le calendrier
+    partagé** ("Tous" / "Salle de sport" / "Course" / "Natation" / "Vélo")
+    — "Salle de sport" regroupe Muscu et Gainage, qui vivent dans le même
+    module. Le calendrier partagé devient ainsi le seul et unique endroit
+    pour une vue calendrier, y compris filtrée sur un seul sport.
+  - Nettoyé en cascade : 4 fonctions de calendrier, leurs navigations de
+    mois, leurs sélections de jour, et 12 variables d'état devenues
+    inutiles (une par sport : mode de vue, mois affiché, jour sélectionné).
+  - Testé : les 4 modules n'affichent plus que la liste, le calendrier
+    partagé et son nouveau filtre fonctionnent normalement, un
+    enregistrement de séance de bout en bout ne montre aucune régression.
+
+2.50.2 - 2026-09-04
+====================
+
+- **Corrigé : en Séance en direct, sélectionner Gainage faisait se toucher
+  la rangée de catégories (Rameur/Vélo/Course/Gainage) et la liste
+  d'exercices juste en dessous.** Cause trouvée : cette rangée réutilisait
+  une grille générique sans la marge de séparation que Muscu avait déjà
+  pour son équivalent. Corrigé en ajoutant la même marge (12px). Vérifié :
+  plus aucun chevauchement, écart net entre les deux blocs.
+
 2.50.1 - 2026-09-04
 ====================
 

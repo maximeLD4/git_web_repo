@@ -399,7 +399,6 @@ function attachBikeLogActionsBarListeners() {
     justLandedItemId = session.id;
     playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
       bikeTab = "history";
-      bikeHistoryViewMode = "list";
       renderBikeApp();
     });
   });

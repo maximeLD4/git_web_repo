@@ -61,64 +61,15 @@ function sessionCardHTML(s) {
              <button class="edit-link" data-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-convert-session="${s.id}">${ICONS.stopwatch} Convertir en plan</button>
              <button class="edit-link" data-share-session="${s.id}">${ICONS.up} Partager</button>
+             <button class="delete-link" data-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
   </div>`;
-  // Enveloppé pour le glissé-pour-supprimer (voir wrapSwipeToDeleteRow) —
-  // fonctionne que la carte soit repliée ou dépliée, contrairement au
-  // bouton "Supprimer" ci-dessus qui n'existe que carte ouverte.
-  return wrapSwipeToDeleteRow(s.id, cardHTML);
-}
-
-function shiftCalendarMonth(delta) {
-  const [y, m] = calendarMonth.split("-").map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  calendarMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function calendarViewHTML() {
-  const [y, m] = calendarMonth.split("-").map(Number);
-  const firstOfMonth = new Date(y, m - 1, 1);
-  const startDow = (firstOfMonth.getDay() + 6) % 7;
-  const daysInMonth = new Date(y, m, 0).getDate();
-  const monthLabel = firstOfMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const sessionDates = new Set(sessions.map((s) => s.date));
-  const today = todayISO();
-
-  const cells = [];
-  for (let i = 0; i < startDow; i++) cells.push("<div class=\"cal-cell empty\"></div>");
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${calendarMonth}-${String(d).padStart(2, "0")}`;
-    const hasData = sessionDates.has(dateStr);
-    const isSelected = selectedCalendarDate === dateStr;
-    const isToday = dateStr === today;
-    cells.push(`
-      <button type="button" class="cal-cell ${hasData ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}" data-cal-date="${dateStr}">
-        <span class="cal-day-num">${d}</span>
-        ${hasData ? `<span class="cal-dot"></span>` : ""}
-      </button>`);
-  }
-
-  let selectedHTML = "";
-  if (selectedCalendarDate) {
-    const daySessions = sessions.filter((s) => s.date === selectedCalendarDate);
-    selectedHTML =
-      daySessions.length > 0
-        ? `<div class="cal-selected-label">${formatDateFR(selectedCalendarDate)}</div>${daySessions.map(sessionCardHTML).join("")}`
-        : `<div class="empty-state" style="padding: 30px 20px;">Aucune séance effectuée ce jour-là.</div>`;
-  }
-
-  return `
-    <div class="cal-header">
-      <button type="button" class="cal-nav-btn" data-cal-prev>${ICONS.back}</button>
-      <div class="cal-month-label">${monthLabel}</div>
-      <button type="button" class="cal-nav-btn" data-cal-next>${ICONS.chevronRight}</button>
-    </div>
-    <div class="cal-weekdays"><div>Lu</div><div>Ma</div><div>Me</div><div>Je</div><div>Ve</div><div>Sa</div><div>Di</div></div>
-    <div class="cal-grid">${cells.join("")}</div>
-    ${selectedHTML}
-  `;
+  // Le glissé (voir wrapSwipeToDeleteRow) ne s'active que carte repliée —
+  // dépliée, le bloc est trop grand pour qu'un glissement reste naturel,
+  // et le bouton "Supprimer" ci-dessus reprend le relais à sa place.
+  return open ? cardHTML : wrapSwipeToDeleteRow(s.id, cardHTML);
 }
 
 // Résumé compact d'un exercice de plan : séries cibles pour Muscu/Rameur/
@@ -153,11 +104,12 @@ function planCardHTML(plan) {
              <button class="edit-link" data-edit-plan="${plan.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-duplicate-plan="${plan.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-convert-plan="${plan.id}">${ICONS.dumbbell} Convertir en séance</button>
+             <button class="delete-link" data-delete-plan="${plan.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
   </div>`;
-  return wrapSwipeToDeleteRow(plan.id, cardHTML);
+  return open ? cardHTML : wrapSwipeToDeleteRow(plan.id, cardHTML);
 }
 
 function plansListHTML() {
@@ -169,74 +121,70 @@ function plansListHTML() {
 
 function historyTabHTML() {
   const sorted = [...sessions].sort((a, b) => (a.date < b.date ? 1 : -1));
-  const lastExport = loadJSON(KEYS.lastExport, null);
-  const lastImport = loadJSON(KEYS.lastImport, null);
-  const backup = `
-    <div class="backup-row">
-      <button class="backup-btn" id="export-btn">${ICONS.up} Exporter</button>
-      <button class="backup-btn" id="import-btn">${ICONS.down} Importer</button>
-      <input type="file" id="import-file" accept="application/json" style="display:none">
-    </div>
-    <div class="sync-status">Dernier export : ${formatRelativeTime(lastExport)} · Dernier import : ${formatRelativeTime(lastImport)}</div>
-    <div class="backup-note">Cette sauvegarde inclut toutes tes activités (muscu, course, natation, vélo), tes plans préparés et tes exercices configurés — un seul fichier pour tout ton historique. Pour le retrouver sur un autre appareil : exporte ici, envoie-toi le fichier (AirDrop, mail, cloud…), puis importe-le là-bas.</div>
-  `;
   // Le choix Séances/Plans est désormais porté par le grand sélecteur en
   // haut du module (voir renderGymApp) — cet onglet se contente d'en
   // refléter le mode courant, plus de bascule locale qui ferait doublon.
   if (gymTopMode === "plan") {
-    return backup + plansListHTML();
+    return plansListHTML();
   }
 
-  const viewToggle = `
-    <div class="ex-type-toggle" style="margin: 0 0 16px;">
-      <button type="button" class="ex-type-btn ${historyViewMode === "list" ? "active" : ""}" data-history-view="list">${ICONS.history} Liste</button>
-      <button type="button" class="ex-type-btn ${historyViewMode === "calendar" ? "active" : ""}" data-history-view="calendar">${ICONS.calendar} Calendrier</button>
-    </div>`;
-
-  if (historyViewMode === "calendar") {
-    return backup + viewToggle + calendarViewHTML();
-  }
   if (sorted.length === 0) {
-    return backup + viewToggle + `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
+    return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
   }
   // Toutes les séances sont traitées pareil, qu'elles soient datées dans le
   // passé ou le futur — plus de distinction "à venir" séparée, dépassée
   // depuis l'arrivée des Plans (voir le grand sélecteur en haut du module).
-  return backup + viewToggle + sorted.map(sessionCardHTML).join("");
+  return sorted.map(sessionCardHTML).join("");
 }
 
 
+// Partagée entre le glissé (carte repliée) et le bouton "Supprimer" de la
+// rangée d'actions (carte dépliée, voir sessionCardHTML/planCardHTML) —
+// même confirmation, même animation de disparition, peu importe le chemin.
+function deleteGymSessionOrPlan(id, cardEl) {
+  // Le mode du grand sélecteur du haut (Séance/Plan) dit lequel des deux
+  // on regarde — les deux se ressemblent trop pour se fier à autre chose.
+  const isSession = gymTopMode === "session";
+  if (isSession) {
+    showConfirm(
+      "Supprimer définitivement cette séance ? Cette action est irréversible.",
+      () => {
+        animateCardRemoval(cardEl, () => {
+          sessions = sessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.sessions, sessions);
+          renderContent();
+        });
+      },
+      { confirmLabel: "Supprimer", danger: true }
+    );
+  } else {
+    showConfirm(
+      "Supprimer définitivement ce plan ? Cette action est irréversible.",
+      () => {
+        animateCardRemoval(cardEl, () => {
+          sessionPlans = sessionPlans.filter((p) => p.id !== id);
+          saveJSON(KEYS.sessionPlans, sessionPlans);
+          renderContent();
+        });
+      },
+      { confirmLabel: "Supprimer", danger: true }
+    );
+  }
+}
+
 function attachHistoryListeners() {
-  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
-    // Le calendrier ne montre jamais que des séances ; en liste, le mode
-    // du grand sélecteur du haut (Séance/Plan) dit lequel des deux on
-    // regarde — les deux se ressemblent trop pour se fier à autre chose.
-    const isSession = historyViewMode === "calendar" || gymTopMode === "session";
-    if (isSession) {
-      showConfirm(
-        "Supprimer définitivement cette séance ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(cardEl, () => {
-            sessions = sessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.sessions, sessions);
-            renderContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
-    } else {
-      showConfirm(
-        "Supprimer définitivement ce plan ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(cardEl, () => {
-            sessionPlans = sessionPlans.filter((p) => p.id !== id);
-            saveJSON(KEYS.sessionPlans, sessionPlans);
-            renderContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
-    }
+  initSwipeToDelete(document.getElementById("content"), deleteGymSessionOrPlan);
+  document.querySelectorAll("[data-delete-session]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      deleteGymSessionOrPlan(btn.dataset.deleteSession, btn.closest(".history-card"));
+    });
+  });
+  document.querySelectorAll("[data-delete-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      deleteGymSessionOrPlan(btn.dataset.deletePlan, btn.closest(".history-card"));
+    });
   });
   document.querySelectorAll("[data-edit-plan]").forEach((btn) => {
     btn.addEventListener("click", (ev) => {
@@ -257,23 +205,6 @@ function attachHistoryListeners() {
       ev.stopPropagation();
       const plan = sessionPlans.find((p) => p.id === btn.dataset.convertPlan);
       if (plan) convertPlanToSession(plan);
-    });
-  });
-  document.querySelectorAll("[data-history-view]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      historyViewMode = btn.dataset.historyView;
-      renderContent();
-    });
-  });
-  const calPrev = document.querySelector("[data-cal-prev]");
-  const calNext = document.querySelector("[data-cal-next]");
-  if (calPrev) calPrev.addEventListener("click", () => animateCalendarMonthChange(-1, () => { shiftCalendarMonth(-1); renderContent(); }));
-  if (calNext) calNext.addEventListener("click", () => animateCalendarMonthChange(1, () => { shiftCalendarMonth(1); renderContent(); }));
-  document.querySelectorAll("[data-cal-date]").forEach((cell) => {
-    cell.addEventListener("click", () => {
-      const d = cell.dataset.calDate;
-      selectedCalendarDate = selectedCalendarDate === d ? null : d;
-      renderContent();
     });
   });
   document.querySelectorAll("[data-toggle]").forEach((el) => {
@@ -310,35 +241,5 @@ function attachHistoryListeners() {
       const session = sessions.find((s) => s.id === btn.dataset.convertSession);
       if (session) convertSessionToPlan(session);
     });
-  });
-
-  const exportBtn = document.getElementById("export-btn");
-  const importBtn = document.getElementById("import-btn");
-  const importFile = document.getElementById("import-file");
-
-  exportBtn.addEventListener("click", async () => {
-    await exportBackup();
-    renderContent();
-  });
-
-  importBtn.addEventListener("click", () => importFile.click());
-  importFile.addEventListener("change", () => {
-    const file = importFile.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      let data;
-      try {
-        data = JSON.parse(reader.result);
-        if (!isValidImportPayload(data)) throw new Error("format invalide");
-      } catch (e) {
-        showAlert("Ce fichier ne semble pas être une sauvegarde ou une séance GymLog valide.");
-        importFile.value = "";
-        return;
-      }
-      handleImportedFile(data, renderContent);
-      importFile.value = "";
-    };
-    reader.readAsText(file);
   });
 }

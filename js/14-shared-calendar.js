@@ -3,6 +3,7 @@ function renderSharedCalendarApp() {
   app.className = "theme-calendar";
   sharedCalendarMonth = todayISO().slice(0, 7);
   sharedSelectedDate = null;
+  sharedCalendarFilter = "all";
   const total = sessions.length + runSessions.length + swimSessions.length + bikeSessions.length;
   app.innerHTML = `
     <div class="header">
@@ -144,6 +145,7 @@ function sharedSessionPreviewHTML(s, type) {
              <button class="edit-link" data-shared-edit-type="${type}" data-shared-edit-id="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-shared-duplicate-type="${type}" data-shared-duplicate-id="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-shared-share-type="${type}" data-shared-share-id="${s.id}">${ICONS.up} Partager</button>
+             <button class="delete-link" data-shared-delete-type="${type}" data-shared-delete-id="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
@@ -151,7 +153,7 @@ function sharedSessionPreviewHTML(s, type) {
   // L'id du glissé embarque aussi le type (gym/gainage/run/swim/bike) —
   // plusieurs listes différentes cohabitent ici, un simple id de séance ne
   // suffirait pas à savoir laquelle supprimer (voir attachSharedCalendarListeners).
-  return wrapSwipeToDeleteRow(toggleKey, cardHTML);
+  return open ? cardHTML : wrapSwipeToDeleteRow(toggleKey, cardHTML);
 }
 
 function sharedCalendarViewHTML() {
@@ -160,8 +162,23 @@ function sharedCalendarViewHTML() {
   const startDow = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(y, m, 0).getDate();
   const monthLabel = firstOfMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  // Remplace les calendriers individuels retirés de chaque module de sport —
+  // "gym" inclut aussi "gainage" (même module "Salle de sport"), les autres
+  // filtres correspondent chacun à un seul module.
+  const activeMeta = sharedCalendarFilter === "all" ? ACTIVITY_META : ACTIVITY_META.filter((a) => a.key === sharedCalendarFilter || (sharedCalendarFilter === "gym" && a.key === "gainage"));
+  const filterOptions = [
+    { key: "all", label: "Tous" },
+    { key: "gym", label: "Salle de sport" },
+    { key: "run", label: "Course" },
+    { key: "swim", label: "Natation" },
+    { key: "bike", label: "Vélo" },
+  ];
+  const filterHTML = `
+    <div class="ex-type-toggle wrap-toggle" style="margin-bottom:16px;">
+      ${filterOptions.map((f) => `<button type="button" class="ex-type-btn ${sharedCalendarFilter === f.key ? "active" : ""}" data-shared-cal-filter="${f.key}">${f.label}</button>`).join("")}
+    </div>`;
   const dateSets = {};
-  ACTIVITY_META.forEach((a) => {
+  activeMeta.forEach((a) => {
     const list = getActivitySessions(a.key);
     dateSets[a.key] = new Set(list.map((s) => s.date));
   });
@@ -174,7 +191,7 @@ function sharedCalendarViewHTML() {
     const isSelected = sharedSelectedDate === dateStr;
     const isToday = dateStr === today;
     let hasAny = false;
-    const dots = ACTIVITY_META.map((a) => {
+    const dots = activeMeta.map((a) => {
       if (!dateSets[a.key].has(dateStr)) return "";
       hasAny = true;
       return `<span class="cal-dot-mini" style="background:${a.color};"></span>`;
@@ -188,7 +205,7 @@ function sharedCalendarViewHTML() {
 
   let selectedHTML = "";
   if (sharedSelectedDate) {
-    const perType = ACTIVITY_META.map((a) => ({
+    const perType = activeMeta.map((a) => ({
       key: a.key,
       list: getActivitySessions(a.key).filter((s) => s.date === sharedSelectedDate),
     }));
@@ -203,6 +220,7 @@ function sharedCalendarViewHTML() {
   }
 
   return `
+    ${filterHTML}
     <div class="cal-header">
       <button type="button" class="cal-nav-btn" data-shared-cal-prev>${ICONS.back}</button>
       <div class="cal-month-label">${monthLabel}</div>
@@ -211,7 +229,7 @@ function sharedCalendarViewHTML() {
     <div class="cal-weekdays"><div>Lu</div><div>Ma</div><div>Me</div><div>Je</div><div>Ve</div><div>Sa</div><div>Di</div></div>
     <div class="cal-grid">${cells.join("")}</div>
     <div class="cal-legend">
-      ${ACTIVITY_META.map((a) => `<span><span class="cal-dot-mini" style="background:${a.color};"></span> ${a.label}</span>`).join("")}
+      ${activeMeta.map((a) => `<span><span class="cal-dot-mini" style="background:${a.color};"></span> ${a.label}</span>`).join("")}
     </div>
     ${selectedHTML}
   `;
@@ -222,36 +240,50 @@ function renderSharedCalendarContent() {
   attachSharedCalendarListeners();
 }
 
+function deleteSharedActivity(swipeId, cardEl) {
+  // swipeId embarque "type:id" (voir sharedSessionPreviewHTML) — plusieurs
+  // listes différentes cohabitent dans ce calendrier, contrairement aux
+  // autres écrans où l'id seul suffit.
+  const sep = swipeId.indexOf(":");
+  const type = swipeId.slice(0, sep);
+  const id = swipeId.slice(sep + 1);
+  showConfirm(
+    "Supprimer définitivement cette activité ? Cette action est irréversible.",
+    () => {
+      animateCardRemoval(cardEl, () => {
+        if (type === "gym" || type === "gainage") {
+          sessions = sessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.sessions, sessions);
+        } else if (type === "run") {
+          runSessions = runSessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.runSessions, runSessions);
+        } else if (type === "swim") {
+          swimSessions = swimSessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.swimSessions, swimSessions);
+        } else {
+          bikeSessions = bikeSessions.filter((s) => s.id !== id);
+          saveJSON(KEYS.bikeSessions, bikeSessions);
+        }
+        renderSharedCalendarContent();
+      });
+    },
+    { confirmLabel: "Supprimer", danger: true }
+  );
+}
+
 function attachSharedCalendarListeners() {
-  initSwipeToDelete(document.getElementById("content"), (swipeId, cardEl) => {
-    // swipeId embarque "type:id" (voir sharedSessionPreviewHTML) — plusieurs
-    // listes différentes cohabitent dans ce calendrier, contrairement aux
-    // autres écrans où l'id seul suffit.
-    const sep = swipeId.indexOf(":");
-    const type = swipeId.slice(0, sep);
-    const id = swipeId.slice(sep + 1);
-    showConfirm(
-      "Supprimer définitivement cette activité ? Cette action est irréversible.",
-      () => {
-        animateCardRemoval(cardEl, () => {
-          if (type === "gym" || type === "gainage") {
-            sessions = sessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.sessions, sessions);
-          } else if (type === "run") {
-            runSessions = runSessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.runSessions, runSessions);
-          } else if (type === "swim") {
-            swimSessions = swimSessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.swimSessions, swimSessions);
-          } else {
-            bikeSessions = bikeSessions.filter((s) => s.id !== id);
-            saveJSON(KEYS.bikeSessions, bikeSessions);
-          }
-          renderSharedCalendarContent();
-        });
-      },
-      { confirmLabel: "Supprimer", danger: true }
-    );
+  document.querySelectorAll("[data-shared-cal-filter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sharedCalendarFilter = btn.dataset.sharedCalFilter;
+      renderSharedCalendarContent();
+    });
+  });
+  initSwipeToDelete(document.getElementById("content"), deleteSharedActivity);
+  document.querySelectorAll("[data-shared-delete-type]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      deleteSharedActivity(`${btn.dataset.sharedDeleteType}:${btn.dataset.sharedDeleteId}`, btn.closest(".history-card"));
+    });
   });
   const prev = document.querySelector("[data-shared-cal-prev]");
   const next = document.querySelector("[data-shared-cal-next]");

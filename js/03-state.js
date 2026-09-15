@@ -80,13 +80,14 @@ let editingPlanId = draft.editingPlanId || null;
 // Créer, un dans Historique), tous deux trop discrets pour porter une
 // distinction aussi structurante.
 let gymTopMode = "session";
-let historyViewMode = "calendar"; // "list" | "calendar"
-let calendarMonth = todayISO().slice(0, 7);
-let selectedCalendarDate = null;
 
 let currentApp = "home"; // "home" | "gym" | "run" | "weight" | "calendar"
 let sharedCalendarMonth = todayISO().slice(0, 7);
 let sharedSelectedDate = null;
+// Remplace les calendriers individuels retirés de chaque module de sport
+// (Muscu, Course, Natation, Vélo) — "all" montre tout, ou un seul module à
+// la fois ("gym" inclut aussi le Gainage, qui vit dans le même module).
+let sharedCalendarFilter = "all";
 
 let runSessions = loadJSON(KEYS.runSessions, []);
 let runLibrary = loadJSON(KEYS.runLibrary, []);
@@ -96,9 +97,6 @@ let runEditingSessionId = runDraft.editingSessionId || null;
 let runTab = "log";
 let openRunHistoryIds = {};
 let runDraftSaveTimer = null;
-let runHistoryViewMode = "calendar"; // "list" | "calendar"
-let runCalendarMonth = todayISO().slice(0, 7);
-let runSelectedCalendarDate = null;
 
 let swimSessions = loadJSON(KEYS.swimSessions, []);
 let swimLibrary = loadJSON(KEYS.swimLibrary, []);
@@ -108,9 +106,6 @@ let swimEditingSessionId = swimDraft.editingSessionId || null;
 let swimTab = "log";
 let openSwimHistoryIds = {};
 let swimDraftSaveTimer = null;
-let swimHistoryViewMode = "calendar";
-let swimCalendarMonth = todayISO().slice(0, 7);
-let swimSelectedCalendarDate = null;
 
 let bikeSessions = loadJSON(KEYS.bikeSessions, []);
 let bikeLibrary = loadJSON(KEYS.bikeLibrary, []);
@@ -120,9 +115,6 @@ let bikeEditingSessionId = bikeDraft.editingSessionId || null;
 let bikeTab = "log";
 let openBikeHistoryIds = {};
 let bikeDraftSaveTimer = null;
-let bikeHistoryViewMode = "calendar";
-let bikeCalendarMonth = todayISO().slice(0, 7);
-let bikeSelectedCalendarDate = null;
 
 const app = document.getElementById("app");
 let scannerStream = null;
