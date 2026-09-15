@@ -28,6 +28,55 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.50.1 - 2026-09-04
+====================
+
+- **Corrigé : dans Paramètres > Salle de sport, la liste des exercices
+  configurés passait par-dessus la barre fixe "Ajouter un exercice" en
+  scrollant jusqu'en bas.** Cause trouvée : cet écran écrasait la marge
+  basse du contenu avec une valeur trop petite (90px) qui ne comptait pas
+  la zone de sécurité en bas des appareils à encoche/barre d'accueil,
+  contrairement au reste de l'app qui utilise déjà une marge suffisante
+  (120px) sans y toucher. Corrigé en retirant cette valeur en trop.
+  Vérifié avec 15 exercices configurés : le dernier reste nettement
+  au-dessus de la barre, marge confortable.
+
+2.50.0 - 2026-09-04
+====================
+
+- **Retiré l'ancien bouton "Supprimer" partout où le glisser-pour-supprimer
+  (2.48.0/2.49.0) le remplace désormais** — plus de double façon de faire
+  la même chose. Concerné : Salle de sport (séance et plan), Course à
+  pied, Natation, Vélo, calendrier partagé, exercices configurés (Muscu et
+  Gainage), et les pesées (l'exemple qui a déclenché ce nettoyage).
+  - Nettoyé au passage la classe CSS `.delete-link`, devenue orpheline.
+  - Testé les 9 endroits un par un : ancien bouton bien absent, glissé
+    fonctionne seul, suppression réussie à chaque fois, aucune erreur.
+
+2.49.0 - 2026-09-04
+====================
+
+- **Le glisser-pour-supprimer (2.48.0) étendu à deux nouveaux endroits :**
+  exercices configurés dans Paramètres (Muscu et Gainage) et les pesées —
+  les deux candidats naturels qui utilisaient déjà le même genre de liste.
+  Le mécanisme lui-même a été généralisé pour fonctionner avec n'importe
+  quel type de carte, pas seulement les séances/plans.
+  - Bug trouvé et corrigé en testant : le bouton "Supprimer" révélé
+    n'était masqué correctement derrière la carte que pour les
+    séances/plans (`.history-card` explicitement visé par le CSS) — pour
+    les pesées (une classe différente), il restait visible par-dessus dès
+    le départ, rendant le glissement inopérant. Corrigé en généralisant la
+    règle CSS à n'importe quelle carte, quelle que soit sa classe.
+  - Passé en revue le reste de l'app pour d'autres candidats : rien
+    d'autre ne s'y prête bien — les exercices/blocs en cours de création
+    ont déjà un bouton de suppression toujours visible (pas besoin de le
+    révéler), et les petites puces de poids sont trop petites pour un
+    glissé. Le "double-touché" (armer puis confirmer) existe déjà là où il
+    a du sens : les puces de la frise en Séance en direct, et le bouton
+    "Réinitialiser" dans Créer.
+  - Testé les 2 nouveaux points + une re-confirmation des 6 précédents :
+    tout fonctionne, aucune régression.
+
 2.48.0 - 2026-09-04
 ====================
 

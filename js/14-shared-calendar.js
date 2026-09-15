@@ -144,7 +144,6 @@ function sharedSessionPreviewHTML(s, type) {
              <button class="edit-link" data-shared-edit-type="${type}" data-shared-edit-id="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-shared-duplicate-type="${type}" data-shared-duplicate-id="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-shared-share-type="${type}" data-shared-share-id="${s.id}">${ICONS.up} Partager</button>
-             <button class="delete-link" data-shared-delete-type="${type}" data-shared-delete-id="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
@@ -290,35 +289,6 @@ function attachSharedCalendarListeners() {
       const type = btn.dataset.sharedShareType;
       const session = getActivitySessions(type).find((s) => s.id === btn.dataset.sharedShareId);
       if (session) exportSingleSession(type, session);
-    });
-  });
-  document.querySelectorAll("[data-shared-delete-type]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      const type = btn.dataset.sharedDeleteType;
-      const id = btn.dataset.sharedDeleteId;
-      showConfirm(
-        "Supprimer définitivement cette activité ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            if (type === "gym" || type === "gainage") {
-              sessions = sessions.filter((s) => s.id !== id);
-              saveJSON(KEYS.sessions, sessions);
-            } else if (type === "run") {
-              runSessions = runSessions.filter((s) => s.id !== id);
-              saveJSON(KEYS.runSessions, runSessions);
-            } else if (type === "swim") {
-              swimSessions = swimSessions.filter((s) => s.id !== id);
-              saveJSON(KEYS.swimSessions, swimSessions);
-            } else {
-              bikeSessions = bikeSessions.filter((s) => s.id !== id);
-              saveJSON(KEYS.bikeSessions, bikeSessions);
-            }
-            renderSharedCalendarContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
     });
   });
 }

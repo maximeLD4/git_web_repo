@@ -31,7 +31,6 @@ function runSessionCardHTML(s) {
              <button class="edit-link" data-run-edit-session="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-run-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-run-share-session="${s.id}">${ICONS.up} Partager</button>
-             <button class="delete-link" data-run-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
@@ -180,22 +179,6 @@ function attachRunHistoryListeners() {
       const id = el.dataset.runToggle;
       openRunHistoryIds[id] = !openRunHistoryIds[id];
       renderRunContent();
-    });
-  });
-  document.querySelectorAll("[data-run-delete-session]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      showConfirm(
-        "Supprimer définitivement cette séance ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            runSessions = runSessions.filter((s) => s.id !== btn.dataset.runDeleteSession);
-            saveJSON(KEYS.runSessions, runSessions);
-            renderRunContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
     });
   });
   document.querySelectorAll("[data-run-share-session]").forEach((btn) => {

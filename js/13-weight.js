@@ -67,15 +67,15 @@ function weightTabHTML() {
     sorted.length === 0
       ? `<div class="empty-state"><div class="bar-icon">${ICONS.scale}</div>Aucune pesée enregistrée pour l'instant.</div>`
       : sorted
-          .map(
-            (e) => `
+          .map((e) =>
+            wrapSwipeToDeleteRow(
+              e.id,
+              `
       <div class="weight-entry-row" data-id="${e.id}">
         <div class="weight-entry-date">${formatDateFR(e.date)}</div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div class="weight-entry-value">${e.weight} kg</div>
-          <button class="icon-btn" data-delete-weight="${e.id}">${ICONS.trash}</button>
-        </div>
+        <div class="weight-entry-value">${e.weight} kg</div>
       </div>`
+            )
           )
           .join("");
 
@@ -97,6 +97,13 @@ function renderWeightContent() {
 }
 
 function attachWeightListeners() {
+  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
+    animateCardRemoval(cardEl, () => {
+      weights = weights.filter((e) => e.id !== id);
+      saveJSON(KEYS.weights, weights);
+      renderWeightContent();
+    });
+  });
   document.getElementById("save-weight-btn").addEventListener("click", () => {
     const dateEl = document.getElementById("w-date");
     const valueEl = document.getElementById("w-value");
@@ -109,14 +116,5 @@ function attachWeightListeners() {
     renderWeightContent();
     const newRow = document.querySelector(`.weight-entry-row[data-id="${newEntry.id}"]`);
     if (newRow) newRow.classList.add("set-row-enter");
-  });
-  document.querySelectorAll("[data-delete-weight]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      animateCardRemoval(btn.closest(".weight-entry-row"), () => {
-        weights = weights.filter((e) => e.id !== btn.dataset.deleteWeight);
-        saveJSON(KEYS.weights, weights);
-        renderWeightContent();
-      });
-    });
   });
 }

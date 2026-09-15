@@ -413,12 +413,11 @@ select.ex-name-pill:focus { outline: none; }
 .chev { transition: transform 0.18s ease; color: rgba(var(--ink-rgb), 0.62); }
 .chev.open { transform: rotate(180deg); }
 .delete-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 14px; padding: 0 16px 14px; }
-.edit-link, .delete-link {
+.edit-link {
   background: none; border: none; font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
   letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0;
 }
 .edit-link { color: var(--action); }
-.delete-link { color: var(--danger); }
 
 /* ========== MODULE POIDS (statistiques, graphique, entrées) ========== */
 .weight-stat-row { display: flex; gap: 10px; margin-bottom: 16px; }
@@ -517,7 +516,7 @@ select.ex-name-pill:focus { outline: none; }
 .history-card.just-landed { animation: history-card-land 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), history-card-glow-fade 1.6s ease 0.3s forwards; }
 /* ---------- Glisser pour supprimer ---------- */
 .swipe-row { position: relative; overflow: hidden; border-radius: var(--radius); margin-bottom: 10px; }
-.swipe-row .history-card { margin-bottom: 0; position: relative; z-index: 1; touch-action: pan-y; background: var(--surface); }
+.swipe-row > [data-swipe-id] { margin-bottom: 0; position: relative; z-index: 1; touch-action: pan-y; background: var(--surface); }
 .swipe-delete-reveal {
   position: absolute; top: 0; right: 0; bottom: 0; width: 84px;
   background: var(--danger); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
@@ -1283,7 +1282,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .live-rest-hero-active .live-rest-hero-label { color: var(--yellow); }
 .live-rest-hero-active .live-rest-hero-value { color: var(--on-ink); }
 .error-msg { background: var(--red); color: #fff; }
-.delete-link, .set-action-btn.danger { color: var(--red); }
+.set-action-btn.danger { color: var(--red); }
 .backup-btn.armed-danger { background: var(--red); border-color: var(--red); color: #fff; }
 
 
@@ -1334,7 +1333,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .modal-confirm.danger { background: var(--ink); color: var(--yellow); }
 .modal-confirm.danger:active { background: var(--yellow); color: var(--ink); }
 .error-msg { background: var(--ink); color: var(--yellow); }
-.delete-link, .set-action-btn.danger, .live-timeline-chip.confirm-delete .live-timeline-delete-overlay { color: var(--text); }
+.set-action-btn.danger, .live-timeline-chip.confirm-delete .live-timeline-delete-overlay { color: var(--text); }
 .live-timeline-chip.confirm-delete { background: var(--yellow); }
 .live-timeline-chip.deleting { background: var(--ink); }
 .live-timeline-chip.deleting .live-timeline-delete-overlay { color: var(--yellow); }

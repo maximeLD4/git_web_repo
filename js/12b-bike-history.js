@@ -31,7 +31,6 @@ function bikeSessionCardHTML(s) {
              <button class="edit-link" data-bike-edit-session="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-bike-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-bike-share-session="${s.id}">${ICONS.up} Partager</button>
-             <button class="delete-link" data-bike-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
@@ -154,22 +153,6 @@ function attachBikeHistoryListeners() {
       const id = el.dataset.bikeToggle;
       openBikeHistoryIds[id] = !openBikeHistoryIds[id];
       renderBikeContent();
-    });
-  });
-  document.querySelectorAll("[data-bike-delete-session]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      showConfirm(
-        "Supprimer définitivement cette séance ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            bikeSessions = bikeSessions.filter((s) => s.id !== btn.dataset.bikeDeleteSession);
-            saveJSON(KEYS.bikeSessions, bikeSessions);
-            renderBikeContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
     });
   });
   document.querySelectorAll("[data-bike-share-session]").forEach((btn) => {

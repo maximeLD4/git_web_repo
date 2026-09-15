@@ -373,13 +373,16 @@ function ensureSwipeGlobalCloser() {
 // Enveloppe le HTML d'une carte existante dans la structure nécessaire au
 // glissé : un bouton "Supprimer" rouge en dessous, révélé en glissant la
 // carte elle-même vers la gauche par-dessus. `cardHTML` doit contenir un
-// unique ".history-card" ; `id` sert à le retrouver et à savoir laquelle
-// supprimer une fois le bouton révélé tapoté (voir initSwipeToDelete).
+// unique élément racine (`.history-card`, `.weight-entry-row`...) ; `id`
+// sert à le retrouver et à savoir laquelle supprimer une fois le bouton
+// révélé tapoté (voir initSwipeToDelete) — peu importe sa classe exacte,
+// l'attribut est simplement ajouté juste après le premier "<div".
 function wrapSwipeToDeleteRow(id, cardHTML) {
+  const withId = cardHTML.replace(/^(\s*<div)(\s)/, `$1 data-swipe-id="${id}"$2`);
   return `
   <div class="swipe-row">
     <div class="swipe-delete-reveal" data-swipe-delete-reveal>${ICONS.trash}<span>Supprimer</span></div>
-    ${cardHTML.replace('class="history-card', `data-swipe-id="${id}" class="history-card`)}
+    ${withId}
   </div>`;
 }
 
@@ -391,7 +394,7 @@ function initSwipeToDelete(container, onDeleteTap) {
   ensureSwipeGlobalCloser();
   const REVEAL = 84;
   container.querySelectorAll(".swipe-row").forEach((row) => {
-    const card = row.querySelector(".history-card[data-swipe-id]");
+    const card = row.querySelector("[data-swipe-id]");
     const reveal = row.querySelector("[data-swipe-delete-reveal]");
     if (!card || !reveal) return;
     const id = card.dataset.swipeId;

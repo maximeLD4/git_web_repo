@@ -12,7 +12,7 @@ function renderSettingsApp() {
       <div class="header-icon-only">${ICONS.gear}</div>
       <div class="header-sub">${currentUser && currentUser.email ? currentUser.email : "Personnalise chaque section"}</div>
     </div>
-    <div class="content" id="content" style="padding-bottom: 90px;"></div>
+    <div class="content" id="content"></div>
     <div style="position:fixed; left:0; right:0; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; justify-content:center;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
     </div>
@@ -88,7 +88,7 @@ function gymSettingsListHTML() {
       const bases = [...c.baseWeights].sort((a, b) => a - b).join(", ");
       const incLabel = c.maxIncrement > 0 ? ` · +0 ou +${c.maxIncrement}kg` : "";
       const autoIncLabel = c.autoIncrement ? ` · Incrément auto` : "";
-      return `
+      const cardHTML = `
       <div class="history-card">
         <div class="history-head" data-edit-config="${c.id}" style="cursor:pointer;">
           <div class="history-head-left">
@@ -96,9 +96,9 @@ function gymSettingsListHTML() {
             <div class="history-label">${bases ? bases + " kg" : "Aucun palier"}${incLabel}${autoIncLabel}</div>
           </div>
           <button type="button" class="icon-btn" data-duplicate-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
-          <button type="button" class="icon-btn" data-delete-config="${c.id}" aria-label="Supprimer">${ICONS.trash}</button>
         </div>
       </div>`;
+      return wrapSwipeToDeleteRow(c.id, cardHTML);
     })
     .join("");
   return `${tabsHTML}${filtered.length === 0 ? emptyState : items}`;
@@ -207,7 +207,7 @@ function renderGymSettingsApp() {
       <div class="header-icon-only">${ICONS.dumbbell}</div>
       <div class="header-sub">Exercices préconfigurés</div>
     </div>
-    <div class="content" id="content" style="padding-bottom: 90px;"></div>
+    <div class="content" id="content"></div>
     <div class="log-actions-bar" id="settings-actions-bar" style="display:none; bottom:0; padding-bottom: calc(12px + env(safe-area-inset-bottom));"></div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
@@ -284,16 +284,19 @@ function gainageSettingsListHTML() {
   const items = [...gainageExerciseConfigs]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(
-      (c) => `
+      (c) =>
+        wrapSwipeToDeleteRow(
+          c.id,
+          `
       <div class="history-card">
         <div class="history-head" data-edit-gainage-config="${c.id}" style="cursor:pointer;">
           <div class="history-head-left">
             <div class="exercise-config-name">${c.name}</div>
           </div>
           <button type="button" class="icon-btn" data-duplicate-gainage-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
-          <button type="button" class="icon-btn" data-delete-gainage-config="${c.id}" aria-label="Supprimer">${ICONS.trash}</button>
         </div>
       </div>`
+        )
     )
     .join("");
   return `${gainageExerciseConfigs.length === 0 ? emptyState : items}`;
@@ -325,6 +328,33 @@ function gainageSettingsFormHTML() {
 }
 
 function attachGymSettingsListeners() {
+  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
+    if (gymSettingsMode === "gainage") {
+      showConfirm(
+        "Supprimer cet exercice de gainage configuré ? Les séances déjà enregistrées ne sont pas affectées.",
+        () => {
+          animateCardRemoval(cardEl, () => {
+            gainageExerciseConfigs = gainageExerciseConfigs.filter((c) => c.id !== id);
+            saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
+            renderGymSettingsContent();
+          });
+        },
+        { confirmLabel: "Supprimer", danger: true }
+      );
+    } else {
+      showConfirm(
+        "Supprimer cet exercice configuré ? Les séances déjà enregistrées ne sont pas affectées.",
+        () => {
+          animateCardRemoval(cardEl, () => {
+            gymExerciseConfigs = gymExerciseConfigs.filter((c) => c.id !== id);
+            saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
+            renderGymSettingsContent();
+          });
+        },
+        { confirmLabel: "Supprimer", danger: true }
+      );
+    }
+  });
   document.querySelectorAll("[data-gym-settings-mode]").forEach((btn) => {
     btn.addEventListener("click", () => {
       gymSettingsMode = btn.dataset.gymSettingsMode;
@@ -385,22 +415,6 @@ function attachGymSettingsListeners() {
       };
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
-    });
-  });
-  document.querySelectorAll("[data-delete-config]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      showConfirm(
-        "Supprimer cet exercice configuré ? Les séances déjà enregistrées ne sont pas affectées.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            gymExerciseConfigs = gymExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteConfig);
-            saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
-            renderGymSettingsContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
     });
   });
 
@@ -542,22 +556,6 @@ function attachGainageSettingsListeners() {
       gainageSettingsEditingConfigId = null;
       gainageSettingsFormDraft = { name: config.name + " (copie)" };
       renderGymSettingsContent();
-    });
-  });
-  document.querySelectorAll("[data-delete-gainage-config]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      showConfirm(
-        "Supprimer cet exercice de gainage configuré ? Les séances déjà enregistrées ne sont pas affectées.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            gainageExerciseConfigs = gainageExerciseConfigs.filter((c) => c.id !== btn.dataset.deleteGainageConfig);
-            saveJSON(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
-            renderGymSettingsContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
     });
   });
 

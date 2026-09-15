@@ -61,7 +61,6 @@ function sessionCardHTML(s) {
              <button class="edit-link" data-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-convert-session="${s.id}">${ICONS.stopwatch} Convertir en plan</button>
              <button class="edit-link" data-share-session="${s.id}">${ICONS.up} Partager</button>
-             <button class="delete-link" data-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
@@ -154,7 +153,6 @@ function planCardHTML(plan) {
              <button class="edit-link" data-edit-plan="${plan.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-duplicate-plan="${plan.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-convert-plan="${plan.id}">${ICONS.dumbbell} Convertir en séance</button>
-             <button class="delete-link" data-delete-plan="${plan.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
@@ -261,23 +259,6 @@ function attachHistoryListeners() {
       if (plan) convertPlanToSession(plan);
     });
   });
-  document.querySelectorAll("[data-delete-plan]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      showConfirm(
-        "Supprimer définitivement ce plan ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            sessionPlans = sessionPlans.filter((p) => p.id !== btn.dataset.deletePlan);
-            saveJSON(KEYS.sessionPlans, sessionPlans);
-            renderContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
-    });
-  });
-
   document.querySelectorAll("[data-history-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
       historyViewMode = btn.dataset.historyView;
@@ -300,22 +281,6 @@ function attachHistoryListeners() {
       const id = el.dataset.toggle;
       openHistoryIds[id] = !openHistoryIds[id];
       renderContent();
-    });
-  });
-  document.querySelectorAll("[data-delete-session]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      showConfirm(
-        "Supprimer définitivement cette séance ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            sessions = sessions.filter((s) => s.id !== btn.dataset.deleteSession);
-            saveJSON(KEYS.sessions, sessions);
-            renderContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
     });
   });
   document.querySelectorAll("[data-share-session]").forEach((btn) => {

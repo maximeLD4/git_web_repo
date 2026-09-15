@@ -31,7 +31,6 @@ function swimSessionCardHTML(s) {
              <button class="edit-link" data-swim-edit-session="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-swim-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
              <button class="edit-link" data-swim-share-session="${s.id}">${ICONS.up} Partager</button>
-             <button class="delete-link" data-swim-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
         : ""
     }
@@ -154,22 +153,6 @@ function attachSwimHistoryListeners() {
       const id = el.dataset.swimToggle;
       openSwimHistoryIds[id] = !openSwimHistoryIds[id];
       renderSwimContent();
-    });
-  });
-  document.querySelectorAll("[data-swim-delete-session]").forEach((btn) => {
-    btn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      showConfirm(
-        "Supprimer définitivement cette séance ? Cette action est irréversible.",
-        () => {
-          animateCardRemoval(btn.closest(".history-card"), () => {
-            swimSessions = swimSessions.filter((s) => s.id !== btn.dataset.swimDeleteSession);
-            saveJSON(KEYS.swimSessions, swimSessions);
-            renderSwimContent();
-          });
-        },
-        { confirmLabel: "Supprimer", danger: true }
-      );
     });
   });
   document.querySelectorAll("[data-swim-share-session]").forEach((btn) => {
