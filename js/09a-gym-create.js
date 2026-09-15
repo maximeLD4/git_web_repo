@@ -986,6 +986,12 @@ function attachLogListeners() {
       }
       minusBtn.addEventListener("click", () => bumpReps(-1));
       plusBtn.addEventListener("click", () => bumpReps(1));
+      // Maintenir enfoncé répète l'ajustement — pas de conflit avec le
+      // double-clic ci-dessous : la répétition ne démarre qu'après un
+      // temps de garde (voir attachHoldToRepeat), largement après qu'un
+      // double-clic ait eu le temps de se produire.
+      attachHoldToRepeat(minusBtn, () => bumpReps(-1));
+      attachHoldToRepeat(plusBtn, () => bumpReps(1));
       // Double-clic/double-tap = +5 (ou -5) au total : chaque clic simple a déjà
       // ajouté ±1 (donc ±2 pour les deux clics du double-clic), le gestionnaire
       // dblclick n'ajoute donc que ±3 de plus pour arriver exactement à ±5,

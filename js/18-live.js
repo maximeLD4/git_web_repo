@@ -485,11 +485,11 @@ function liveCardioSetFormHTML(activeExercise) {
               : `<div class="live-stepper-group">
             <div class="live-stepper-label">Distance (km, optionnel)</div>
             <div class="live-stepper">
-              <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins">-</button>
-              <button type="button" class="live-stepper-tiny-btn" data-live-distance-tiny-minus aria-label="Moins">-</button>
+              <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins 1 km">−</button>
+              <button type="button" class="live-stepper-tiny-btn" data-live-distance-tiny-minus aria-label="Moins 0,1 km">−</button>
               <div class="live-stepper-value">${distance.toFixed(1)} km</div>
-              <button type="button" class="live-stepper-tiny-btn" data-live-distance-tiny-plus aria-label="Plus">+</button>
-              <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus">+</button>
+              <button type="button" class="live-stepper-tiny-btn" data-live-distance-tiny-plus aria-label="Plus 0,1 km">+</button>
+              <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus 1 km">+</button>
             </div>
           </div>`
           }
@@ -1521,6 +1521,8 @@ function attachLiveSetFormListeners(content) {
   const repsPlus = content.querySelector("[data-live-reps-plus]");
   if (repsMinus) repsMinus.addEventListener("click", () => { liveDraftReps = Math.max(0, liveDraftReps - 1); renderLiveApp(); });
   if (repsPlus) repsPlus.addEventListener("click", () => { liveDraftReps = liveDraftReps + 1; renderLiveApp(); });
+  attachHoldToRepeat(repsMinus, () => { liveDraftReps = Math.max(0, liveDraftReps - 1); renderLiveApp(); });
+  attachHoldToRepeat(repsPlus, () => { liveDraftReps = liveDraftReps + 1; renderLiveApp(); });
 
   const weightSelect = content.querySelector("#live-weight-select");
   if (weightSelect) {
@@ -1548,10 +1550,24 @@ function attachLiveSetFormListeners(content) {
   const distTinyMinus = content.querySelector("[data-live-distance-tiny-minus]");
   const distTinyPlus = content.querySelector("[data-live-distance-tiny-plus]");
   const distPlus = content.querySelector("[data-live-distance-plus]");
-  if (distMinus) distMinus.addEventListener("click", () => { liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) - 1) * 10) / 10); renderLiveApp(); });
-  if (distTinyMinus) distTinyMinus.addEventListener("click", () => { liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) - 0.1) * 10) / 10); renderLiveApp(); });
-  if (distTinyPlus) distTinyPlus.addEventListener("click", () => { liveDraftDistance = Math.round(((liveDraftDistance || 0) + 0.1) * 10) / 10; renderLiveApp(); });
-  if (distPlus) distPlus.addEventListener("click", () => { liveDraftDistance = Math.round(((liveDraftDistance || 0) + 1) * 10) / 10; renderLiveApp(); });
+  // Un seul geste factorisé pour les 4 boutons plutôt que 4 fois le même
+  // calcul : ±1 (réglage grossier) ou ±0.1 (réglage fin), jamais sous 0,
+  // arrondi au dixième pour éviter les imprécisions classiques des
+  // flottants (0.1 + 0.2 ne fait pas rond en JS).
+  const adjustDistance = (delta) => {
+    liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) + delta) * 10) / 10);
+    renderLiveApp();
+  };
+  if (distMinus) distMinus.addEventListener("click", () => adjustDistance(-1));
+  if (distTinyMinus) distTinyMinus.addEventListener("click", () => adjustDistance(-0.1));
+  if (distTinyPlus) distTinyPlus.addEventListener("click", () => adjustDistance(0.1));
+  if (distPlus) distPlus.addEventListener("click", () => adjustDistance(1));
+  // Maintenir un de ces boutons enfoncé répète l'ajustement, plutôt que de
+  // devoir tapoter autant de fois que nécessaire pour une longue distance.
+  attachHoldToRepeat(distMinus, () => adjustDistance(-1));
+  attachHoldToRepeat(distTinyMinus, () => adjustDistance(-0.1));
+  attachHoldToRepeat(distTinyPlus, () => adjustDistance(0.1));
+  attachHoldToRepeat(distPlus, () => adjustDistance(1));
 }
 
 // Actions qui valident/changent l'état d'une série ou d'un exercice :

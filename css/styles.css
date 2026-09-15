@@ -790,8 +790,13 @@ select.ex-name-pill:focus { outline: none; }
 .live-stepper-label { text-align: center; font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-dim); font-weight: 600; }
 .live-stepper { display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); border-radius: var(--radius); padding: 8px; }
 .live-stepper-btn { width: 56px; height: 56px; border-radius: var(--radius); border: none; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 30px; font-weight: 400; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; }
-.live-stepper-tiny-btn { width: 28px; height: 28px; border-radius: var(--radius); border: none; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 15px; font-weight: 200; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; }
 .live-stepper-btn:active { background: var(--ink); color: var(--on-ink); }
+/* Réglage fin (±0.1) à côté du réglage grossier (±1, .live-stepper-btn) —
+   pour la distance en Course/Vélo, où ±0.1 seul demanderait des dizaines
+   de taps pour couvrir une distance réaliste. Volontairement plus petit :
+   la taille seule suffit à distinguer "gros pas" de "petit pas", pas
+   besoin d'étiquette supplémentaire. */
+.live-stepper-tiny-btn { width: 28px; height: 28px; border-radius: var(--radius); border: none; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 15px; font-weight: 400; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; }
 .live-stepper-tiny-btn:active { background: var(--ink); color: var(--on-ink); }
 .live-stepper-value { font-family: var(--font); font-size: 34px; font-weight: 900; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; flex: 1; text-align: center; }
 .live-weight-select { width: 100%; font-family: var(--font); font-size: 20px; padding: 16px; text-align: center; text-align-last: center; border-radius: var(--radius); background: var(--surface-2); border: 1px solid transparent; color: var(--text); font-weight: 800; letter-spacing: -0.5px; -webkit-appearance: none; appearance: none; }
@@ -1073,7 +1078,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .backup-btn, .add-exercise-btn, .home-settings-link { border-radius: var(--radius); }
 .icon-btn, .set-action-btn, .rep-step-btn, .live-stepper-tiny-btn, .live-stepper-btn,
 .back-btn, .cal-nav-btn, .logout-btn { border-radius: 50%; }
-.rep-step-btn, .live-stepper-tiny-btn , .live-stepper-btn { background: var(--surface); }
+.rep-step-btn, .live-stepper-tiny-btn, .live-stepper-btn { background: var(--surface); }
 
 /* ---------- Calendrier : trame carrée stricte ---------- */
 .cal-grid { gap: 2px; }
@@ -1128,7 +1133,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .rep-stepper, .live-stepper, .set-main input, select.set-weight,
 .live-type-switch, .live-weight-select { background: var(--surface-2); }
 /* ...et ce qui se pose dedans reste du papier, sinon le bouton disparaît. */
-.rep-stepper .rep-step-btn, .live-stepper .live-stepper-tiny-btn .live-stepper-btn { background: var(--surface); }
+.rep-stepper .rep-step-btn, .live-stepper .live-stepper-tiny-btn, .live-stepper .live-stepper-btn { background: var(--surface); }
 
 
 /* ==========================================================================
@@ -1223,11 +1228,11 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    glyphe 3px trop bas. L'écart étant proportionnel au corps, la compensation
    est en em : elle vaut pour les steppers de 56px comme pour ceux de 32px. */
 .rep-step-btn, .live-stepper-btn { padding: 0 6px 0.2em; transition: transform 0.1s steps(2); }
-.rep-step-btn, .live-stepper-tiny-btn { padding: 0 3px 0.2em; transition: transform 0.1s steps(2); }
+.live-stepper-tiny-btn { padding: 0 3px 0.2em; transition: transform 0.1s steps(2); }
 .rep-step-btn:active, .live-stepper-btn:active {
   transform: scale(0.88); background: var(--ink); color: var(--on-ink);
 }
-.rep-step-btn:active, .live-stepper-tiny-btn:active {
+.live-stepper-tiny-btn:active {
   transform: scale(0.88); background: var(--ink); color: var(--on-ink);
 }
 

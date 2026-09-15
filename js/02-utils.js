@@ -140,6 +140,54 @@ function scrollCardBottomIntoView(card) {
 // Glissement latéral au changement de mois, réutilisable par tous les
 // calendriers (chaque sport + le calendrier partagé) puisqu'ils utilisent
 // tous la même classe ".cal-grid" et qu'un seul est visible à la fois.
+// ---------- Maintenir un bouton +/- enfoncé pour répéter ----------
+// Le premier appui reste géré par le "click" normal laissé à l'appelant
+// (aucun changement de comportement pour un tap simple) — cette fonction
+// ajoute SEULEMENT la répétition après un temps de garde, tant qu'on
+// maintient. Légère accélération après quelques pas, pour parcourir une
+// plage large sans que ça devienne interminable.
+let holdRepeatActive = null; // { timeoutId, intervalId }
+function stopHoldRepeat() {
+  if (!holdRepeatActive) return;
+  clearTimeout(holdRepeatActive.timeoutId);
+  clearInterval(holdRepeatActive.intervalId);
+  holdRepeatActive = null;
+}
+// Écouté au niveau du document, jamais sur le bouton lui-même : certains
+// de ces boutons (voir Séance en direct) redessinent tout l'écran à
+// chaque pas, ce qui remplace le bouton EN PLEIN MAINTIEN — un écouteur
+// posé dessus ne verrait alors jamais le relâchement puisque l'élément
+// sous le doigt n'est déjà plus le même. Attaché une seule fois pour de
+// bon, pas à chaque rendu.
+let holdRepeatGlobalListenerAttached = false;
+function ensureHoldRepeatGlobalListener() {
+  if (holdRepeatGlobalListenerAttached) return;
+  holdRepeatGlobalListenerAttached = true;
+  document.addEventListener("pointerup", stopHoldRepeat, true);
+  document.addEventListener("pointercancel", stopHoldRepeat, true);
+}
+function attachHoldToRepeat(el, onStep) {
+  if (!el) return;
+  ensureHoldRepeatGlobalListener();
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button !== undefined && e.button !== 0) return; // clic gauche/tap seulement
+    stopHoldRepeat();
+    const timeoutId = setTimeout(() => {
+      let steps = 0;
+      const intervalId = setInterval(() => {
+        steps++;
+        if (steps === 12 && holdRepeatActive) {
+          clearInterval(holdRepeatActive.intervalId);
+          holdRepeatActive.intervalId = setInterval(onStep, 60);
+        }
+        onStep();
+      }, 130);
+      holdRepeatActive = { timeoutId: null, intervalId };
+    }, 450);
+    holdRepeatActive = { timeoutId, intervalId: null };
+  });
+}
+
 function animateCalendarMonthChange(delta, renderFn) {
   const oldGrid = document.querySelector(".cal-grid");
   if (oldGrid) {

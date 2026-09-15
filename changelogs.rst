@@ -28,6 +28,43 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.57.0 - 2026-09-04
+====================
+
+- **Maintenir un bouton +/- enfoncé répète maintenant l'ajustement**,
+  plutôt que de devoir tapoter autant de fois que nécessaire — concerné :
+  les 4 boutons de distance en Séance en direct (2.56.0), les répétitions
+  en Séance en direct, et les répétitions par série dans Créer. Léger
+  temps de garde avant que ça démarre (pour ne jamais gêner un tap
+  simple), puis une petite accélération après quelques pas.
+  - Point technique réglé en le construisant : sur Séance en direct,
+    chaque pas redessine tout l'écran, ce qui remplace le bouton EN PLEIN
+    MAINTIEN — le relâchement est donc écouté au niveau du document,
+    jamais du bouton lui-même, pour ne jamais perdre le contrôle si
+    l'élément sous le doigt a changé entre-temps.
+  - Testé : le maintien répète bien plus qu'un tap simple, le relâchement
+    arrête proprement (y compris en dehors du bouton), un tap simple reste
+    inchangé, et le double-clic (+5 sur les répétitions dans Créer) n'est
+    pas affecté par cet ajout.
+
+2.56.0 - 2026-09-04
+====================
+
+- **Distance en Séance en direct (Course/Vélo) : ajouté un petit bouton
+  ±0,1 km à côté du grand bouton ±1 km**, pour éviter des dizaines de taps
+  quand on veut ajuster une distance de plusieurs kilomètres. Bonne idée
+  proposée et testée avant intégration.
+  - Corrigé au passage un effet de bord introduit avec ce changement : les
+    boutons +/- de répétitions dans Créer avaient perdu la moitié de leur
+    marge intérieure (un sélecteur CSS incluait par erreur cette classe-là
+    en plus de la nouvelle). Rendu au passage le code JS des 4 boutons
+    plus compact (un seul calcul factorisé plutôt que répété 4 fois), et
+    ajouté des libellés d'accessibilité qui précisent le pas (1 km / 0,1
+    km) plutôt qu'un simple "Plus"/"Moins" générique.
+  - Testé : les 4 boutons ajustent la bonne quantité, le clampage à 0
+    fonctionne, les boutons de répétitions ont retrouvé leur espacement
+    d'origine.
+
 2.55.1 - 2026-09-04
 ====================
 
