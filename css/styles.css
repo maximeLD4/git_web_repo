@@ -352,13 +352,13 @@ select.ex-name-pill:focus { outline: none; }
   justify-content: center; gap: 6px; animation: flash-slide-up 0.28s cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 /* Effet d'appui universel : léger rétrécissement au tap. */
-.live-btn, .live-validate-btn, .live-stepper-btn, .live-subcat-btn, .live-type-switch-btn,
+.live-btn, .live-validate-btn, .live-stepper-tiny-btn, .live-stepper-btn, .live-subcat-btn, .live-type-switch-btn,
 .home-tile, .rep-step-btn, .add-set-btn, .save-btn, .add-exercise-btn, .increment-switch-btn,
 .live-post-btn, .live-stop-btn, .live-timeline-chip, .cal-cell, .exercise-collapsed-summary,
 .home-settings-link {
   transition: transform 0.1s ease;
 }
-.live-btn:active, .live-validate-btn:active, .live-stepper-btn:active, .live-subcat-btn:active, .live-type-switch-btn:active,
+.live-btn:active, .live-validate-btn:active, .live-stepper-tiny-btn:active, .live-stepper-btn:active, .live-subcat-btn:active, .live-type-switch-btn:active,
 .home-tile:active, .rep-step-btn:active, .add-set-btn:active, .save-btn:active, .add-exercise-btn:active, .increment-switch-btn:active,
 .live-post-btn:active, .live-stop-btn:active, .live-timeline-chip:active, .cal-cell:active, .exercise-collapsed-summary:active,
 .home-settings-link:active {
@@ -790,7 +790,9 @@ select.ex-name-pill:focus { outline: none; }
 .live-stepper-label { text-align: center; font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-dim); font-weight: 600; }
 .live-stepper { display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); border-radius: var(--radius); padding: 8px; }
 .live-stepper-btn { width: 56px; height: 56px; border-radius: var(--radius); border: none; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 30px; font-weight: 400; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; }
+.live-stepper-tiny-btn { width: 28px; height: 28px; border-radius: var(--radius); border: none; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 15px; font-weight: 200; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; }
 .live-stepper-btn:active { background: var(--ink); color: var(--on-ink); }
+.live-stepper-tiny-btn:active { background: var(--ink); color: var(--on-ink); }
 .live-stepper-value { font-family: var(--font); font-size: 34px; font-weight: 900; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; flex: 1; text-align: center; }
 .live-weight-select { width: 100%; font-family: var(--font); font-size: 20px; padding: 16px; text-align: center; text-align-last: center; border-radius: var(--radius); background: var(--surface-2); border: 1px solid transparent; color: var(--text); font-weight: 800; letter-spacing: -0.5px; -webkit-appearance: none; appearance: none; }
 .live-increment-btn { width: 100%; margin-top: 8px; padding: 12px; border-radius: var(--radius); }
@@ -1069,9 +1071,9 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 /* ---------- Boutons : rectangles pleins, pas de pastille ---------- */
 .save-btn, .live-validate-btn, .auth-submit, .modal-btn, .live-post-btn,
 .backup-btn, .add-exercise-btn, .home-settings-link { border-radius: var(--radius); }
-.icon-btn, .set-action-btn, .rep-step-btn, .live-stepper-btn,
+.icon-btn, .set-action-btn, .rep-step-btn, .live-stepper-tiny-btn, .live-stepper-btn,
 .back-btn, .cal-nav-btn, .logout-btn { border-radius: 50%; }
-.rep-step-btn, .live-stepper-btn { background: var(--surface); }
+.rep-step-btn, .live-stepper-tiny-btn , .live-stepper-btn { background: var(--surface); }
 
 /* ---------- Calendrier : trame carrée stricte ---------- */
 .cal-grid { gap: 2px; }
@@ -1126,7 +1128,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .rep-stepper, .live-stepper, .set-main input, select.set-weight,
 .live-type-switch, .live-weight-select { background: var(--surface-2); }
 /* ...et ce qui se pose dedans reste du papier, sinon le bouton disparaît. */
-.rep-stepper .rep-step-btn, .live-stepper .live-stepper-btn { background: var(--surface); }
+.rep-stepper .rep-step-btn, .live-stepper .live-stepper-tiny-btn .live-stepper-btn { background: var(--surface); }
 
 
 /* ==========================================================================
@@ -1221,7 +1223,11 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    glyphe 3px trop bas. L'écart étant proportionnel au corps, la compensation
    est en em : elle vaut pour les steppers de 56px comme pour ceux de 32px. */
 .rep-step-btn, .live-stepper-btn { padding: 0 6px 0.2em; transition: transform 0.1s steps(2); }
+.rep-step-btn, .live-stepper-tiny-btn { padding: 0 3px 0.2em; transition: transform 0.1s steps(2); }
 .rep-step-btn:active, .live-stepper-btn:active {
+  transform: scale(0.88); background: var(--ink); color: var(--on-ink);
+}
+.rep-step-btn:active, .live-stepper-tiny-btn:active {
   transform: scale(0.88); background: var(--ink); color: var(--on-ink);
 }
 

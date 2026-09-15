@@ -485,8 +485,10 @@ function liveCardioSetFormHTML(activeExercise) {
               : `<div class="live-stepper-group">
             <div class="live-stepper-label">Distance (km, optionnel)</div>
             <div class="live-stepper">
-              <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins">−</button>
+              <button type="button" class="live-stepper-btn" data-live-distance-minus aria-label="Moins">-</button>
+              <button type="button" class="live-stepper-tiny-btn" data-live-distance-tiny-minus aria-label="Moins">-</button>
               <div class="live-stepper-value">${distance.toFixed(1)} km</div>
+              <button type="button" class="live-stepper-tiny-btn" data-live-distance-tiny-plus aria-label="Plus">+</button>
               <button type="button" class="live-stepper-btn" data-live-distance-plus aria-label="Plus">+</button>
             </div>
           </div>`
@@ -1543,9 +1545,13 @@ function attachLiveSetFormListeners(content) {
   }
 
   const distMinus = content.querySelector("[data-live-distance-minus]");
+  const distTinyMinus = content.querySelector("[data-live-distance-tiny-minus]");
+  const distTinyPlus = content.querySelector("[data-live-distance-tiny-plus]");
   const distPlus = content.querySelector("[data-live-distance-plus]");
-  if (distMinus) distMinus.addEventListener("click", () => { liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) - 0.1) * 10) / 10); renderLiveApp(); });
-  if (distPlus) distPlus.addEventListener("click", () => { liveDraftDistance = Math.round(((liveDraftDistance || 0) + 0.1) * 10) / 10; renderLiveApp(); });
+  if (distMinus) distMinus.addEventListener("click", () => { liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) - 1) * 10) / 10); renderLiveApp(); });
+  if (distTinyMinus) distTinyMinus.addEventListener("click", () => { liveDraftDistance = Math.max(0, Math.round(((liveDraftDistance || 0) - 0.1) * 10) / 10); renderLiveApp(); });
+  if (distTinyPlus) distTinyPlus.addEventListener("click", () => { liveDraftDistance = Math.round(((liveDraftDistance || 0) + 0.1) * 10) / 10; renderLiveApp(); });
+  if (distPlus) distPlus.addEventListener("click", () => { liveDraftDistance = Math.round(((liveDraftDistance || 0) + 1) * 10) / 10; renderLiveApp(); });
 }
 
 // Actions qui valident/changent l'état d'une série ou d'un exercice :
