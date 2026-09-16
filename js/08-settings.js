@@ -35,23 +35,59 @@ function renderSettingsContent() {
       </div>
       <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
-    <div class="home-section-label" style="margin: 20px 0 10px;">Apparence</div>
-    <div class="ex-type-toggle" style="margin-bottom: 12px;">
-      <button type="button" class="ex-type-btn ${colorMode === "day" ? "active" : ""}" data-color-mode="day">${ICONS.sun} Jour</button>
-      <button type="button" class="ex-type-btn ${colorMode === "night" ? "active" : ""}" data-color-mode="night">${ICONS.moon} Nuit</button>
-      <button type="button" class="ex-type-btn ${colorMode === "anne" ? "active" : ""}" data-color-mode="anne">${ICONS.heart} Anne</button>
+    <div class="home-card" data-open-settings="appearance">
+      <div class="home-card-icon" style="background: rgba(var(--ink-rgb), 0.08); color: var(--ink);">${ICONS.sun}</div>
+      <div class="home-card-text">
+        <div class="home-card-title">Apparence</div>
+        <div class="home-card-sub">${colorMode === "day" ? "Jour" : colorMode === "night" ? "Nuit" : "Anne"}</div>
+      </div>
+      <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
-    <div class="home-section-label" style="margin: 20px 0 10px;">Sauvegarde</div>
-    <div class="backup-row">
-      <button class="backup-btn" id="export-btn">${ICONS.up} Exporter</button>
-      <button class="backup-btn" id="import-btn">${ICONS.down} Importer</button>
-      <input type="file" id="import-file" accept="application/json" style="display:none">
+    <div class="home-card" data-open-settings="sound">
+      <div class="home-card-icon" style="background: rgba(var(--ink-rgb), 0.08); color: var(--ink);">${ICONS.volume}</div>
+      <div class="home-card-text">
+        <div class="home-card-title">Son</div>
+        <div class="home-card-sub">Volume des bips à ${soundVolume}%</div>
+      </div>
+      <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
-    <div class="sync-status">Dernier export : ${formatRelativeTime(loadJSON(KEYS.lastExport, null))} · Dernier import : ${formatRelativeTime(loadJSON(KEYS.lastImport, null))}</div>
-    <div class="backup-note">Cette sauvegarde inclut toutes tes activités (muscu, course, natation, vélo), tes plans préparés et tes exercices configurés — un seul fichier pour tout ton historique. Pour le retrouver sur un autre appareil : exporte ici, envoie-toi le fichier (AirDrop, mail, cloud…), puis importe-le là-bas.</div>
+    <div class="home-card" data-open-settings="backup">
+      <div class="home-card-icon" style="background: rgba(var(--ink-rgb), 0.08); color: var(--ink);">${ICONS.up}</div>
+      <div class="home-card-text">
+        <div class="home-card-title">Sauvegarde</div>
+        <div class="home-card-sub">Exporter / importer toutes tes données</div>
+      </div>
+      <div class="home-card-arrow">${ICONS.chevronRight}</div>
+    </div>
   `;
-  document.querySelector("[data-open-settings]").addEventListener("click", () => {
-    currentApp = "settings-gym";
+  document.querySelectorAll("[data-open-settings]").forEach((card) => {
+    card.addEventListener("click", () => {
+      const target = card.dataset.openSettings;
+      currentApp = target === "gym" ? "settings-gym" : "settings-" + target;
+      render();
+    });
+  });
+}
+
+// ---------- Apparence : sous-écran dédié ----------
+function renderSettingsAppearanceApp() {
+  app.className = "theme-settings";
+  app.innerHTML = `
+    <div class="header">
+      <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
+      <div class="header-icon-only">${ICONS.sun}</div>
+      <div class="header-sub">Apparence</div>
+    </div>
+    <div class="content" id="content">
+      <div class="ex-type-toggle" style="margin-bottom: 12px;">
+        <button type="button" class="ex-type-btn ${colorMode === "day" ? "active" : ""}" data-color-mode="day">${ICONS.sun} Jour</button>
+        <button type="button" class="ex-type-btn ${colorMode === "night" ? "active" : ""}" data-color-mode="night">${ICONS.moon} Nuit</button>
+        <button type="button" class="ex-type-btn ${colorMode === "anne" ? "active" : ""}" data-color-mode="anne">${ICONS.heart} Anne</button>
+      </div>
+    </div>
+  `;
+  document.querySelector("[data-back-settings]").addEventListener("click", () => {
+    currentApp = "settings";
     render();
   });
   document.querySelectorAll("[data-color-mode]").forEach((btn) => {
@@ -63,21 +99,89 @@ function renderSettingsContent() {
       // Re-rendu complet (pas juste ce petit toggle) : les couleurs de
       // module (icônes, etc.) codées en dur ailleurs dans ce même écran
       // doivent, elles aussi, refléter le nouveau mode tout de suite.
-      renderSettingsApp();
+      renderSettingsAppearanceApp();
     });
   });
+}
 
-  // Sauvegarde/restauration : vivait avant en 4 exemplaires identiques (un
-  // par sport, voir les changelogs) — export/import portent de toute façon
-  // sur la totalité des données, jamais sur un seul sport. Un seul
-  // exemplaire ici, dans Réglages, plutôt que dupliqué partout pour rien.
+// ---------- Son : sous-écran dédié ----------
+function renderSettingsSoundApp() {
+  app.className = "theme-settings";
+  app.innerHTML = `
+    <div class="header">
+      <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
+      <div class="header-icon-only">${ICONS.volume}</div>
+      <div class="header-sub">Son</div>
+    </div>
+    <div class="content" id="content">
+      <div class="field" style="margin-bottom: 20px;">
+        <label>Volume des bips (Séance en direct) — ${soundVolume}%</label>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+          <input type="range" id="sound-volume-slider" min="0" max="150" step="10" value="${soundVolume}" style="flex:1;">
+          <button type="button" class="icon-btn" id="test-sound-btn" aria-label="Tester le son">${ICONS.volume}</button>
+        </div>
+        <div class="backup-note" style="margin-top:8px;">Au-delà de 100%, plus fort que le volume d'origine — utile si de la musique dans les oreilles couvre le bip par défaut.</div>
+      </div>
+    </div>
+  `;
+  document.querySelector("[data-back-settings]").addEventListener("click", () => {
+    currentApp = "settings";
+    render();
+  });
+  // Pas de re-rendu complet à chaque glissement (saccaderait le curseur en
+  // plein geste) : juste le texte du pourcentage, mis à jour à la volée.
+  // Le son n'est prévisualisé qu'au relâchement ("change"), ou sur demande
+  // via le bouton dédié — pas à chaque minuscule cran du curseur.
+  const soundSlider = document.getElementById("sound-volume-slider");
+  const testSoundBtn = document.getElementById("test-sound-btn");
+  if (soundSlider) {
+    const label = soundSlider.closest(".field")?.querySelector("label");
+    soundSlider.addEventListener("input", () => {
+      soundVolume = parseInt(soundSlider.value, 10);
+      if (label) label.textContent = `Volume des bips (Séance en direct) — ${soundVolume}%`;
+    });
+    soundSlider.addEventListener("change", () => {
+      saveJSON(KEYS.soundVolume, soundVolume);
+      playLiveRestSignal();
+    });
+  }
+  if (testSoundBtn) {
+    testSoundBtn.addEventListener("click", () => {
+      playLiveRestSignal();
+    });
+  }
+}
+
+// ---------- Sauvegarde : sous-écran dédié ----------
+function renderSettingsBackupApp() {
+  app.className = "theme-settings";
+  app.innerHTML = `
+    <div class="header">
+      <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
+      <div class="header-icon-only">${ICONS.up}</div>
+      <div class="header-sub">Sauvegarde</div>
+    </div>
+    <div class="content" id="content">
+      <div class="backup-row">
+        <button class="backup-btn" id="export-btn">${ICONS.up} Exporter</button>
+        <button class="backup-btn" id="import-btn">${ICONS.down} Importer</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none">
+      </div>
+      <div class="sync-status">Dernier export : ${formatRelativeTime(loadJSON(KEYS.lastExport, null))} · Dernier import : ${formatRelativeTime(loadJSON(KEYS.lastImport, null))}</div>
+      <div class="backup-note">Cette sauvegarde inclut toutes tes activités (muscu, course, natation, vélo), tes plans préparés et tes exercices configurés — un seul fichier pour tout ton historique. Pour le retrouver sur un autre appareil : exporte ici, envoie-toi le fichier (AirDrop, mail, cloud…), puis importe-le là-bas.</div>
+    </div>
+  `;
+  document.querySelector("[data-back-settings]").addEventListener("click", () => {
+    currentApp = "settings";
+    render();
+  });
   const exportBtn = document.getElementById("export-btn");
   const importBtn = document.getElementById("import-btn");
   const importFile = document.getElementById("import-file");
 
   exportBtn.addEventListener("click", async () => {
     await exportBackup();
-    renderSettingsContent();
+    renderSettingsBackupApp();
   });
 
   importBtn.addEventListener("click", () => importFile.click());
@@ -95,7 +199,7 @@ function renderSettingsContent() {
         importFile.value = "";
         return;
       }
-      handleImportedFile(data, renderSettingsContent);
+      handleImportedFile(data, renderSettingsBackupApp);
       importFile.value = "";
     };
     reader.readAsText(file);

@@ -33,8 +33,13 @@ function scheduleLiveTone(ctx, frequency, durationMs) {
   osc.frequency.value = frequency;
   // Petite enveloppe (montée/descente en volume) plutôt qu'un aplat brut —
   // évite le "clic" désagréable d'un son qui démarre/s'arrête à volume plein.
+  // Le pic (0.22 à 100%) est mis à l'échelle du réglage de volume choisi
+  // dans Réglages (voir soundVolume) — pensé pour pouvoir monter au-delà
+  // de l'original, pas seulement baisser (de la musique dans les oreilles
+  // peut couvrir le bip par défaut).
+  const peak = 0.22 * (soundVolume / 100);
   gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), ctx.currentTime + 0.015);
   gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
   osc.connect(gain);
   gain.connect(ctx.destination);

@@ -15,6 +15,12 @@ function applyColorMode(mode) {
 }
 applyColorMode(colorMode);
 
+// Volume des bips de la boucle Gainage (voir 19-live-sound.js) — en
+// pourcentage, 100 = volume d'origine (celui d'avant ce réglage). Permet
+// de monter au-delà si besoin (musique dans les oreilles qui couvre le
+// bip par défaut), pas seulement de baisser.
+let soundVolume = loadJSON(KEYS.soundVolume, 100);
+
 let sessions = loadJSON(KEYS.sessions, []);
 let library = loadJSON(KEYS.library, []);
 let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);

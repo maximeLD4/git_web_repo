@@ -28,6 +28,36 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.61.0 - 2026-09-04
+====================
+
+- **Réorganisé le menu Réglages : Apparence, Son et Sauvegarde sont
+  maintenant des sous-écrans à part entière**, comme l'était déjà "Salle
+  de sport" — plutôt que des sections empilées les unes sous les autres
+  sur le même écran. Le menu principal montre désormais 4 cartes, chacune
+  avec un aperçu de son état actuel en un coup d'œil ("Nuit", "Volume des
+  bips à 80%"...), et un tap ouvre l'écran dédié correspondant.
+  - Aucun changement de comportement ni de réglage existant — uniquement
+    la présentation, encapsulée proprement plutôt qu'en vrac.
+  - Testé : les 4 cartes, la navigation vers chaque sous-écran et le
+    retour, et que chaque action (mode couleur, volume, export réel)
+    fonctionne toujours exactement pareil qu'avant. Aucune régression sur
+    les 14 écrans principaux.
+
+2.60.0 - 2026-09-04
+====================
+
+- **Ajouté un réglage de volume pour les bips de la boucle Gainage**
+  (Réglages > Son) — jusque là fixe, pas toujours assez fort pour percer
+  par-dessus de la musique dans les oreilles. Curseur de 0 à 150% (100%
+  = volume d'origine, donc rien ne change par défaut), avec un bouton
+  dédié pour tester le son au niveau choisi sans attendre le prochain
+  bip réel, et un aperçu automatique dès qu'on relâche le curseur.
+  - Testé : le curseur affecte bien le volume réellement produit (vérifié
+    le calcul du gain à plusieurs niveaux), la valeur persiste après
+    rechargement de la page, et l'aperçu fonctionne aussi bien via le
+    bouton dédié qu'au relâchement du curseur.
+
 2.59.3 - 2026-09-04
 ====================
 

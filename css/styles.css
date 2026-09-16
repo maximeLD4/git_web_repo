@@ -178,6 +178,14 @@ a:hover { color: var(--action); }
   font-family: var(--font-mono); font-size: 9px; text-transform: uppercase;
   letter-spacing: 0.14em; color: var(--text-dim); font-weight: 600;
 }
+/* Curseur de volume (Réglages > Son) — l'apparence par défaut du
+   navigateur jure avec le reste de l'app, donc redessiné entièrement.
+   Webkit/Blink et Firefox exigent chacun leurs propres pseudo-éléments
+   pour le pouce et le rail, aucune propriété commune ne suffit. */
+input[type="range"] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; background: var(--surface-2); outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); cursor: pointer; box-shadow: var(--shadow-card); }
+input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); border: none; cursor: pointer; box-shadow: var(--shadow-card); }
+input[type="range"]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--surface-2); }
 /* Les champs deviennent des lignes soulignées plutôt que des boîtes : moins
    de cadres, plus de lecture. */
 input[type="text"], input[type="date"], input[type="number"] {

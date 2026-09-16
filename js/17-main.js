@@ -8,6 +8,9 @@ function render() {
   if (currentApp === "bike") { renderBikeApp(); return; }
   if (currentApp === "settings") { renderSettingsApp(); return; }
   if (currentApp === "settings-gym") { renderGymSettingsApp(); return; }
+  if (currentApp === "settings-appearance") { renderSettingsAppearanceApp(); return; }
+  if (currentApp === "settings-sound") { renderSettingsSoundApp(); return; }
+  if (currentApp === "settings-backup") { renderSettingsBackupApp(); return; }
   if (currentApp === "scanner") { renderScannerApp(); return; }
   if (currentApp === "performance") { renderPerformanceApp(); return; }
   if (currentApp === "performance-detail") { renderPerformanceDetailApp(); return; }
