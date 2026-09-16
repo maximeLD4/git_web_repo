@@ -369,6 +369,35 @@ function gainageSettingsFormHTML() {
         <label>Nom de l'exercice de gainage</label>
         <input type="text" id="gainage-config-name-input" placeholder="Ex. Planche, Gainage latéral…" value="${(gainageSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
       </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Réglages par défaut de la boucle (modifiables à chaque lancement)</label>
+        <div class="live-loop-config">
+          <div class="live-stepper-group">
+            <div class="live-stepper-label">Tours</div>
+            <div class="live-stepper">
+              <button type="button" class="live-stepper-btn" data-gainage-loop-rounds-minus aria-label="Moins">−</button>
+              <div class="live-stepper-value">${gainageSettingsFormDraft.rounds}</div>
+              <button type="button" class="live-stepper-btn" data-gainage-loop-rounds-plus aria-label="Plus">+</button>
+            </div>
+          </div>
+          <div class="live-stepper-group">
+            <div class="live-stepper-label">Travail (secondes)</div>
+            <div class="live-stepper">
+              <button type="button" class="live-stepper-btn" data-gainage-loop-work-minus aria-label="Moins">−</button>
+              <div class="live-stepper-value">${gainageSettingsFormDraft.workSec}s</div>
+              <button type="button" class="live-stepper-btn" data-gainage-loop-work-plus aria-label="Plus">+</button>
+            </div>
+          </div>
+          <div class="live-stepper-group">
+            <div class="live-stepper-label">Repos (secondes)</div>
+            <div class="live-stepper">
+              <button type="button" class="live-stepper-btn" data-gainage-loop-rest-minus aria-label="Moins">−</button>
+              <div class="live-stepper-value">${gainageSettingsFormDraft.restSec}s</div>
+              <button type="button" class="live-stepper-btn" data-gainage-loop-rest-plus aria-label="Plus">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="gainage-config-form-error"></div>
       <button class="save-btn" id="save-gainage-config-btn">${ICONS.check} Enregistrer</button>
       <button class="backup-btn" id="cancel-gainage-config-btn" style="margin-top:10px;">Annuler</button>
@@ -582,7 +611,10 @@ function attachGainageSettingsListeners() {
     addBtn.addEventListener("click", () => {
       gainageSettingsFormOpen = true;
       gainageSettingsEditingConfigId = null;
-      gainageSettingsFormDraft = { name: "" };
+      // 10 tours × 30s travail / 30s repos : mêmes valeurs par défaut que
+      // la boucle générique en Séance en direct (voir liveLoopStepperHTML),
+      // pour ne pas surprendre avec un point de départ différent.
+      gainageSettingsFormDraft = { name: "", rounds: 10, workSec: 30, restSec: 30 };
       renderGymSettingsContent();
     });
   }
@@ -592,7 +624,7 @@ function attachGainageSettingsListeners() {
       if (!config) return;
       gainageSettingsFormOpen = true;
       gainageSettingsEditingConfigId = config.id;
-      gainageSettingsFormDraft = { name: config.name };
+      gainageSettingsFormDraft = { name: config.name, rounds: config.rounds || 10, workSec: config.workSec || 30, restSec: config.restSec ?? 30 };
       renderGymSettingsContent();
     });
   });
@@ -603,7 +635,7 @@ function attachGainageSettingsListeners() {
       if (!config) return;
       gainageSettingsFormOpen = true;
       gainageSettingsEditingConfigId = null;
-      gainageSettingsFormDraft = { name: config.name + " (copie)" };
+      gainageSettingsFormDraft = { name: config.name + " (copie)", rounds: config.rounds || 10, workSec: config.workSec || 30, restSec: config.restSec ?? 30 };
       renderGymSettingsContent();
     });
   });
@@ -611,12 +643,37 @@ function attachGainageSettingsListeners() {
   if (!gainageSettingsFormOpen) return;
 
   const nameInput = document.getElementById("gainage-config-name-input");
+  // Synchronise vers l'état à chaque frappe : sans ça, taper le nom PUIS
+  // toucher un stepper (qui redessine tout le formulaire depuis l'état,
+  // voir gainageConfigFormHTML) effacerait ce qui vient d'être tapé, non
+  // encore reflété nulle part ailleurs que dans le champ lui-même.
+  nameInput.addEventListener("input", () => {
+    gainageSettingsFormDraft.name = nameInput.value;
+  });
   document.querySelectorAll("[data-suggest-gainage-name]").forEach((btn) => {
     btn.addEventListener("click", () => {
       nameInput.value = btn.dataset.suggestGainageName;
+      // Ce clic ne passe jamais par l'événement "input" du champ (voir
+      // juste au-dessus) — sans cette ligne, le nom réapparaît correct à
+      // l'écran mais reste vide dans l'état, et le premier stepper touché
+      // (qui redessine tout depuis l'état) l'efface aussitôt.
+      gainageSettingsFormDraft.name = nameInput.value;
       nameInput.focus();
     });
   });
+  // Mêmes bornes que la boucle en Séance en direct (voir attachLiveSetFormListeners).
+  const loopRoundsMinus = document.querySelector("[data-gainage-loop-rounds-minus]");
+  const loopRoundsPlus = document.querySelector("[data-gainage-loop-rounds-plus]");
+  const loopWorkMinus = document.querySelector("[data-gainage-loop-work-minus]");
+  const loopWorkPlus = document.querySelector("[data-gainage-loop-work-plus]");
+  const loopRestMinus = document.querySelector("[data-gainage-loop-rest-minus]");
+  const loopRestPlus = document.querySelector("[data-gainage-loop-rest-plus]");
+  if (loopRoundsMinus) loopRoundsMinus.addEventListener("click", () => { gainageSettingsFormDraft.rounds = Math.max(1, gainageSettingsFormDraft.rounds - 1); renderGymSettingsContent(); });
+  if (loopRoundsPlus) loopRoundsPlus.addEventListener("click", () => { gainageSettingsFormDraft.rounds = Math.min(50, gainageSettingsFormDraft.rounds + 1); renderGymSettingsContent(); });
+  if (loopWorkMinus) loopWorkMinus.addEventListener("click", () => { gainageSettingsFormDraft.workSec = Math.max(5, gainageSettingsFormDraft.workSec - 5); renderGymSettingsContent(); });
+  if (loopWorkPlus) loopWorkPlus.addEventListener("click", () => { gainageSettingsFormDraft.workSec = Math.min(600, gainageSettingsFormDraft.workSec + 5); renderGymSettingsContent(); });
+  if (loopRestMinus) loopRestMinus.addEventListener("click", () => { gainageSettingsFormDraft.restSec = Math.max(0, gainageSettingsFormDraft.restSec - 5); renderGymSettingsContent(); });
+  if (loopRestPlus) loopRestPlus.addEventListener("click", () => { gainageSettingsFormDraft.restSec = Math.min(600, gainageSettingsFormDraft.restSec + 5); renderGymSettingsContent(); });
   document.getElementById("cancel-gainage-config-btn").addEventListener("click", () => {
     gainageSettingsFormOpen = false;
     renderGymSettingsContent();
@@ -635,7 +692,13 @@ function attachGainageSettingsListeners() {
       return;
     }
     errorSlot.innerHTML = "";
-    const newConfig = { id: gainageSettingsEditingConfigId || uid(), name };
+    const newConfig = {
+      id: gainageSettingsEditingConfigId || uid(),
+      name,
+      rounds: gainageSettingsFormDraft.rounds,
+      workSec: gainageSettingsFormDraft.workSec,
+      restSec: gainageSettingsFormDraft.restSec,
+    };
     if (gainageSettingsEditingConfigId) {
       gainageExerciseConfigs = gainageExerciseConfigs.map((c) => (c.id === gainageSettingsEditingConfigId ? newConfig : c));
     } else {

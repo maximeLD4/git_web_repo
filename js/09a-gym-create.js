@@ -336,6 +336,16 @@ function findExerciseConfig(name) {
   return gymExerciseConfigs.find((c) => c.name.trim().toLowerCase() === norm) || null;
 }
 
+// Miroir de findExerciseConfig, pour le Gainage — sert à préremplir la
+// boucle (tours/travail/repos) à son ouverture en Séance en direct avec
+// les habitudes enregistrées pour CET exercice précis, plutôt que les
+// valeurs génériques par défaut (voir startOrResumeLiveExercise).
+function findGainageExerciseConfig(name) {
+  const norm = (name || "").trim().toLowerCase();
+  if (!norm) return null;
+  return gainageExerciseConfigs.find((c) => c.name.trim().toLowerCase() === norm) || null;
+}
+
 function computeBaseWeightsOnly(config) {
   if (!config || !config.baseWeights) return [];
   return [...new Set(config.baseWeights.map((b) => Math.round(b * 100) / 100))].sort((a, b) => a - b);

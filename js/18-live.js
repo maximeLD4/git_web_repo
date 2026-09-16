@@ -236,7 +236,7 @@ function liveCategoryStepHTML() {
           return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}"><span class="live-exercise-btn-name">${c.name}</span>${badgeHTML}</button>`;
         })
         .join("");
-      const inner = `<div class="live-grid" style="grid-template-columns:1fr 1fr;">${genericButtonHTML}${configuredButtonsHTML}</div>`;
+      const inner = `<div class="live-grid" style="grid-template-columns:1fr 1fr;">${genericButtonHTML}${configuredButtonsHTML}<button type="button" class="live-btn configure-exercise-tile" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`;
       gainageListHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}">${inner}</div>`;
     }
     return liveTimelineHTML() + planSectionHTML + switchHTML + categoriesHTML + gainageListHTML;
@@ -296,6 +296,7 @@ function liveCategoryStepHTML() {
                 return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}"><span class="live-exercise-btn-name">${c.name}</span>${badgeHTML}</button>`;
               })
               .join("")}
+            <button type="button" class="live-btn configure-exercise-tile" data-live-go-settings>${ICONS.plus} Configurer un exercice</button>
           </div>`;
     exercisesHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}" data-category-key="${liveDraftCategory}">${inner}</div>`;
   }
@@ -993,6 +994,18 @@ function startOrResumeLiveExercise() {
         // Ouvre directement l'écran de confirmation de la boucle, déjà
         // prérempli — prêt à lancer, comme demandé.
         liveLoopFormOpen = true;
+      } else {
+        // Sans cible de plan, on reprend les habitudes enregistrées pour CET
+        // exercice de gainage précis (voir Paramètres > Salle de sport) —
+        // seulement s'il en a une : "Gainage" (le générique, sans nom) et les
+        // autres catégories cardio (Rameur/Vélo/Course) n'ont pas cette
+        // notion, et gardent donc les valeurs par défaut déjà en mémoire.
+        const gainageConfig = findGainageExerciseConfig(liveDraftName);
+        if (gainageConfig) {
+          liveLoopDraftRounds = gainageConfig.rounds || 10;
+          liveLoopDraftWork = gainageConfig.workSec || 30;
+          liveLoopDraftRest = gainageConfig.restSec ?? 30;
+        }
       }
     } else {
       const config = findExerciseConfig(liveDraftName);
@@ -1418,7 +1431,11 @@ function attachLiveNavigationListeners(content) {
         gymSettingsMode = "gainage";
         gainageSettingsFormOpen = true;
         gainageSettingsEditingConfigId = null;
-        gainageSettingsFormDraft = { name: "" };
+        // Mêmes valeurs par défaut qu'à la création normale depuis
+        // Paramètres (voir attachGainageSettingsListeners) — oubliées ici,
+        // rounds/workSec/restSec valaient undefined, d'où le "NaN" au
+        // premier +/- sur un stepper.
+        gainageSettingsFormDraft = { name: "", rounds: 10, workSec: 30, restSec: 30 };
       } else {
         gymSettingsMode = "muscu";
         gymSettingsFormOpen = true;

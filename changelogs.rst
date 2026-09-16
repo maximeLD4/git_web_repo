@@ -28,6 +28,78 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.59.2 - 2026-09-04
+====================
+
+- **Corrigé pour de bon : le nom d'un exercice de gainage disparaissait au
+  premier +/- sur un stepper de boucle.** Le correctif précédent (2.59.0)
+  ne couvrait que la frappe au clavier — mais choisir le nom via une des
+  puces de suggestion (un raccourci courant, sans doute le chemin le plus
+  emprunté) ne synchronisait toujours pas vers l'état, laissant le même
+  trou. Corrigé en synchronisant aussi à ce moment-là. Vérifié au passage
+  que le formulaire Muscu n'a pas ce problème (il resynchronise déjà
+  systématiquement avant tout redessin, quelle que soit l'action).
+  - Testé le scénario exact : clic sur une suggestion, puis les 3
+    steppers l'un après l'autre — le nom reste bien affiché à chaque fois.
+
+2.59.1 - 2026-09-04
+====================
+
+- **Corrigé : configurer un exercice de gainage depuis Séance en direct
+  (la tuile "Configurer un exercice", 2.58.0) affichait "undefined" sur
+  les réglages de boucle, puis "NaN" au premier +/-.** En ajoutant ces
+  réglages (2.59.0), j'avais mis à jour les 3 endroits où le formulaire
+  démarre depuis Paramètres, mais oublié ce 4ᵉ point d'entrée précis,
+  propre à Live. Mêmes valeurs par défaut que partout ailleurs désormais
+  (10 tours × 30s/30s). Testé le flux exact rapporté : plus d'undefined à
+  l'ouverture, plus de NaN en incrémentant/décrémentant.
+
+2.59.0 - 2026-09-04
+====================
+
+- **Un exercice de gainage configuré (Réglages > Salle de sport) enregistre
+  maintenant des réglages de boucle par défaut** (tours, travail, repos) —
+  jusque là, seul le nom était mémorisé, chaque lancement en Séance en
+  direct repartait des mêmes valeurs génériques (10 tours × 30s/30s) quel
+  que soit l'exercice.
+  - Mêmes steppers que ceux déjà utilisés en Séance en direct, pour rester
+    cohérent visuellement. 10/30/30 par défaut à la création — les mêmes
+    valeurs qu'avant, donc aucune surprise pour les exercices déjà
+    configurés (repli automatique dessus si rien n'est encore enregistré).
+  - Lancer un exercice de gainage nommé reprend désormais ses réglages
+    personnels au lieu des valeurs génériques ; le "Gainage" générique
+    (sans nom particulier) n'est pas concerné et garde 10/30/30. Toujours
+    modifiable à la volée une fois lancé, comme demandé.
+  - Bug trouvé et corrigé en construisant ça : cliquer sur un des nouveaux
+    steppers redessinait tout le formulaire, ce qui effaçait le nom
+    d'exercice en cours de saisie (jamais synchronisé vers l'état avant).
+    Corrigé avec une synchronisation à chaque frappe, comme le fait déjà
+    le formulaire Muscu pour la même raison.
+  - Testé : création, édition (les réglages se rechargent bien), et
+    duplication (copiés correctement) — puis vérifié le préremplissage en
+    Séance en direct dans les deux sens (exercice nommé vs générique).
+    Aucune régression sur les 11 écrans principaux.
+
+2.58.0 - 2026-09-04
+====================
+
+- **"Configurer un exercice" est maintenant toujours accessible en Séance
+  en direct (Muscu et Gainage), pas seulement quand aucun exercice n'est
+  configuré du tout.** Avant, ce bouton n'apparaissait qu'en dernier
+  recours (liste vide) — désormais une tuile en pointillés, à la fin de la
+  grille, permet d'en ajouter un nouveau à tout moment si ceux déjà
+  disponibles ne suffisent pas, sans avoir à sortir de la séance en cours.
+  Pour clarifier : ce n'est pas une fonctionnalité qui existait puis a
+  disparu, c'est une vraie nouveauté — avant, ce bouton n'existait que
+  dans le cas "liste vide".
+  - Réutilise le mécanisme de retour déjà en place (2.38.2/2.38.3) : le
+    formulaire s'ouvre pré-rempli avec le bon type et la bonne catégorie,
+    et une fois enregistré, on revient pile en Séance en direct, sur le
+    même exercice/catégorie, avec le nouvel exercice aussitôt disponible.
+  - Testé sur Muscu et Gainage, avec des exercices déjà configurés dans
+    les deux cas : la tuile apparaît, le clic ouvre le bon formulaire, et
+    le nouvel exercice est bien utilisable au retour.
+
 2.57.0 - 2026-09-04
 ====================
 

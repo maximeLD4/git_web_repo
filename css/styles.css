@@ -775,6 +775,17 @@ select.ex-name-pill:focus { outline: none; }
 .live-btn[data-live-exercise]:active::after { color: rgba(var(--on-ink-rgb), 0.7); }
 /* Catégories cardio : pas de badge, donc on garde le libellé centré. */
 .live-btn[data-live-cardio-category] { justify-content: center; align-items: center; text-align: center; padding: 18px 12px; }
+/* Tuile "Configurer un exercice" toujours présente à la fin de la grille
+   (Muscu et Gainage) — pas seulement quand la liste est vide (voir
+   .add-exercise-btn.configure-exercise-btn ci-dessus, pour ce cul-de-sac
+   précis) : si aucun des exercices déjà proposés ne convient, pas besoin
+   de quitter la séance en cours pour en ajouter un nouveau. Bordure en
+   pointillés plutôt que pleine, comme les autres affordances "ajouter" de
+   l'app, pour la distinguer d'un vrai choix d'exercice déjà configuré. */
+.live-btn.configure-exercise-tile {
+  border: 1.5px dashed rgba(var(--ink-rgb), 0.18); background: none; color: var(--text-dim);
+  flex-direction: row; align-items: center; justify-content: center; text-align: center;
+}
 .live-btn:active { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
 .live-btn.has-progress { border-color: var(--ok); color: var(--text); }
 .live-set-form { flex: 1; display: flex; flex-direction: column; min-height: 0; }
