@@ -28,6 +28,23 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.59.3 - 2026-09-04
+====================
+
+- **Corrigé : toucher n'importe quel stepper +/- dans les formulaires
+  d'exercice (Muscu ou Gainage) redonnait le focus au champ nom, rouvrant
+  le clavier sur téléphone à chaque tap.** Cause trouvée : un `.focus()`
+  systématique en fin de rendu, pensé à l'origine pour l'ouverture du
+  formulaire (curseur prêt à taper), mais qui se redéclenchait à chaque
+  redessin — y compris ceux causés par un simple +/-. Corrigé : le focus
+  n'est plus redonné qu'à l'ouverture fraîche du formulaire (ajouter,
+  modifier, dupliquer), plus jamais après une action déjà en cours dessus.
+  - Le comportement voulu par ailleurs est resté intact : ajouter un poids
+    (Muscu) redonne toujours le focus au champ poids, prêt à en ajouter un
+    autre à la suite.
+  - Testé sur les deux formulaires : focus initial correct à l'ouverture,
+    plus aucun vol de focus sur les steppers/le bouton incrément auto.
+
 2.59.2 - 2026-09-04
 ====================
 

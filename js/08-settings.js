@@ -595,12 +595,15 @@ function attachGymSettingsListeners() {
   if (gymSettingsFocusTarget === "weight") {
     const weightInput = document.getElementById("config-new-base-weight");
     if (weightInput) weightInput.focus();
-  } else {
+  } else if (gymSettingsFocusTarget === "name") {
     nameInput.focus();
   }
-  // On retombe sur "name" par défaut pour le prochain rendu, sauf si une
-  // action explicite redemande "weight" avant le prochain appel.
-  gymSettingsFocusTarget = "name";
+  // Sans demande explicite pour le prochain rendu (voir les points
+  // d'ouverture du formulaire, qui redemandent "name" à chaque fois), on
+  // ne redonne plus le focus à rien du tout — sinon un simple stepper
+  // (incrément auto, +/- un poids...) rouvrait le clavier à chaque tap en
+  // renvoyant le focus sur le nom, sans que rien ne le demande vraiment.
+  gymSettingsFocusTarget = null;
 }
 
 // ---------- Gainage : écouteurs (liste + formulaire), séparés de ceux de
@@ -615,6 +618,7 @@ function attachGainageSettingsListeners() {
       // la boucle générique en Séance en direct (voir liveLoopStepperHTML),
       // pour ne pas surprendre avec un point de départ différent.
       gainageSettingsFormDraft = { name: "", rounds: 10, workSec: 30, restSec: 30 };
+      gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
   }
@@ -625,6 +629,7 @@ function attachGainageSettingsListeners() {
       gainageSettingsFormOpen = true;
       gainageSettingsEditingConfigId = config.id;
       gainageSettingsFormDraft = { name: config.name, rounds: config.rounds || 10, workSec: config.workSec || 30, restSec: config.restSec ?? 30 };
+      gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
   });
@@ -636,6 +641,7 @@ function attachGainageSettingsListeners() {
       gainageSettingsFormOpen = true;
       gainageSettingsEditingConfigId = null;
       gainageSettingsFormDraft = { name: config.name + " (copie)", rounds: config.rounds || 10, workSec: config.workSec || 30, restSec: config.restSec ?? 30 };
+      gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
   });
@@ -710,5 +716,10 @@ function attachGainageSettingsListeners() {
     if (returnFromSettingsToGymCreateIfNeeded()) return;
     renderGymSettingsContent();
   });
-  nameInput.focus();
+  // Même principe que pour Muscu (voir juste au-dessus) : uniquement à
+  // l'ouverture fraîche du formulaire, jamais après un simple stepper —
+  // sinon chaque tap sur Tours/Travail/Repos rouvrirait le clavier en
+  // redonnant le focus au nom, sans que rien ne le demande vraiment.
+  if (gymSettingsFocusTarget === "name") nameInput.focus();
+  gymSettingsFocusTarget = null;
 }

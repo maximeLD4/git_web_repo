@@ -48,7 +48,7 @@ function migrateGymExerciseConfigNames() {
 }
 migrateGymExerciseConfigNames();
 let gymSettingsFormOpen = false;
-let gymSettingsFocusTarget = "name"; // "name" (par défaut) ou "weight" (après un ajout de poids)
+let gymSettingsFocusTarget = "name"; // "name" (à l'ouverture du formulaire), "weight" (après un ajout de poids), ou null (aucun focus à redonner)
 let gymSettingsEditingConfigId = null;
 let gymSettingsFormDraft = { name: "", category: "pecs", baseWeights: [], maxIncrement: 0 };
 let gymSettingsActiveCategory = "all";
