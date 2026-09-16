@@ -459,6 +459,10 @@ function liveCardioSetFormHTML(activeExercise) {
   // d'arrêter proprement.
   if (loop) {
     const workingNow = !!liveSession.setInProgressStartedAt;
+    // Sur le dernier tour, "passer" le repos termine la boucle plutôt que
+    // d'enchaîner sur un tour suivant qui n'existe pas — le libellé le dit
+    // clairement plutôt que de promettre un tour de plus qui ne viendra pas.
+    const skipLabel = workingNow ? "Passer au repos" : loop.currentRound >= loop.rounds ? "Terminer la boucle" : "Passer au tour suivant";
     return `
       <div class="live-set-form">
         <div class="live-set-form-scroll">
@@ -466,6 +470,7 @@ function liveCardioSetFormHTML(activeExercise) {
           <div class="live-in-progress-banner">${workingNow ? "Travail" : "Repos"} — Tour ${loop.currentRound}/${loop.rounds}</div>
         </div>
         <div class="live-set-form-actions">
+          <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-skip-loop-phase>${ICONS.chevronRight} ${skipLabel}</button>
           <button type="button" class="live-validate-btn live-finish-btn" data-live-stop-loop>${ICONS.stop} Arrêter la boucle</button>
           <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
         </div>
@@ -824,44 +829,56 @@ function updateLiveRestChronoDisplay() {
 // aucune boucle n'est en cours (voir startLiveLoop/stopLiveLoop). Les
 // signaux sonores/haptiques appelés ici (playLiveRestSignal, etc.) vivent
 // dans 19-live-sound.js.
+// Force le passage à la phase suivante de la boucle MAINTENANT, sans
+// attendre l'écoulement du chrono — logique partagée entre le passage
+// automatique (une fois le temps écoulé, voir checkLiveLoopAutoAdvance) et
+// le bouton "Passer" manuel (voir data-live-skip-loop-phase), pour couper
+// court à un repos ou un effort jugé trop long sans fausser le nombre de
+// tours ni l'enchaînement.
+function advanceLiveLoopPhase() {
+  const loop = liveSession ? liveSession.loop : null;
+  if (!loop) return;
+  if (liveSession.setInProgressStartedAt) {
+    playLiveRestSignal();
+    finishLiveSet();
+  } else if (liveSession.restStartedAt) {
+    if (loop.currentRound >= loop.rounds) {
+      // Dernier tour terminé : la boucle s'arrête d'elle-même, on repasse
+      // en mode manuel normal (le repos qui vient de s'écouler reste
+      // disponible pour être attaché à la prochaine série, comme
+      // d'habitude — voir stopLiveRestManually).
+      playLiveLoopDoneSignal();
+      liveSession.loop = null;
+      stopLiveRestManually();
+      // Exercice de gainage PRÉPARÉ (via le plan attaché) dont la boucle
+      // vient de se terminer entièrement : retour au menu de sélection,
+      // comme pour n'importe quel exercice préparé achevé (voir aussi
+      // applyFinishLiveSet pour Muscu/Rameur/Vélo/Course).
+      const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+      if (planExercise && planExercise.loop) {
+        closeCurrentLiveSegment();
+        liveActiveExerciseId = null;
+        liveStep = "category";
+      }
+      saveJSON(KEYS.liveSession, liveSession);
+      renderLiveApp();
+    } else {
+      playLiveWorkSignal();
+      loop.currentRound += 1;
+      startLiveSet();
+    }
+  }
+}
+
 function checkLiveLoopAutoAdvance() {
   const loop = liveSession ? liveSession.loop : null;
   if (!loop) return;
   if (liveSession.setInProgressStartedAt) {
     const elapsed = (Date.now() - liveSession.setInProgressStartedAt) / 1000;
-    if (elapsed >= loop.workSec) {
-      playLiveRestSignal();
-      finishLiveSet();
-    }
+    if (elapsed >= loop.workSec) advanceLiveLoopPhase();
   } else if (liveSession.restStartedAt) {
     const elapsed = (Date.now() - liveSession.restStartedAt) / 1000;
-    if (elapsed >= loop.restSec) {
-      if (loop.currentRound >= loop.rounds) {
-        // Dernier tour terminé : la boucle s'arrête d'elle-même, on repasse
-        // en mode manuel normal (le repos qui vient de s'écouler reste
-        // disponible pour être attaché à la prochaine série, comme
-        // d'habitude — voir stopLiveRestManually).
-        playLiveLoopDoneSignal();
-        liveSession.loop = null;
-        stopLiveRestManually();
-        // Exercice de gainage PRÉPARÉ (via le plan attaché) dont la boucle
-        // vient de se terminer entièrement : retour au menu de sélection,
-        // comme pour n'importe quel exercice préparé achevé (voir aussi
-        // applyFinishLiveSet pour Muscu/Rameur/Vélo/Course).
-        const planExercise = getAttachedPlanExerciseFor(liveDraftName);
-        if (planExercise && planExercise.loop) {
-          closeCurrentLiveSegment();
-          liveActiveExerciseId = null;
-          liveStep = "category";
-        }
-        saveJSON(KEYS.liveSession, liveSession);
-        renderLiveApp();
-      } else {
-        playLiveWorkSignal();
-        loop.currentRound += 1;
-        startLiveSet();
-      }
-    }
+    if (elapsed >= loop.restSec) advanceLiveLoopPhase();
   }
 }
 
@@ -1642,4 +1659,6 @@ function attachLiveLoopListeners(content) {
 
   const stopLoopBtn = content.querySelector("[data-live-stop-loop]");
   if (stopLoopBtn) stopLoopBtn.addEventListener("click", stopLiveLoop);
+  const skipLoopBtn = content.querySelector("[data-live-skip-loop-phase]");
+  if (skipLoopBtn) skipLoopBtn.addEventListener("click", advanceLiveLoopPhase);
 }

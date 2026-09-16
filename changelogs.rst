@@ -28,6 +28,24 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.62.0 - 2026-09-04
+====================
+
+- **Bouton "Passer" sur la boucle Gainage en Séance en direct** — pour
+  couper court à un repos ou un effort jugé trop long sans attendre
+  l'écoulement complet du chrono, ce qui faussait autrement le nombre de
+  tours ou la durée réelle. Passe immédiatement à la phase suivante
+  (travail → repos, repos → tour suivant), avec le même son et le même
+  comportement que le passage automatique habituel. Sur le dernier tour,
+  le bouton se lit "Terminer la boucle" plutôt que de promettre un tour
+  suivant qui n'existe pas.
+  - Réutilise la même logique que le passage automatique (un seul endroit
+    dans le code désormais, plutôt que deux copies qui auraient pu
+    diverger).
+  - Testé la séquence complète : travail → repos → tour suivant → dernier
+    repos → fin de boucle, avec le bon libellé à chaque étape et les
+    séries correctement enregistrées.
+
 2.61.0 - 2026-09-04
 ====================
 
