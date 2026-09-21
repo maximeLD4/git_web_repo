@@ -30,6 +30,7 @@ function runSessionCardHTML(s) {
            <div class="delete-row">
              <button class="edit-link" data-run-edit-session="${s.id}">${ICONS.edit} Modifier</button>
              <button class="edit-link" data-run-duplicate-session="${s.id}">${ICONS.duplicate} Dupliquer</button>
+             <button class="edit-link" data-run-convert-session="${s.id}">${ICONS.stopwatch} Convertir en plan</button>
              <button class="edit-link" data-run-share-session="${s.id}">${ICONS.up} Partager</button>
              <button class="delete-link" data-run-delete-session="${s.id}">${ICONS.trash} Supprimer</button>
            </div>`
@@ -39,7 +40,56 @@ function runSessionCardHTML(s) {
   return open ? cardHTML : wrapSwipeToDeleteRow(s.id, cardHTML);
 }
 
+function runPlanCardHTML(plan) {
+  const open = !!openRunHistoryIds[plan.id];
+  const justLanded = justLandedItemId === plan.id;
+  if (justLanded) justLandedItemId = null;
+  const blocksSummary = plan.blocks
+    .map(
+      (b) => `
+  <div>
+    <div class="history-ex-name">${b.label}</div>
+    <div class="history-sets"><div class="history-set-chip">${formatBlockSummary(b)}</div></div>
+  </div>`
+    )
+    .join("");
+  const cardHTML = `
+  <div class="history-card ${justLanded ? "just-landed" : ""}">
+    <div class="history-head" data-run-toggle="${plan.id}">
+      <div class="history-head-left">
+        <div class="history-date">${plan.label}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="history-meta">${plan.blocks.length} bloc${plan.blocks.length !== 1 ? "s" : ""}</div>
+        <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
+      </div>
+    </div>
+    ${
+      open
+        ? `<div class="history-body">${blocksSummary}</div>
+           <div class="delete-row">
+             <button class="edit-link" data-run-edit-plan="${plan.id}">${ICONS.edit} Modifier</button>
+             <button class="edit-link" data-run-duplicate-plan="${plan.id}">${ICONS.duplicate} Dupliquer</button>
+             <button class="edit-link" data-run-convert-plan="${plan.id}">${ICONS.stopwatch} Convertir en séance</button>
+             <button class="delete-link" data-run-delete-plan="${plan.id}">${ICONS.trash} Supprimer</button>
+           </div>`
+        : ""
+    }
+  </div>`;
+  return open ? cardHTML : wrapSwipeToDeleteRow(plan.id, cardHTML);
+}
+
+function runPlansListHTML() {
+  if (runSessionPlans.length === 0) {
+    return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucun plan préparé pour l'instant.<br>Va dans l'onglet "Créer" pour en préparer un.</div>`;
+  }
+  return runSessionPlans.map(runPlanCardHTML).join("");
+}
+
 function runHistoryTabHTML() {
+  if (runTopMode === "plan") {
+    return runPlansListHTML();
+  }
   const sorted = [...runSessions].sort((a, b) => (a.date < b.date ? 1 : -1));
   if (sorted.length === 0) {
     return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
@@ -88,12 +138,35 @@ function deleteRunSession(id, cardEl) {
   );
 }
 
+function deleteRunPlan(id, cardEl) {
+  showConfirm(
+    "Supprimer définitivement ce plan ? Cette action est irréversible.",
+    () => {
+      animateCardRemoval(cardEl, () => {
+        runSessionPlans = runSessionPlans.filter((p) => p.id !== id);
+        saveJSON(KEYS.runSessionPlans, runSessionPlans);
+        renderRunContent();
+      });
+    },
+    { confirmLabel: "Supprimer", danger: true }
+  );
+}
+
 function attachRunHistoryListeners() {
-  initSwipeToDelete(document.getElementById("content"), deleteRunSession);
+  initSwipeToDelete(document.getElementById("content"), (id, cardEl) => {
+    if (runTopMode === "plan") deleteRunPlan(id, cardEl);
+    else deleteRunSession(id, cardEl);
+  });
   document.querySelectorAll("[data-run-delete-session]").forEach((btn) => {
     btn.addEventListener("click", (ev) => {
       ev.stopPropagation();
       deleteRunSession(btn.dataset.runDeleteSession, btn.closest(".history-card"));
+    });
+  });
+  document.querySelectorAll("[data-run-delete-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      deleteRunPlan(btn.dataset.runDeletePlan, btn.closest(".history-card"));
     });
   });
   document.querySelectorAll("[data-run-toggle]").forEach((el) => {
@@ -122,6 +195,34 @@ function attachRunHistoryListeners() {
       ev.stopPropagation();
       const session = runSessions.find((s) => s.id === btn.dataset.runDuplicateSession);
       if (session) duplicateRunSession(session);
+    });
+  });
+  document.querySelectorAll("[data-run-convert-session]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const session = runSessions.find((s) => s.id === btn.dataset.runConvertSession);
+      if (session) convertRunSessionToPlan(session);
+    });
+  });
+  document.querySelectorAll("[data-run-edit-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const plan = runSessionPlans.find((p) => p.id === btn.dataset.runEditPlan);
+      if (plan) startEditRunPlan(plan);
+    });
+  });
+  document.querySelectorAll("[data-run-duplicate-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const plan = runSessionPlans.find((p) => p.id === btn.dataset.runDuplicatePlan);
+      if (plan) duplicateRunPlan(plan);
+    });
+  });
+  document.querySelectorAll("[data-run-convert-plan]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const plan = runSessionPlans.find((p) => p.id === btn.dataset.runConvertPlan);
+      if (plan) convertRunPlanToSession(plan);
     });
   });
 }

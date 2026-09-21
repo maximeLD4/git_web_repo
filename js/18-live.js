@@ -73,6 +73,13 @@ function renderLiveStep() {
   // bien être en train de choisir le prochain exercice pendant qu'on
   // récupère, ou avoir laissé le chrono de la série tourner en arrière-plan.
   content.innerHTML = liveStatusHeroHTML() + stepHTML;
+  // Lu par tous les affichages du numéro de tour au sein de CE rendu (voir
+  // liveStatusHeroHTML et liveCardioSetFormHTML, tous deux déjà construits
+  // juste au-dessus à ce stade) — remis à zéro ici, seul point par lequel
+  // passent TOUS les chemins de rendu de cet écran (contrairement à
+  // renderLiveApp, pas toujours appelée — voir startLiveSet par exemple),
+  // pour que ce ne soit vrai qu'une fois, pas à chaque rendu suivant.
+  liveLoopRoundJustChanged = false;
   attachLiveStepListeners();
   ensureLiveRestTicking();
   const timeline = document.getElementById("live-timeline");
@@ -94,7 +101,7 @@ function liveStatusHeroHTML() {
   if (!liveSession) return "";
   const loop = liveSession.loop;
   if (liveSession.restStartedAt) {
-    const label = loop ? `${ICONS.stopwatch} Repos — Tour ${loop.currentRound}/${loop.rounds}` : `${ICONS.stopwatch} Repos`;
+    const label = loop ? `${ICONS.stopwatch} Repos — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} Repos`;
     return `
     <div class="live-rest-hero" id="live-rest-hero">
       <div class="live-rest-hero-label">${label}</div>
@@ -102,7 +109,7 @@ function liveStatusHeroHTML() {
     </div>`;
   }
   if (liveSession.setInProgressStartedAt) {
-    const label = loop ? `${ICONS.play} Travail — Tour ${loop.currentRound}/${loop.rounds}` : `${ICONS.play} ${liveDraftName || "Série en cours"}`;
+    const label = loop ? `${ICONS.play} Travail — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.play} ${liveDraftName || "Série en cours"}`;
     return `
     <div class="live-rest-hero live-rest-hero-active" id="live-rest-hero">
       <div class="live-rest-hero-label">${label}</div>
@@ -208,8 +215,13 @@ function liveCategoryStepHTML() {
     // catégorie qu'on sélectionne, révélant en dessous la liste des
     // exercices de gainage nommés/configurés — voir plus bas.
     const allCardioCats = [...CARDIO_CATEGORIES, GAINAGE_CATEGORY];
+    // Même drapeau/consommation que pour la liste d'exercices plus bas —
+    // sans lui, la grille apparaissait d'un coup juste après le glissement
+    // du curseur (voir data-live-type-switch), pendant que tout le reste
+    // de l'écran, lui, glissait en douceur.
+    const catShouldAnimateEnter = liveTypeJustSwitched;
     const categoriesHTML = `
-      <div class="live-grid live-cardio-categories" style="grid-template-columns:1fr 1fr;">
+      <div class="live-grid live-cardio-categories ${catShouldAnimateEnter ? "live-exercise-list-enter" : ""}" style="grid-template-columns:1fr 1fr;">
         ${allCardioCats.map((c) => `<button type="button" class="live-btn ${liveDraftCategory === c.key ? "active" : ""}" data-live-cardio-category="${c.key}">${c.label}</button>`).join("")}
       </div>`;
     let gainageListHTML = "";
@@ -239,6 +251,7 @@ function liveCategoryStepHTML() {
       const inner = `<div class="live-grid" style="grid-template-columns:1fr 1fr;">${genericButtonHTML}${configuredButtonsHTML}<button type="button" class="live-btn configure-exercise-tile" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`;
       gainageListHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}">${inner}</div>`;
     }
+    liveTypeJustSwitched = false;
     return liveTimelineHTML() + planSectionHTML + switchHTML + categoriesHTML + gainageListHTML;
   }
 
@@ -248,6 +261,7 @@ function liveCategoryStepHTML() {
   // équivalent pour le Gainage, déjà immédiat puisqu'il n'a pas cette
   // étape de catégorie intermédiaire).
   if (gymExerciseConfigs.length === 0) {
+    liveTypeJustSwitched = false;
     return (
       liveTimelineHTML() +
       planSectionHTML +
@@ -259,8 +273,12 @@ function liveCategoryStepHTML() {
   // Muscu : la catégorie s'affiche en rangée compacte de puces (comme un
   // filtre), sélectionnable et désélectionnable — la reselectionner referme
   // la liste d'exercices sans changer d'écran.
+  // Même drapeau/consommation que pour la grille Cardio ci-dessus et la
+  // liste d'exercices plus bas.
+  const catShouldAnimateEnter = liveTypeJustSwitched;
+  liveTypeJustSwitched = false;
   const categoryRowHTML = `
-    <div class="live-subcat-row">
+    <div class="live-subcat-row ${catShouldAnimateEnter ? "live-exercise-list-enter" : ""}">
       ${GYM_EXERCISE_CATEGORIES.map((c) => {
         // Même signal visuel qu'en Créer (voir categoryToggleHTML) : une
         // catégorie sans le moindre exercice configuré se grise, mais
@@ -467,10 +485,10 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          <div class="live-in-progress-banner">${workingNow ? "Travail" : "Repos"} — Tour ${loop.currentRound}/${loop.rounds}</div>
+          <div class="live-in-progress-banner">${workingNow ? "Travail" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span></div>
         </div>
         <div class="live-set-form-actions">
-          <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-skip-loop-phase>${ICONS.chevronRight} ${skipLabel}</button>
+          <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-skip-loop-phase>${ICONS.chevronRight} ${skipLabel}</button>
           <button type="button" class="live-validate-btn live-finish-btn" data-live-stop-loop>${ICONS.stop} Arrêter la boucle</button>
           <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
         </div>
@@ -865,6 +883,7 @@ function advanceLiveLoopPhase() {
     } else {
       playLiveWorkSignal();
       loop.currentRound += 1;
+      liveLoopRoundJustChanged = true;
       startLiveSet();
     }
   }
@@ -1378,6 +1397,7 @@ function attachLiveNavigationListeners(content) {
       const newType = btn.dataset.liveTypeSwitch;
       if (liveDraftType === newType) return;
       liveDraftType = newType;
+      liveTypeJustSwitched = true;
       // On anime d'abord le curseur sur l'élément DOM déjà présent (pour que
       // la transition CSS glisse vraiment), puis on ne reconstruit le
       // contenu (catégories) qu'une fois le glissement visuellement

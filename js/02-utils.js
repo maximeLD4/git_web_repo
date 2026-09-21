@@ -434,6 +434,10 @@ let swipeGlobalCloserAttached = false;
 
 function closeSwipeCard(card) {
   if (!card) return;
+  // Vide plutôt qu'une valeur explicite : la carte retombe sur le petit
+  // repli permanent fixé en CSS (voir .swipe-row > [data-swipe-id]) — un
+  // indice discret et toujours visible que quelque chose se cache derrière,
+  // plutôt que 0 qui ne laisserait absolument rien deviner.
   card.style.transform = "";
   card.classList.remove("swipe-open");
   if (swipeOpenCard === card) swipeOpenCard = null;
@@ -479,6 +483,11 @@ function wrapSwipeToDeleteRow(id, cardHTML) {
 function initSwipeToDelete(container, onDeleteTap) {
   ensureSwipeGlobalCloser();
   const REVEAL = 84;
+  // Repli permanent (voir la même valeur en CSS, .swipe-row > [data-swipe-id])
+  // — la position de repos réelle n'est pas 0 mais ce léger décalage, pour
+  // qu'un mince bord rouge dépasse toujours un peu, seul indice qu'un
+  // geste est possible ici.
+  const PEEK = 8;
   container.querySelectorAll(".swipe-row").forEach((row) => {
     const card = row.querySelector("[data-swipe-id]");
     const reveal = row.querySelector("[data-swipe-delete-reveal]");
@@ -497,7 +506,7 @@ function initSwipeToDelete(container, onDeleteTap) {
     card.addEventListener("pointerdown", (e) => {
       startX = e.clientX;
       startY = e.clientY;
-      baseX = card.classList.contains("swipe-open") ? -REVEAL : 0;
+      baseX = card.classList.contains("swipe-open") ? -REVEAL : -PEEK;
       dragging = true;
       horizontal = null;
       card.style.transition = "none";
@@ -521,7 +530,7 @@ function initSwipeToDelete(container, onDeleteTap) {
       }
       if (!horizontal) return;
       e.preventDefault();
-      const x = Math.min(0, Math.max(-REVEAL - 24, baseX + dx));
+      const x = Math.min(-PEEK, Math.max(-REVEAL - 24, baseX + dx));
       card.style.transform = `translateX(${x}px)`;
     });
 

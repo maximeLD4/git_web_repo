@@ -97,30 +97,44 @@ let sharedCalendarFilter = "all";
 
 let runSessions = loadJSON(KEYS.runSessions, []);
 let runLibrary = loadJSON(KEYS.runLibrary, []);
-let runDraft = loadJSON(KEYS.runDraft, null) || { date: todayISO(), label: "", blocks: [emptyBlock()] };
+let runDraft = loadJSON(KEYS.runDraft, null) || { kind: "session", date: todayISO(), label: "", blocks: [emptyBlock()] };
 if (!Array.isArray(runDraft.blocks) || runDraft.blocks.length === 0) runDraft.blocks = [emptyBlock()];
+if (!runDraft.kind) runDraft.kind = "session";
 let runEditingSessionId = runDraft.editingSessionId || null;
 let runTab = "log";
 let openRunHistoryIds = {};
 let runDraftSaveTimer = null;
+// Plans (gabarits prêts à lancer) pour Course à pied — même principe que
+// pour Salle de sport, voir gymTopMode/sessionPlans.
+let runSessionPlans = loadJSON(KEYS.runSessionPlans, []);
+let runTopMode = "session"; // "session" | "plan"
+let runEditingPlanId = runDraft.editingPlanId || null;
 
 let swimSessions = loadJSON(KEYS.swimSessions, []);
 let swimLibrary = loadJSON(KEYS.swimLibrary, []);
-let swimDraft = loadJSON(KEYS.swimDraft, null) || { date: todayISO(), label: "", blocks: [emptySwimBlock()] };
+let swimDraft = loadJSON(KEYS.swimDraft, null) || { kind: "session", date: todayISO(), label: "", blocks: [emptySwimBlock()] };
 if (!Array.isArray(swimDraft.blocks) || swimDraft.blocks.length === 0) swimDraft.blocks = [emptySwimBlock()];
+if (!swimDraft.kind) swimDraft.kind = "session";
 let swimEditingSessionId = swimDraft.editingSessionId || null;
 let swimTab = "log";
 let openSwimHistoryIds = {};
 let swimDraftSaveTimer = null;
+let swimSessionPlans = loadJSON(KEYS.swimSessionPlans, []);
+let swimTopMode = "session"; // "session" | "plan"
+let swimEditingPlanId = swimDraft.editingPlanId || null;
 
 let bikeSessions = loadJSON(KEYS.bikeSessions, []);
 let bikeLibrary = loadJSON(KEYS.bikeLibrary, []);
-let bikeDraft = loadJSON(KEYS.bikeDraft, null) || { date: todayISO(), label: "", blocks: [emptyBikeBlock()] };
+let bikeDraft = loadJSON(KEYS.bikeDraft, null) || { kind: "session", date: todayISO(), label: "", blocks: [emptyBikeBlock()] };
 if (!Array.isArray(bikeDraft.blocks) || bikeDraft.blocks.length === 0) bikeDraft.blocks = [emptyBikeBlock()];
+if (!bikeDraft.kind) bikeDraft.kind = "session";
 let bikeEditingSessionId = bikeDraft.editingSessionId || null;
 let bikeTab = "log";
 let openBikeHistoryIds = {};
 let bikeDraftSaveTimer = null;
+let bikeSessionPlans = loadJSON(KEYS.bikeSessionPlans, []);
+let bikeTopMode = "session"; // "session" | "plan"
+let bikeEditingPlanId = bikeDraft.editingPlanId || null;
 
 const app = document.getElementById("app");
 let scannerStream = null;
@@ -140,6 +154,10 @@ let gymCreateConfigReturnTarget = false;
 let calendarReturnDate = null; // date de la séance éditée, pour la re-sélectionner au retour dans le calendrier
 let openSharedCalendarIds = {}; // réduit/déplié des séances dans le calendrier partagé (par défaut : réduit)
 let performanceSelectedExerciseId = null;
+// Onglet actif dans Performance — "muscu" (existant) ou l'un des 3 sports
+// cardio, qui n'avaient jusque-là aucun suivi de progression malgré des
+// données déjà toutes présentes.
+let performanceMode = "muscu";
 let currentUser = null;
 
 /* ---------- Séance en direct : état du parcours pas-à-pas ---------- */
@@ -168,6 +186,11 @@ let liveLoopFormOpen = false;
 let liveLoopDraftRounds = 10;
 let liveLoopDraftWork = 30;
 let liveLoopDraftRest = 30;
+// Vrai juste après un changement de tour (auto ou via "Passer", voir
+// advanceLiveLoopPhase) — lu une fois par rendu pour poser une petite
+// animation sur le numéro de tour, puis remis à zéro (voir renderLiveApp),
+// pour que le changement soit visible plutôt qu'instantané et muet.
+let liveLoopRoundJustChanged = false;
 // Dernier temps de repos mesuré MANUELLEMENT (bouton "Démarrer le repos" puis
 // arrêt automatique dès qu'on touche au poids/reps de la série suivante) —
 // conservé ici jusqu'à la validation de cette prochaine série, à laquelle il
@@ -187,6 +210,11 @@ let liveJustAddedLogIndex = null;
 // l'animation d'entrée de la liste d'exercices ne rejoue pas à chaque
 // interaction sans rapport (ex. premier appui sur une puce de la frise).
 let liveCategoryJustChanged = false;
+// Vrai juste après avoir basculé Muscu ↔ Cardio/Gainage (voir le clic sur
+// [data-live-type-switch]) — sert à faire entrer la grille de catégories
+// en douceur (voir liveCategoryStepHTML), qui jusque là apparaissait d'un
+// coup juste après le glissement du curseur, sans le moindre signe.
+let liveTypeJustSwitched = false;
 // Id de la séance/du plan qui vient tout juste d'être enregistré(e) — lu une
 // seule fois par la carte concernée (voir sessionCardHTML et équivalents) pour
 // jouer son animation d'arrivée dans la liste, puis effacé aussitôt pour ne

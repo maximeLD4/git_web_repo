@@ -28,6 +28,124 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.66.0 - 2026-09-04
+====================
+
+- **Performance suit maintenant aussi Course à pied, Natation et Vélo**
+  — jusque là réservé à la Muscu, malgré un nom qui suggérait "tous mes
+  progrès". Un nouveau sélecteur en haut (Muscu / Course / Natation /
+  Vélo) donne accès, pour chaque sport cardio, à sa meilleure allure (ou
+  vitesse pour le vélo), sa plus longue distance, une courbe d'évolution
+  dans le temps, et l'historique des séances — les mêmes briques déjà
+  construites pour la Muscu (graphique, comptage animé), réutilisées
+  telles quelles plutôt que redessinées.
+  - Contrairement à la Muscu (une liste d'exercices, chacun avec sa propre
+    fiche), les sports cardio n'ont qu'un seul indicateur par sport — pas
+    de nom d'exercice stable d'une séance à l'autre — donc une page
+    directe par sport, sans étape de sélection intermédiaire.
+  - Testé : les 4 onglets, l'état vide avant toute séance, les calculs
+    (allure/vitesse, plus longue distance) sur des séances réalistes pour
+    les 3 sports, et la non-régression complète de la Muscu existante.
+
+2.65.0 - 2026-09-04
+====================
+
+- **Les "Plans" (gabarits prêts à lancer) existent maintenant pour Course
+  à pied, Natation et Vélo** — jusque là réservés à la Salle de sport.
+  Même bascule "Séance effectuée" / "Plan à préparer" en haut du module,
+  même principe : un plan garde juste les blocs cibles (durée, distance,
+  allure...), sans date ni exécution réelle, prêt à convertir en séance le
+  jour venu.
+  - Modifier, dupliquer, convertir dans les deux sens (séance → plan et
+    plan → séance), supprimer (avec glissement) — tout le corpus déjà
+    disponible pour Salle de sport, répliqué à l'identique pour les 3
+    autres sports.
+  - Basculer entre les deux modes en pleine construction préserve ce qui
+    est déjà saisi, comme pour la Salle de sport (2.55.1) — aucune perte
+    de données.
+  - Bug trouvé en auditant le code mort avant de livrer : le sens "séance
+    → plan" avait ses fonctions mais aucun bouton pour les déclencher,
+    sur les 3 sports. Corrigé.
+  - Testé les 6 scénarios clés sur chacun des 3 sports (bascule, champ
+    date masqué en mode plan, enregistrement, conversion dans les deux
+    sens, préservation des données au changement de mode), plus une
+    passe de non-régression générale sur les 14 écrans principaux.
+
+2.64.1 - 2026-09-04
+====================
+
+- **Animation du changement de tour rendue plus marquée** — vérifié en
+  profondeur (temps réel écoulé, pas seulement simulé) que le mécanisme se
+  déclenche bien pour un passage automatique, aux deux endroits concernés,
+  et reste stable sans être effacé par un rendu parasite. Techniquement
+  fonctionnel, mais 0,3s de simple agrandissement pouvait être trop
+  discret pour être remarqué en pleine série, sans regarder l'écran au
+  bon instant. Allongé à 0,6s et ajouté un bref passage en couleur accent,
+  pour que ce soit visible même si le regard n'est pas dessus pile au bon
+  moment.
+  - Si le souci persiste malgré ça, la piste la plus probable serait un
+    Service Worker qui sert encore une version mise en cache — vérifié que
+    le mécanisme de cache se base bien sur le numéro de version (donc
+    devrait s'actualiser tout seul), mais à garder en tête si besoin.
+
+2.64.0 - 2026-09-04
+====================
+
+- **"Passer" et "Changer d'exercice" ont maintenant des styles distincts**
+  pendant la boucle Gainage — le premier reprend la teinte accent déjà
+  utilisée pour "Lancer en boucle" (une action qui fait avancer), le
+  second reste neutre (une action qui quitte). Les deux se ressemblaient
+  trop pour des impacts aussi différents.
+- **Le changement de tour ("Tour 2/3") a maintenant un petit "pop"**
+  visuel, plutôt que de changer sans le moindre signe — qu'il survienne
+  automatiquement ou via "Passer".
+- **La bascule Muscu ↔ Cardio/Gainage anime maintenant la grille de
+  catégories elle-même**, pas seulement le curseur du bouton. En creusant
+  le "sans transition" signalé, la vraie cause était plus précise que
+  prévu : le curseur glissait déjà correctement, mais la grille en
+  dessous (Rameur/Vélo/Course/Gainage, ou Pecs/Dos/Épaules...) apparaissait
+  d'un coup sec juste après — c'est ce décalage entre une partie animée et
+  une partie qui saute qui donnait cette impression.
+  - Bug trouvé en testant le pop du tour : le nettoyage du signal reposait
+    sur une fonction pas toujours appelée selon le chemin emprunté (ex.
+    démarrer une série directement) — corrigé en le déplaçant vers le
+    seul point par lequel passent tous les rendus de cet écran.
+  - Testé les 3 points ainsi que la non-régression de l'animation déjà
+    existante pour la liste d'exercices au sein d'une catégorie.
+
+2.63.1 - 2026-09-04
+====================
+
+- **Accueil simplifié : "Suivi" et "Calendrier" fusionnés en une seule
+  section**, plutôt que deux regroupements distincts (un défilement pour
+  Performance/Poids, plus un grand bloc isolé pour le Calendrier). Les
+  trois relèvent du même besoin — regarder en arrière plutôt qu'agir —
+  donc ça n'avait pas de raison d'être séparé. Le Calendrier devient une
+  tuile compacte parmi les autres au lieu d'un grand bloc, ce qui réduit
+  nettement la hauteur totale de l'écran.
+  - L'accueil passe ainsi de 4 regroupements visuels distincts (Séance en
+    direct, Sports, Suivi, Calendrier) à 3 (Séance en direct, Sports,
+    Suivi) — aucune fonctionnalité perdue, juste moins de blocs empilés.
+  - Testé : la navigation depuis chaque tuile fonctionne toujours
+    normalement, y compris le Calendrier depuis sa nouvelle place.
+
+2.63.0 - 2026-09-04
+====================
+
+- **Le glisser-pour-supprimer a maintenant un indice visuel permanent** —
+  un mince bord rouge dépasse toujours légèrement à droite de chaque carte
+  concernée (séances, plans, pesées, exercices configurés...), seul signe
+  qu'un geste est possible ici. Jusque là, rien ne le suggérait : un
+  utilisateur qui ne connaît pas cette convention n'avait aucun moyen de
+  deviner qu'elle existait.
+  - Purement visuel, aucun changement de comportement : le tap normal
+    déplie toujours la carte, le glissement complet fonctionne exactement
+    comme avant, et refermer une carte ouverte retombe sur ce même repli
+    discret plutôt que sur rien du tout.
+  - Testé sur 4 endroits différents (séances, pesées, exercices
+    configurés, calendrier partagé) — le mécanisme étant partagé, les 9
+    endroits concernés en bénéficient automatiquement.
+
 2.62.0 - 2026-09-04
 ====================
 

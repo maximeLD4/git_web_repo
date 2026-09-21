@@ -90,15 +90,10 @@ function renderHome() {
             <div class="home-tile-title">Poids</div>
             <div class="home-tile-sub">${tileStatHTML(weights.length, "pesée")}</div>
           </div>
-        </div>
-      </div>
-
-      <div class="home-fluid-block">
-        <div class="home-tile home-tile-wide" data-open-app="calendar">
-          <div class="home-tile-icon home-tile-icon-wide" style="background: rgba(var(--rgb-calendar), 0.18); color: rgb(var(--rgb-calendar));">${ICONS.calendarBig}</div>
-          <div class="home-tile-wide-text">
+          <div class="home-tile home-tile-hscroll" data-open-app="calendar">
+            <div class="home-tile-icon" style="background: rgba(var(--rgb-calendar), 0.14); color: rgb(var(--rgb-calendar));">${ICONS.calendarBig}</div>
             <div class="home-tile-title">Calendrier</div>
-            <div class="home-tile-sub">${tileStatHTML(totalSessions, "séance", " au total")}</div>
+            <div class="home-tile-sub">${tileStatHTML(totalSessions, "séance")}</div>
           </div>
         </div>
       </div>

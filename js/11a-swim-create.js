@@ -104,14 +104,17 @@ function scheduleSwimDraftSave() {
 }
 
 function clearSwimDraft() {
-  swimDraft = { date: todayISO(), label: "", blocks: [emptySwimBlock()] };
+  swimDraft = { kind: "session", date: todayISO(), label: "", blocks: [emptySwimBlock()] };
   swimEditingSessionId = null;
+  swimEditingPlanId = null;
   saveJSON(KEYS.swimDraft, swimDraft);
 }
 
 function startEditSwimSession(session) {
   swimEditingSessionId = session.id;
+  swimEditingPlanId = null;
   swimDraft = {
+    kind: "session",
     date: session.date,
     label: session.label || "",
     blocks: JSON.parse(JSON.stringify(session.blocks)),
@@ -122,10 +125,28 @@ function startEditSwimSession(session) {
   renderSwimApp();
 }
 
+// Équivalent de startEditSwimSession, pour un PLAN — même écran Créer, les
+// blocs d'un plan sont déjà des cibles par nature.
+function startEditSwimPlan(plan) {
+  swimEditingPlanId = plan.id;
+  swimEditingSessionId = null;
+  swimDraft = {
+    kind: "plan",
+    date: todayISO(),
+    label: plan.label || "",
+    blocks: JSON.parse(JSON.stringify(plan.blocks)),
+    editingPlanId: swimEditingPlanId,
+  };
+  saveJSON(KEYS.swimDraft, swimDraft);
+  swimTab = "log";
+  renderSwimApp();
+}
+
 function duplicateSwimSession(session) {
   const clonedBlocks = JSON.parse(JSON.stringify(session.blocks)).map((b) => ({ ...b, id: uid() }));
   swimEditingSessionId = null;
-  swimDraft = { date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
+  swimEditingPlanId = null;
+  swimDraft = { kind: "session", date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
   saveJSON(KEYS.swimDraft, swimDraft);
   playSaveTravelAnimation(ICONS.duplicate, "Duplication de la séance", session.label || formatDateFR(session.date), () => {
     swimTab = "log";
@@ -133,19 +154,80 @@ function duplicateSwimSession(session) {
   });
 }
 
+function duplicateSwimPlan(plan) {
+  const clonedBlocks = JSON.parse(JSON.stringify(plan.blocks)).map((b) => ({ ...b, id: uid() }));
+  swimEditingSessionId = null;
+  swimEditingPlanId = null;
+  swimDraft = { kind: "plan", date: todayISO(), label: (plan.label || "") + " (copie)", blocks: clonedBlocks, editingPlanId: null };
+  saveJSON(KEYS.swimDraft, swimDraft);
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication du plan", plan.label || "", () => {
+    swimTab = "log";
+    renderSwimApp();
+  });
+}
+
+function convertSwimSessionToPlan(session) {
+  const clonedBlocks = JSON.parse(JSON.stringify(session.blocks)).map((b) => ({ ...b, id: uid() }));
+  swimEditingSessionId = null;
+  swimEditingPlanId = null;
+  swimDraft = { kind: "plan", date: todayISO(), label: session.label || formatDateFR(session.date), blocks: clonedBlocks, editingPlanId: null };
+  saveJSON(KEYS.swimDraft, swimDraft);
+  playSaveTravelAnimation(ICONS.stopwatch, "Conversion en plan", session.label || formatDateFR(session.date), () => {
+    swimTab = "log";
+    renderSwimApp();
+  }, "right");
+}
+
+function convertSwimPlanToSession(plan) {
+  const clonedBlocks = JSON.parse(JSON.stringify(plan.blocks)).map((b) => ({ ...b, id: uid() }));
+  swimEditingSessionId = null;
+  swimEditingPlanId = null;
+  swimDraft = { kind: "session", date: todayISO(), label: plan.label || "", blocks: clonedBlocks, editingSessionId: null };
+  saveJSON(KEYS.swimDraft, swimDraft);
+  playSaveTravelAnimation(ICONS.stopwatch, "Conversion en séance", plan.label || "", () => {
+    swimTab = "log";
+    renderSwimApp();
+  }, "left");
+}
+
+function switchSwimTopMode(newMode) {
+  if (swimTopMode === newMode) return;
+  swimTopMode = newMode;
+  const dateEl = document.getElementById("swim-date");
+  const labelEl = document.getElementById("swim-label");
+  swimDraft = {
+    kind: newMode,
+    date: dateEl ? dateEl.value : swimDraft.date,
+    label: labelEl ? labelEl.value : swimDraft.label,
+    blocks: serializeSwimBlocksFromDOM(),
+    editingSessionId: null,
+    editingPlanId: null,
+  };
+  swimEditingSessionId = null;
+  swimEditingPlanId = null;
+  saveJSON(KEYS.swimDraft, swimDraft);
+  renderSwimApp();
+}
+
 function renderSwimApp() {
   app.className = "theme-swim";
+  if (swimTab === "log" && swimDraft.kind && swimDraft.kind !== swimTopMode) swimTopMode = swimDraft.kind;
+  const isPlanMode = swimTopMode === "plan";
   app.innerHTML = `
     <div class="header">
       <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
       <div class="header-icon-only">${ICONS.swim}</div>
-      <div class="header-sub">${swimSessions.length} séance${swimSessions.length !== 1 ? "s" : ""} enregistrée${swimSessions.length !== 1 ? "s" : ""}</div>
+      <div class="header-sub">${isPlanMode ? `${swimSessionPlans.length} plan${swimSessionPlans.length !== 1 ? "s" : ""} enregistré${swimSessionPlans.length !== 1 ? "s" : ""}` : `${swimSessions.length} séance${swimSessions.length !== 1 ? "s" : ""} enregistrée${swimSessions.length !== 1 ? "s" : ""}`}</div>
+    </div>
+    <div class="ex-type-toggle" id="swim-top-mode-toggle" style="margin: 14px 16px 0 18px;">
+      <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-swim-top-mode="session">Séance effectuée</button>
+      <button type="button" class="ex-type-btn ${isPlanMode ? "active" : ""}" data-swim-top-mode="plan">Plan à préparer</button>
     </div>
     <div class="content" id="content"></div>
     <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${swimTab === "log" ? "active" : ""}" data-swim-tab="log">${ICONS.swim}Créer</button>
-      <button class="tab-btn ${swimTab === "history" ? "active" : ""}" data-swim-tab="history">${ICONS.history}Séances</button>
+      <button class="tab-btn ${swimTab === "history" ? "active" : ""}" data-swim-tab="history">${ICONS.history}${isPlanMode ? "Plans" : "Séances"}</button>
     </div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", () => {
@@ -160,6 +242,9 @@ function renderSwimApp() {
       swimTab = btn.dataset.swimTab;
       renderSwimApp();
     });
+  });
+  document.querySelectorAll("[data-swim-top-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => switchSwimTopMode(btn.dataset.swimTopMode));
   });
   renderSwimContent();
 }
@@ -248,18 +333,25 @@ function swimLogTabHTML() {
   const libOptions = swimLibrary.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
   const editBanner = swimEditingSessionId
     ? `<div class="edit-banner">Modification d'une séance existante<button type="button" id="swim-cancel-edit-btn">Annuler</button></div>`
-    : "";
+    : swimEditingPlanId
+      ? `<div class="edit-banner">Modification d'un plan existant<button type="button" id="swim-cancel-edit-btn">Annuler</button></div>`
+      : "";
+  const isPlan = swimDraft.kind === "plan";
+  const fieldsHTML = isPlan
+    ? `<div class="field"><label>Nom du plan</label><input type="text" id="swim-label" placeholder="Séance technique…" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></div>`
+    : `
+    <div class="field-row">
+      <div class="field field-date"><label>Date</label><input type="date" id="swim-date" value="${swimDraft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="swim-label" placeholder="Séance technique…" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></div>
+    </div>`;
   return `
     <div class="backup-row">
-      <button class="backup-btn" id="swim-import-draft-btn">${ICONS.down} Importer une séance</button>
+      <button class="backup-btn" id="swim-import-draft-btn">${ICONS.down} ${isPlan ? "Importer un plan" : "Importer une séance"}</button>
       <button class="backup-btn" id="swim-reset-draft-btn">${ICONS.reset} Réinitialiser</button>
       <input type="file" id="swim-import-draft-file" accept="application/json" style="display:none">
     </div>
     ${editBanner}
-    <div class="field-row">
-      <div class="field field-date"><label>Date</label><input type="date" id="swim-date" value="${swimDraft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="swim-label" placeholder="Séance technique…" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></div>
-    </div>
+    ${fieldsHTML}
     <div class="run-summary-bar" id="swim-summary-bar">${formatSwimSessionTotalsLine(swimDraft.blocks)}</div>
     <div id="swim-blocks-container">${blocksHTML}</div>
     <datalist id="swim-block-suggestions"><option value="Échauffement"><option value="Technique"><option value="Endurance"><option value="Récupération">${libOptions}</datalist>
@@ -269,10 +361,18 @@ function swimLogTabHTML() {
 }
 
 function swimLogActionsBarContentHTML() {
+  const isPlan = swimDraft.kind === "plan";
+  const saveLabel = isPlan
+    ? swimEditingPlanId
+      ? "Enregistrer les modifications"
+      : "Enregistrer le plan"
+    : swimEditingSessionId
+      ? "Enregistrer les modifications"
+      : "Enregistrer la séance";
   return `
     <div id="swim-error-slot"></div>
     <button class="add-exercise-btn" id="add-swim-block-btn">${ICONS.plus} Ajouter un bloc</button>
-    <button class="save-btn" id="save-swim-session-btn">${ICONS.check} ${swimEditingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
+    <button class="save-btn" id="save-swim-session-btn">${ICONS.check} ${saveLabel}</button>
     <div id="swim-flash-slot"></div>
   `;
 }
@@ -300,7 +400,7 @@ function updateSwimSummaryBar() {
 function attachSwimLogListeners() {
   const dateEl = document.getElementById("swim-date");
   const labelEl = document.getElementById("swim-label");
-  dateEl.addEventListener("input", scheduleSwimDraftSave);
+  if (dateEl) dateEl.addEventListener("input", scheduleSwimDraftSave);
   labelEl.addEventListener("input", scheduleSwimDraftSave);
 
   const importDraftBtn = document.getElementById("swim-import-draft-btn");
@@ -501,6 +601,27 @@ function attachSwimLogActionsBarListeners() {
       errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un bloc avec des données avant d'enregistrer.</div>`;
       return;
     }
+
+    if (swimDraft.kind === "plan") {
+      errorSlot.innerHTML = "";
+      const wasEditingPlan = !!swimEditingPlanId;
+      const planLabel = labelEl.value.trim() || `Plan ${swimSessionPlans.filter((p) => p.id !== swimEditingPlanId).length + 1}`;
+      const plan = { id: swimEditingPlanId || uid(), label: planLabel, blocks };
+      if (wasEditingPlan) {
+        swimSessionPlans = swimSessionPlans.map((p) => (p.id === swimEditingPlanId ? plan : p));
+      } else {
+        swimSessionPlans = [plan, ...swimSessionPlans];
+      }
+      saveJSON(KEYS.swimSessionPlans, swimSessionPlans);
+      clearSwimDraft();
+      justLandedItemId = plan.id;
+      playSaveTravelAnimation(ICONS.check, wasEditingPlan ? "Plan modifié" : "Plan enregistré", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
+        swimTab = "history";
+        swimTopMode = "plan";
+        renderSwimApp();
+      });
+      return;
+    }
     errorSlot.innerHTML = "";
 
     const wasEditing = !!swimEditingSessionId;
@@ -523,6 +644,7 @@ function attachSwimLogActionsBarListeners() {
     }
     justLandedItemId = session.id;
     playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
+      swimTopMode = "session";
       swimTab = "history";
       renderSwimApp();
     });

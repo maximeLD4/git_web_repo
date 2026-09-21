@@ -72,14 +72,17 @@ function scheduleBikeDraftSave() {
 }
 
 function clearBikeDraft() {
-  bikeDraft = { date: todayISO(), label: "", blocks: [emptyBikeBlock()] };
+  bikeDraft = { kind: "session", date: todayISO(), label: "", blocks: [emptyBikeBlock()] };
   bikeEditingSessionId = null;
+  bikeEditingPlanId = null;
   saveJSON(KEYS.bikeDraft, bikeDraft);
 }
 
 function startEditBikeSession(session) {
   bikeEditingSessionId = session.id;
+  bikeEditingPlanId = null;
   bikeDraft = {
+    kind: "session",
     date: session.date,
     label: session.label || "",
     blocks: JSON.parse(JSON.stringify(session.blocks)),
@@ -90,10 +93,28 @@ function startEditBikeSession(session) {
   renderBikeApp();
 }
 
+// Équivalent de startEditBikeSession, pour un PLAN — même écran Créer, les
+// blocs d'un plan sont déjà des cibles par nature.
+function startEditBikePlan(plan) {
+  bikeEditingPlanId = plan.id;
+  bikeEditingSessionId = null;
+  bikeDraft = {
+    kind: "plan",
+    date: todayISO(),
+    label: plan.label || "",
+    blocks: JSON.parse(JSON.stringify(plan.blocks)),
+    editingPlanId: bikeEditingPlanId,
+  };
+  saveJSON(KEYS.bikeDraft, bikeDraft);
+  bikeTab = "log";
+  renderBikeApp();
+}
+
 function duplicateBikeSession(session) {
   const clonedBlocks = JSON.parse(JSON.stringify(session.blocks)).map((b) => ({ ...b, id: uid() }));
   bikeEditingSessionId = null;
-  bikeDraft = { date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
+  bikeEditingPlanId = null;
+  bikeDraft = { kind: "session", date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
   saveJSON(KEYS.bikeDraft, bikeDraft);
   playSaveTravelAnimation(ICONS.duplicate, "Duplication de la séance", session.label || formatDateFR(session.date), () => {
     bikeTab = "log";
@@ -101,19 +122,80 @@ function duplicateBikeSession(session) {
   });
 }
 
+function duplicateBikePlan(plan) {
+  const clonedBlocks = JSON.parse(JSON.stringify(plan.blocks)).map((b) => ({ ...b, id: uid() }));
+  bikeEditingSessionId = null;
+  bikeEditingPlanId = null;
+  bikeDraft = { kind: "plan", date: todayISO(), label: (plan.label || "") + " (copie)", blocks: clonedBlocks, editingPlanId: null };
+  saveJSON(KEYS.bikeDraft, bikeDraft);
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication du plan", plan.label || "", () => {
+    bikeTab = "log";
+    renderBikeApp();
+  });
+}
+
+function convertBikeSessionToPlan(session) {
+  const clonedBlocks = JSON.parse(JSON.stringify(session.blocks)).map((b) => ({ ...b, id: uid() }));
+  bikeEditingSessionId = null;
+  bikeEditingPlanId = null;
+  bikeDraft = { kind: "plan", date: todayISO(), label: session.label || formatDateFR(session.date), blocks: clonedBlocks, editingPlanId: null };
+  saveJSON(KEYS.bikeDraft, bikeDraft);
+  playSaveTravelAnimation(ICONS.stopwatch, "Conversion en plan", session.label || formatDateFR(session.date), () => {
+    bikeTab = "log";
+    renderBikeApp();
+  }, "right");
+}
+
+function convertBikePlanToSession(plan) {
+  const clonedBlocks = JSON.parse(JSON.stringify(plan.blocks)).map((b) => ({ ...b, id: uid() }));
+  bikeEditingSessionId = null;
+  bikeEditingPlanId = null;
+  bikeDraft = { kind: "session", date: todayISO(), label: plan.label || "", blocks: clonedBlocks, editingSessionId: null };
+  saveJSON(KEYS.bikeDraft, bikeDraft);
+  playSaveTravelAnimation(ICONS.stopwatch, "Conversion en séance", plan.label || "", () => {
+    bikeTab = "log";
+    renderBikeApp();
+  }, "left");
+}
+
+function switchBikeTopMode(newMode) {
+  if (bikeTopMode === newMode) return;
+  bikeTopMode = newMode;
+  const dateEl = document.getElementById("bike-date");
+  const labelEl = document.getElementById("bike-label");
+  bikeDraft = {
+    kind: newMode,
+    date: dateEl ? dateEl.value : bikeDraft.date,
+    label: labelEl ? labelEl.value : bikeDraft.label,
+    blocks: serializeBikeBlocksFromDOM(),
+    editingSessionId: null,
+    editingPlanId: null,
+  };
+  bikeEditingSessionId = null;
+  bikeEditingPlanId = null;
+  saveJSON(KEYS.bikeDraft, bikeDraft);
+  renderBikeApp();
+}
+
 function renderBikeApp() {
   app.className = "theme-bike";
+  if (bikeTab === "log" && bikeDraft.kind && bikeDraft.kind !== bikeTopMode) bikeTopMode = bikeDraft.kind;
+  const isPlanMode = bikeTopMode === "plan";
   app.innerHTML = `
     <div class="header">
       <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
       <div class="header-icon-only">${ICONS.bike}</div>
-      <div class="header-sub">${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""} enregistrée${bikeSessions.length !== 1 ? "s" : ""}</div>
+      <div class="header-sub">${isPlanMode ? `${bikeSessionPlans.length} plan${bikeSessionPlans.length !== 1 ? "s" : ""} enregistré${bikeSessionPlans.length !== 1 ? "s" : ""}` : `${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""} enregistrée${bikeSessions.length !== 1 ? "s" : ""}`}</div>
+    </div>
+    <div class="ex-type-toggle" id="bike-top-mode-toggle" style="margin: 14px 16px 0 18px;">
+      <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-bike-top-mode="session">Séance effectuée</button>
+      <button type="button" class="ex-type-btn ${isPlanMode ? "active" : ""}" data-bike-top-mode="plan">Plan à préparer</button>
     </div>
     <div class="content" id="content"></div>
     <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${bikeTab === "log" ? "active" : ""}" data-bike-tab="log">${ICONS.bike}Créer</button>
-      <button class="tab-btn ${bikeTab === "history" ? "active" : ""}" data-bike-tab="history">${ICONS.history}Séances</button>
+      <button class="tab-btn ${bikeTab === "history" ? "active" : ""}" data-bike-tab="history">${ICONS.history}${isPlanMode ? "Plans" : "Séances"}</button>
     </div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", () => {
@@ -128,6 +210,9 @@ function renderBikeApp() {
       bikeTab = btn.dataset.bikeTab;
       renderBikeApp();
     });
+  });
+  document.querySelectorAll("[data-bike-top-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => switchBikeTopMode(btn.dataset.bikeTopMode));
   });
   renderBikeContent();
 }
@@ -174,18 +259,25 @@ function bikeLogTabHTML() {
   const libOptions = bikeLibrary.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
   const editBanner = bikeEditingSessionId
     ? `<div class="edit-banner">Modification d'une séance existante<button type="button" id="bike-cancel-edit-btn">Annuler</button></div>`
-    : "";
+    : bikeEditingPlanId
+      ? `<div class="edit-banner">Modification d'un plan existant<button type="button" id="bike-cancel-edit-btn">Annuler</button></div>`
+      : "";
+  const isPlan = bikeDraft.kind === "plan";
+  const fieldsHTML = isPlan
+    ? `<div class="field"><label>Nom du plan</label><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></div>`
+    : `
+    <div class="field-row">
+      <div class="field field-date"><label>Date</label><input type="date" id="bike-date" value="${bikeDraft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></div>
+    </div>`;
   return `
     <div class="backup-row">
-      <button class="backup-btn" id="bike-import-draft-btn">${ICONS.down} Importer une séance</button>
+      <button class="backup-btn" id="bike-import-draft-btn">${ICONS.down} ${isPlan ? "Importer un plan" : "Importer une séance"}</button>
       <button class="backup-btn" id="bike-reset-draft-btn">${ICONS.reset} Réinitialiser</button>
       <input type="file" id="bike-import-draft-file" accept="application/json" style="display:none">
     </div>
     ${editBanner}
-    <div class="field-row">
-      <div class="field field-date"><label>Date</label><input type="date" id="bike-date" value="${bikeDraft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></div>
-    </div>
+    ${fieldsHTML}
     <div class="run-summary-bar" id="bike-summary-bar">${formatBikeSessionTotalsLine(bikeDraft.blocks)}</div>
     <div id="bike-blocks-container">${blocksHTML}</div>
     <datalist id="bike-block-suggestions"><option value="Échauffement"><option value="Sortie route"><option value="Home trainer"><option value="Récupération">${libOptions}</datalist>
@@ -194,10 +286,18 @@ function bikeLogTabHTML() {
 }
 
 function bikeLogActionsBarContentHTML() {
+  const isPlan = bikeDraft.kind === "plan";
+  const saveLabel = isPlan
+    ? bikeEditingPlanId
+      ? "Enregistrer les modifications"
+      : "Enregistrer le plan"
+    : bikeEditingSessionId
+      ? "Enregistrer les modifications"
+      : "Enregistrer la séance";
   return `
     <div id="bike-error-slot"></div>
     <button class="add-exercise-btn" id="add-bike-block-btn">${ICONS.plus} Ajouter un bloc</button>
-    <button class="save-btn" id="save-bike-session-btn">${ICONS.check} ${bikeEditingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
+    <button class="save-btn" id="save-bike-session-btn">${ICONS.check} ${saveLabel}</button>
     <div id="bike-flash-slot"></div>
   `;
 }
@@ -226,7 +326,7 @@ function updateBikeSummaryBar() {
 function attachBikeLogListeners() {
   const dateEl = document.getElementById("bike-date");
   const labelEl = document.getElementById("bike-label");
-  dateEl.addEventListener("input", scheduleBikeDraftSave);
+  if (dateEl) dateEl.addEventListener("input", scheduleBikeDraftSave);
   labelEl.addEventListener("input", scheduleBikeDraftSave);
 
   const importDraftBtn = document.getElementById("bike-import-draft-btn");
@@ -376,6 +476,27 @@ function attachBikeLogActionsBarListeners() {
       errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un bloc avec des données avant d'enregistrer.</div>`;
       return;
     }
+
+    if (bikeDraft.kind === "plan") {
+      errorSlot.innerHTML = "";
+      const wasEditingPlan = !!bikeEditingPlanId;
+      const planLabel = labelEl.value.trim() || `Plan ${bikeSessionPlans.filter((p) => p.id !== bikeEditingPlanId).length + 1}`;
+      const plan = { id: bikeEditingPlanId || uid(), label: planLabel, blocks };
+      if (wasEditingPlan) {
+        bikeSessionPlans = bikeSessionPlans.map((p) => (p.id === bikeEditingPlanId ? plan : p));
+      } else {
+        bikeSessionPlans = [plan, ...bikeSessionPlans];
+      }
+      saveJSON(KEYS.bikeSessionPlans, bikeSessionPlans);
+      clearBikeDraft();
+      justLandedItemId = plan.id;
+      playSaveTravelAnimation(ICONS.check, wasEditingPlan ? "Plan modifié" : "Plan enregistré", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
+        bikeTab = "history";
+        bikeTopMode = "plan";
+        renderBikeApp();
+      });
+      return;
+    }
     errorSlot.innerHTML = "";
 
     const wasEditing = !!bikeEditingSessionId;
@@ -398,6 +519,7 @@ function attachBikeLogActionsBarListeners() {
     }
     justLandedItemId = session.id;
     playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
+      bikeTopMode = "session";
       bikeTab = "history";
       renderBikeApp();
     });

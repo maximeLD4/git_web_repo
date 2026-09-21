@@ -140,14 +140,17 @@ function scheduleRunDraftSave() {
 }
 
 function clearRunDraft() {
-  runDraft = { date: todayISO(), label: "", blocks: [emptyBlock()] };
+  runDraft = { kind: "session", date: todayISO(), label: "", blocks: [emptyBlock()] };
   runEditingSessionId = null;
+  runEditingPlanId = null;
   saveJSON(KEYS.runDraft, runDraft);
 }
 
 function startEditRunSession(session) {
   runEditingSessionId = session.id;
+  runEditingPlanId = null;
   runDraft = {
+    kind: "session",
     date: session.date,
     label: session.label || "",
     blocks: JSON.parse(JSON.stringify(session.blocks)),
@@ -158,10 +161,29 @@ function startEditRunSession(session) {
   renderRunApp();
 }
 
+// Équivalent de startEditRunSession, pour un PLAN plutôt qu'une séance déjà
+// faite — même écran Créer, les blocs d'un plan sont déjà des cibles par
+// nature (durée/distance/allure), rien à transformer entre les deux formes.
+function startEditRunPlan(plan) {
+  runEditingPlanId = plan.id;
+  runEditingSessionId = null;
+  runDraft = {
+    kind: "plan",
+    date: todayISO(),
+    label: plan.label || "",
+    blocks: JSON.parse(JSON.stringify(plan.blocks)),
+    editingPlanId: runEditingPlanId,
+  };
+  saveJSON(KEYS.runDraft, runDraft);
+  runTab = "log";
+  renderRunApp();
+}
+
 function duplicateRunSession(session) {
   const clonedBlocks = JSON.parse(JSON.stringify(session.blocks)).map((b) => ({ ...b, id: uid() }));
   runEditingSessionId = null;
-  runDraft = { date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
+  runEditingPlanId = null;
+  runDraft = { kind: "session", date: todayISO(), label: session.label || "", blocks: clonedBlocks, editingSessionId: null };
   saveJSON(KEYS.runDraft, runDraft);
   playSaveTravelAnimation(ICONS.duplicate, "Duplication de la séance", session.label || formatDateFR(session.date), () => {
     runTab = "log";
@@ -169,19 +191,89 @@ function duplicateRunSession(session) {
   });
 }
 
+// Équivalent de duplicateRunSession, pour un plan.
+function duplicateRunPlan(plan) {
+  const clonedBlocks = JSON.parse(JSON.stringify(plan.blocks)).map((b) => ({ ...b, id: uid() }));
+  runEditingSessionId = null;
+  runEditingPlanId = null;
+  runDraft = { kind: "plan", date: todayISO(), label: (plan.label || "") + " (copie)", blocks: clonedBlocks, editingPlanId: null };
+  saveJSON(KEYS.runDraft, runDraft);
+  playSaveTravelAnimation(ICONS.duplicate, "Duplication du plan", plan.label || "", () => {
+    runTab = "log";
+    renderRunApp();
+  });
+}
+
+// Les blocs Course à pied sont déjà des cibles par nature (durée, distance,
+// allure) — contrairement aux séries Muscu, rien à retirer entre séance et
+// plan (pas de repos mesuré ni d'horodatage à ce niveau). Convertir revient
+// donc juste à recopier les blocs tels quels, sans transformation.
+function convertRunSessionToPlan(session) {
+  const clonedBlocks = JSON.parse(JSON.stringify(session.blocks)).map((b) => ({ ...b, id: uid() }));
+  runEditingSessionId = null;
+  runEditingPlanId = null;
+  runDraft = { kind: "plan", date: todayISO(), label: session.label || formatDateFR(session.date), blocks: clonedBlocks, editingPlanId: null };
+  saveJSON(KEYS.runDraft, runDraft);
+  playSaveTravelAnimation(ICONS.stopwatch, "Conversion en plan", session.label || formatDateFR(session.date), () => {
+    runTab = "log";
+    renderRunApp();
+  }, "right");
+}
+
+function convertRunPlanToSession(plan) {
+  const clonedBlocks = JSON.parse(JSON.stringify(plan.blocks)).map((b) => ({ ...b, id: uid() }));
+  runEditingSessionId = null;
+  runEditingPlanId = null;
+  runDraft = { kind: "session", date: todayISO(), label: plan.label || "", blocks: clonedBlocks, editingSessionId: null };
+  saveJSON(KEYS.runDraft, runDraft);
+  playSaveTravelAnimation(ICONS.stopwatch, "Conversion en séance", plan.label || "", () => {
+    runTab = "log";
+    renderRunApp();
+  }, "left");
+}
+
+// Bascule Séance/Plan PENDANT la construction — même principe que
+// switchGymTopMode : on transforme le brouillon en cours plutôt que de
+// l'effacer (les deux formes sont déjà identiques ici, aucune conversion
+// de champ nécessaire, juste le "kind" et l'identifiant d'édition).
+function switchRunTopMode(newMode) {
+  if (runTopMode === newMode) return;
+  runTopMode = newMode;
+  const dateEl = document.getElementById("run-date");
+  const labelEl = document.getElementById("run-label");
+  runDraft = {
+    kind: newMode,
+    date: dateEl ? dateEl.value : runDraft.date,
+    label: labelEl ? labelEl.value : runDraft.label,
+    blocks: serializeBlocksFromDOM(),
+    editingSessionId: null,
+    editingPlanId: null,
+  };
+  runEditingSessionId = null;
+  runEditingPlanId = null;
+  saveJSON(KEYS.runDraft, runDraft);
+  renderRunApp();
+}
+
 function renderRunApp() {
   app.className = "theme-run";
+  if (runTab === "log" && runDraft.kind && runDraft.kind !== runTopMode) runTopMode = runDraft.kind;
+  const isPlanMode = runTopMode === "plan";
   app.innerHTML = `
     <div class="header">
       <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
       <div class="header-icon-only">${ICONS.stopwatch}</div>
-      <div class="header-sub">${runSessions.length} séance${runSessions.length !== 1 ? "s" : ""} enregistrée${runSessions.length !== 1 ? "s" : ""}</div>
+      <div class="header-sub">${isPlanMode ? `${runSessionPlans.length} plan${runSessionPlans.length !== 1 ? "s" : ""} enregistré${runSessionPlans.length !== 1 ? "s" : ""}` : `${runSessions.length} séance${runSessions.length !== 1 ? "s" : ""} enregistrée${runSessions.length !== 1 ? "s" : ""}`}</div>
+    </div>
+    <div class="ex-type-toggle" id="run-top-mode-toggle" style="margin: 14px 16px 0 18px;">
+      <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-run-top-mode="session">Séance effectuée</button>
+      <button type="button" class="ex-type-btn ${isPlanMode ? "active" : ""}" data-run-top-mode="plan">Plan à préparer</button>
     </div>
     <div class="content" id="content"></div>
     <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
     <div class="tabbar">
       <button class="tab-btn ${runTab === "log" ? "active" : ""}" data-run-tab="log">${ICONS.stopwatch}Créer</button>
-      <button class="tab-btn ${runTab === "history" ? "active" : ""}" data-run-tab="history">${ICONS.history}Séances</button>
+      <button class="tab-btn ${runTab === "history" ? "active" : ""}" data-run-tab="history">${ICONS.history}${isPlanMode ? "Plans" : "Séances"}</button>
     </div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", () => {
@@ -196,6 +288,9 @@ function renderRunApp() {
       runTab = btn.dataset.runTab;
       renderRunApp();
     });
+  });
+  document.querySelectorAll("[data-run-top-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => switchRunTopMode(btn.dataset.runTopMode));
   });
   renderRunContent();
 }
@@ -291,18 +386,25 @@ function runLogTabHTML() {
   const libOptions = runLibrary.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
   const editBanner = runEditingSessionId
     ? `<div class="edit-banner">Modification d'une séance existante<button type="button" id="run-cancel-edit-btn">Annuler</button></div>`
-    : "";
+    : runEditingPlanId
+      ? `<div class="edit-banner">Modification d'un plan existant<button type="button" id="run-cancel-edit-btn">Annuler</button></div>`
+      : "";
+  const isPlan = runDraft.kind === "plan";
+  const fieldsHTML = isPlan
+    ? `<div class="field"><label>Nom du plan</label><input type="text" id="run-label" placeholder="Fractionné 10x400…" value="${(runDraft.label || "").replace(/"/g, "&quot;")}"></div>`
+    : `
+    <div class="field-row">
+      <div class="field field-date"><label>Date</label><input type="date" id="run-date" value="${runDraft.date}"></div>
+      <div class="field"><label>Séance</label><input type="text" id="run-label" placeholder="Fractionné 10x400…" value="${(runDraft.label || "").replace(/"/g, "&quot;")}"></div>
+    </div>`;
   return `
     <div class="backup-row">
-      <button class="backup-btn" id="run-import-draft-btn">${ICONS.down} Importer une séance</button>
+      <button class="backup-btn" id="run-import-draft-btn">${ICONS.down} ${isPlan ? "Importer un plan" : "Importer une séance"}</button>
       <button class="backup-btn" id="run-reset-draft-btn">${ICONS.reset} Réinitialiser</button>
       <input type="file" id="run-import-draft-file" accept="application/json" style="display:none">
     </div>
     ${editBanner}
-    <div class="field-row">
-      <div class="field field-date"><label>Date</label><input type="date" id="run-date" value="${runDraft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="run-label" placeholder="Fractionné 10x400…" value="${(runDraft.label || "").replace(/"/g, "&quot;")}"></div>
-    </div>
+    ${fieldsHTML}
     <div class="run-summary-bar" id="run-summary-bar">${formatSessionTotalsLine(runDraft.blocks)}</div>
     <div id="blocks-container">${blocksHTML}</div>
     <datalist id="block-suggestions"><option value="Échauffement"><option value="Endurance fondamentale"><option value="Fractionné"><option value="Récupération"><option value="Retour au calme">${libOptions}</datalist>
@@ -311,10 +413,18 @@ function runLogTabHTML() {
 }
 
 function runLogActionsBarContentHTML() {
+  const isPlan = runDraft.kind === "plan";
+  const saveLabel = isPlan
+    ? runEditingPlanId
+      ? "Enregistrer les modifications"
+      : "Enregistrer le plan"
+    : runEditingSessionId
+      ? "Enregistrer les modifications"
+      : "Enregistrer la séance";
   return `
     <div id="run-error-slot"></div>
     <button class="add-exercise-btn" id="add-block-btn">${ICONS.plus} Ajouter un bloc</button>
-    <button class="save-btn" id="save-run-session-btn">${ICONS.check} ${runEditingSessionId ? "Enregistrer les modifications" : "Enregistrer la séance"}</button>
+    <button class="save-btn" id="save-run-session-btn">${ICONS.check} ${saveLabel}</button>
     <div id="run-flash-slot"></div>
   `;
 }
@@ -366,7 +476,7 @@ function updateRunSummaryBar() {
 function attachRunLogListeners() {
   const dateEl = document.getElementById("run-date");
   const labelEl = document.getElementById("run-label");
-  dateEl.addEventListener("input", scheduleRunDraftSave);
+  if (dateEl) dateEl.addEventListener("input", scheduleRunDraftSave);
   labelEl.addEventListener("input", scheduleRunDraftSave);
 
   const importDraftBtn = document.getElementById("run-import-draft-btn");
@@ -576,6 +686,27 @@ function attachRunLogActionsBarListeners() {
       errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un bloc avec des données avant d'enregistrer.</div>`;
       return;
     }
+
+    if (runDraft.kind === "plan") {
+      errorSlot.innerHTML = "";
+      const wasEditingPlan = !!runEditingPlanId;
+      const planLabel = labelEl.value.trim() || `Plan ${runSessionPlans.filter((p) => p.id !== runEditingPlanId).length + 1}`;
+      const plan = { id: runEditingPlanId || uid(), label: planLabel, blocks };
+      if (wasEditingPlan) {
+        runSessionPlans = runSessionPlans.map((p) => (p.id === runEditingPlanId ? plan : p));
+      } else {
+        runSessionPlans = [plan, ...runSessionPlans];
+      }
+      saveJSON(KEYS.runSessionPlans, runSessionPlans);
+      clearRunDraft();
+      justLandedItemId = plan.id;
+      playSaveTravelAnimation(ICONS.check, wasEditingPlan ? "Plan modifié" : "Plan enregistré", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
+        runTab = "history";
+        runTopMode = "plan";
+        renderRunApp();
+      });
+      return;
+    }
     errorSlot.innerHTML = "";
 
     const wasEditing = !!runEditingSessionId;
@@ -602,6 +733,7 @@ function attachRunLogActionsBarListeners() {
     justLandedItemId = session.id;
     playSaveTravelAnimation(ICONS.check, wasEditing ? "Séance modifiée" : "Séance enregistrée", `${blocks.length} bloc${blocks.length !== 1 ? "s" : ""}`, () => {
       runTab = "history";
+      runTopMode = "session";
       renderRunApp();
     });
   });

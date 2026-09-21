@@ -1,4 +1,82 @@
-/* ---------- Performance : suivi des indicateurs de progression (Salle de sport) ---------- */
+/* ---------- Performance : suivi des indicateurs de progression ---------- */
+
+// Calcule, pour un sport cardio donné, l'historique chronologique des
+// séances avec leurs totaux agrégés (distance, durée, allure/vitesse
+// moyenne) — l'équivalent cardio de getExerciseHistory (Muscu) ci-dessous,
+// mais à l'échelle de la séance ENTIÈRE plutôt que d'un exercice nommé :
+// Course/Natation/Vélo n'ont pas cette notion, leurs blocs n'ont pas de nom
+// stable d'une séance à l'autre.
+function getCardioSessionHistory(sport) {
+  const sessionsArr = sport === "run" ? runSessions : sport === "swim" ? swimSessions : bikeSessions;
+  const sorted = [...sessionsArr]
+    .filter((s) => s.date <= todayISO())
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+  return sorted.map((s) => {
+    let distance = 0;
+    let duration = 0;
+    s.blocks.forEach((b) => {
+      if (sport === "run") {
+        distance += blockDistanceKm(b);
+        duration += blockDurationMin(b);
+      } else if (sport === "swim") {
+        distance += swimBlockDistanceM(b);
+        duration += swimBlockDurationMin(b);
+      } else {
+        distance += bikeBlockDistanceKm(b);
+        duration += bikeBlockDurationMin(b);
+      }
+    });
+    // "index" représente ici l'allure (min/km ou min/100m, plus petit =
+    // mieux) ou la vitesse pour le vélo (km/h, plus grand = mieux) — pas un
+    // score composite comme pour la Muscu, la valeur brute est déjà le
+    // bon indicateur à suivre dans le temps.
+    let index = 0;
+    if (distance > 0) {
+      if (sport === "run") index = duration / distance;
+      else if (sport === "swim") index = (duration * 100) / distance;
+      else index = duration > 0 ? distance / (duration / 60) : 0;
+    }
+    return { date: s.date, sessionId: s.id, distance: Math.round(distance * 100) / 100, duration: Math.round(duration * 10) / 10, index: Math.round(index * 100) / 100 };
+  });
+}
+
+// Meilleure allure/vitesse et plus longue distance sur tout l'historique
+// — équivalent cardio de getPersonalRecords (Muscu) ci-dessous. Le sens
+// de "meilleur" s'inverse pour le vélo (vitesse : plus grand = mieux)
+// par rapport à la course/natation (allure : plus petit = mieux).
+function getCardioRecords(history, sport) {
+  let bestIndex = null;
+  let bestIndexDate = null;
+  let longestDist = null;
+  let longestDistDate = null;
+  history.forEach((h) => {
+    if (h.index > 0) {
+      const better = sport === "bike" ? bestIndex === null || h.index > bestIndex : bestIndex === null || h.index < bestIndex;
+      if (better) {
+        bestIndex = h.index;
+        bestIndexDate = h.date;
+      }
+    }
+    if (longestDist === null || h.distance > longestDist) {
+      longestDist = h.distance;
+      longestDistDate = h.date;
+    }
+  });
+  return { bestIndex, bestIndexDate, longestDist, longestDistDate };
+}
+
+function cardioSportLabel(sport) {
+  return sport === "run" ? "Course à pied" : sport === "swim" ? "Natation" : "Vélo";
+}
+function cardioDistUnit(sport) {
+  return sport === "swim" ? "m" : "km";
+}
+function cardioFormatIndex(sport, v) {
+  if (v == null) return "—";
+  if (sport === "bike") return `${Math.round(v * 10) / 10} km/h`;
+  if (sport === "run") return formatPaceDisplay(String(v)) || "—";
+  return formatSwimPaceDisplay(String(v)) || "—";
+}
 
 function getExerciseHistory(exerciseName) {
   const norm = (exerciseName || "").trim().toLowerCase();
@@ -70,9 +148,21 @@ function renderPerformanceApp() {
       <div class="header-icon-only">${ICONS.trending}</div>
       <div class="header-sub">Suivi de tes progrès</div>
     </div>
+    <div class="ex-type-toggle wrap-toggle" style="margin: 14px 16px 0 18px;">
+      <button type="button" class="ex-type-btn ${performanceMode === "muscu" ? "active" : ""}" data-performance-mode="muscu">Muscu</button>
+      <button type="button" class="ex-type-btn ${performanceMode === "run" ? "active" : ""}" data-performance-mode="run">Course</button>
+      <button type="button" class="ex-type-btn ${performanceMode === "swim" ? "active" : ""}" data-performance-mode="swim">Natation</button>
+      <button type="button" class="ex-type-btn ${performanceMode === "bike" ? "active" : ""}" data-performance-mode="bike">Vélo</button>
+    </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
   `;
   document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  document.querySelectorAll("[data-performance-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      performanceMode = btn.dataset.performanceMode;
+      renderPerformanceApp();
+    });
+  });
   renderPerformanceContent();
 }
 
@@ -120,6 +210,11 @@ function performanceRowHTML(config) {
 
 function renderPerformanceContent() {
   const content = document.getElementById("content");
+  if (performanceMode !== "muscu") {
+    content.innerHTML = cardioPerformanceContentHTML(performanceMode);
+    content.querySelectorAll(".perf-record-value[data-count-to]").forEach((el) => animateCountUp(el));
+    return;
+  }
   if (gymExerciseConfigs.length === 0) {
     content.innerHTML = `<div class="empty-state">Aucun exercice configuré pour l'instant.<br>Configure tes exercices dans Paramètres → Salle de sport pour voir apparaître leur suivi ici.</div>`;
     return;
@@ -146,6 +241,55 @@ function renderPerformanceContent() {
       render();
     });
   });
+}
+
+// Contenu Performance pour un sport cardio (Course/Natation/Vélo) — une
+// seule page directement (contrairement à la Muscu, pas de "liste
+// d'exercices" à choisir d'abord : il n'y a qu'un seul indicateur par
+// sport, pas un par exercice nommé).
+function cardioPerformanceContentHTML(sport) {
+  const history = getCardioSessionHistory(sport);
+  if (history.length === 0) {
+    return `<div class="empty-state">Aucune séance de ${cardioSportLabel(sport).toLowerCase()} enregistrée pour l'instant.</div>`;
+  }
+  const records = getCardioRecords(history, sport);
+  const paceLabel = sport === "bike" ? "vitesse" : "allure";
+  const distUnit = cardioDistUnit(sport);
+  const historyRowsHTML = [...history]
+    .reverse()
+    .map(
+      (h) => `
+    <div class="history-card">
+      <div class="history-head" style="cursor:default;">
+        <div class="history-head-left">
+          <div class="history-date">${formatDateFR(h.date)}</div>
+          <div class="history-label">${Math.round(h.distance * 10) / 10}${distUnit} · ${formatDurationMin(h.duration)} · ${cardioFormatIndex(sport, h.index)}</div>
+        </div>
+      </div>
+    </div>`
+    )
+    .join("");
+
+  return `
+    <div class="perf-records-row">
+      <div class="perf-record-card">
+        <div class="perf-record-label">Meilleure ${paceLabel}</div>
+        <div class="perf-record-value">${cardioFormatIndex(sport, records.bestIndex)}</div>
+        <div class="perf-record-date">${formatDateFR(records.bestIndexDate)}</div>
+      </div>
+      <div class="perf-record-card">
+        <div class="perf-record-label">Plus longue distance</div>
+        <div class="perf-record-value" data-count-to="${records.longestDist}" data-count-suffix="${distUnit}">0${distUnit}</div>
+        <div class="perf-record-date">${formatDateFR(records.longestDistDate)}</div>
+      </div>
+    </div>
+    <div class="perf-chart-wrap">
+      <div class="weight-chip-label" style="margin-top:0;">${paceLabel.charAt(0).toUpperCase() + paceLabel.slice(1)} dans le temps</div>
+      ${performanceChartSVG(history)}
+    </div>
+    <div class="weight-chip-label">Historique des séances</div>
+    ${historyRowsHTML}
+  `;
 }
 
 function performanceChartSVG(history) {

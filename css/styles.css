@@ -472,6 +472,12 @@ select.ex-name-pill:focus { outline: none; }
 .cal-cell.has-data { color: var(--text); font-weight: 800; }
 @keyframes cal-pop { 0% { transform: scale(1); } 45% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .cal-cell.selected { background: rgba(var(--ink-rgb), 0.07); border-color: var(--ink); animation: cal-pop 0.25s ease; }
+/* Changement de tour pendant la boucle Gainage (voir liveLoopRoundJustChanged)
+   — sans ça, le chiffre changeait sans le moindre signal, aussi discret
+   qu'un défilement de texte normal. Même "pop" que .cal-cell.selected
+   ci-dessus, réutilisé tel quel plutôt que réinventé. */
+@keyframes live-round-flash { 0% { transform: scale(1); color: inherit; } 35% { transform: scale(1.25); color: var(--accent); } 100% { transform: scale(1); color: inherit; } }
+.live-round-pop { display: inline-block; animation: live-round-flash 0.6s ease; }
 @keyframes cal-grid-slide-in-from-right { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes cal-grid-slide-in-from-left { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes cal-grid-slide-out-to-left { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-30px); opacity: 0; } }
@@ -525,7 +531,14 @@ select.ex-name-pill:focus { outline: none; }
 .history-card.just-landed { animation: history-card-land 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), history-card-glow-fade 1.6s ease 0.3s forwards; }
 /* ---------- Glisser pour supprimer ---------- */
 .swipe-row { position: relative; overflow: hidden; border-radius: var(--radius); margin-bottom: 10px; }
-.swipe-row > [data-swipe-id] { margin-bottom: 0; position: relative; z-index: 1; touch-action: pan-y; background: var(--surface); }
+.swipe-row > [data-swipe-id] {
+  margin-bottom: 0; position: relative; z-index: 1; touch-action: pan-y; background: var(--surface);
+  /* Repos permanent légèrement décalé (voir la même valeur, PEEK, dans
+     initSwipeToDelete) plutôt que 0 — un mince bord rouge dépasse toujours
+     un peu à droite, seul indice qu'un geste est possible ici : le geste
+     lui-même n'a sinon rien de visible qui le suggère. */
+  transform: translateX(-8px);
+}
 .swipe-delete-reveal {
   position: absolute; top: 0; right: 0; bottom: 0; width: 84px;
   background: var(--danger); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
