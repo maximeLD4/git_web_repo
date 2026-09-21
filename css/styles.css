@@ -212,7 +212,7 @@ input:focus { outline: none; border-bottom-color: var(--ink); background: transp
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
   cursor: pointer; text-align: center; background: transparent; color: var(--text-dim);
 }
-.increment-switch-btn.active { background: var(--action); border-color: var(--action); color: var(--on-ink); }
+.increment-switch-btn.active { background: var(--accent); border-color: var(--accent); color: var(--on-ink); }
 /* ---------- Switch on/off générique (ex. Incrément automatique) ---------- */
 .toggle-switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .toggle-switch-label-text { font-size: 11.5px; color: var(--text-dim); line-height: 1.45; flex: 1; min-width: 0; font-weight: 500; }
@@ -425,7 +425,7 @@ select.ex-name-pill:focus { outline: none; }
   background: none; border: none; font-family: var(--font-mono); font-size: 9.5px; font-weight: 600;
   letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0;
 }
-.edit-link { color: var(--action); }
+.edit-link { color: var(--accent); }
 .delete-link { color: var(--danger); }
 
 /* ========== MODULE POIDS (statistiques, graphique, entrées) ========== */
@@ -1071,8 +1071,15 @@ html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 .week-range, .live-stepper-label { font-weight: 600; }
 
 /* ---------- Sélection : un bloc encre plein, jamais une pilule ---------- */
+/* --accent plutôt que --action : chaque écran a déjà sa propre teinte
+   d'identité définie (voir plus haut, une par thème/mode) — jusqu'ici
+   jamais reprise ici, donc les onglets/bascules actifs se ressemblaient
+   partout, quel que soit le sport ouvert. Les écrans neutres (Réglages,
+   Calendrier, Accueil) ont une --accent délibérément identique à
+   l'ancienne --action, donc rien ne change pour eux.
+   */
 .tab-btn.active, .ex-type-btn.active, .live-subcat-btn.active, .weight-chip.active,
-.increment-switch-btn.active { background: var(--action); color: var(--on-ink); border-color: var(--action); }
+.increment-switch-btn.active { background: var(--accent); color: var(--on-ink); border-color: var(--accent); }
 .live-type-thumb { background: var(--ink); }
 .live-type-switch-btn.active { color: var(--on-ink); }
 .live-type-switch { background: var(--surface-2); padding: 0; gap: 0; }
@@ -1199,7 +1206,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 /* ---------- 2. L'en-tête comme bloc encre ---------- */
 .header { background: var(--ink); padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: 18px; }
 .header .back-btn, .header .logout-btn { color: rgba(255, 255, 255, 0.9); border-color: rgba(255, 255, 255, 0.7); }
-.header-icon-only { color: var(--yellow); }
+.header-icon-only { color: var(--accent); }
 .home-wordmark { color: var(--on-ink); }
 .header-sub { color: rgba(255, 255, 255, 0.7); }
 

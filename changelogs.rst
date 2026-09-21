@@ -28,6 +28,30 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.66.1 - 2026-09-04
+====================
+
+- **Les couleurs identitaires de chaque sport sont maintenant visibles à
+  l'intérieur de leur propre module**, pas seulement sur les tuiles de
+  l'accueil. En creusant, l'infrastructure existait déjà entièrement
+  (chaque écran a sa propre teinte définie, cohérente jour/nuit/Anne) —
+  elle n'était simplement jamais reprise dans les éléments qui comptent :
+  l'icône de l'en-tête restait jaune fixe partout, et les onglets/bascules
+  actifs utilisaient tous la même teinte neutre, quel que soit le sport
+  ouvert.
+  - Concerné : l'icône de l'en-tête, les onglets actifs en bas d'écran
+    (Créer/Séances), les bascules actives (Séance effectuée/Plan à
+    préparer, Jour/Nuit/Anne...), et les liens d'action (Modifier,
+    Dupliquer...).
+  - Les écrans neutres (Réglages, Calendrier, Accueil) ne changent pas :
+    leur teinte d'identité était déjà la même que l'ancienne couleur
+    neutre partagée. Poids et Performance, qui avaient eux aussi leur
+    propre teinte déjà définie mais inutilisée, en profitent au passage.
+  - Testé visuellement sur les 4 sports en mode Jour et Nuit (bon
+    contraste du texte dans les deux cas), vérifié que les écrans neutres
+    restent inchangés, et passé une non-régression complète sur les 14
+    écrans principaux.
+
 2.66.0 - 2026-09-04
 ====================
 
