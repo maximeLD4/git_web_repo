@@ -11,7 +11,12 @@ function formatSetChip(exType, s) {
     const durationLabel = formatCardioDuration(s.weight);
     return s.reps ? `${durationLabel} · ${s.reps}km` : durationLabel;
   }
-  return `${s.weight || 0}kg × ${s.reps || 0}`;
+  // Suffixe (G)/(D) uniquement pour une série unilatérale (voir
+  // config.unilateral) — "les deux" reste la forme silencieuse, la plus
+  // courante, pour ne pas alourdir l'affichage des exercices qui n'ont
+  // jamais cette distinction.
+  const sideLabel = s.side === "left" ? " (G)" : s.side === "right" ? " (D)" : "";
+  return `${s.weight || 0}kg × ${s.reps || 0}${sideLabel}`;
 }
 function formatSetsSummary(exType, sets) {
   return sets.map((s) => formatSetChip(exType, s)).join(", ");
@@ -875,7 +880,7 @@ function attachLogListeners() {
         gymSettingsMode = "muscu";
         gymSettingsFormOpen = true;
         gymSettingsEditingConfigId = null;
-        gymSettingsFormDraft = { name: "", category: targetCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false };
+        gymSettingsFormDraft = { name: "", category: targetCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
         gymSettingsFocusTarget = "name";
         currentApp = "settings-gym";
         render();

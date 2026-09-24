@@ -311,6 +311,27 @@ function gymSettingsFormHTML() {
         <input type="text" inputmode="decimal" min="0" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}">
         <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Poids fixe qu'on peut ajouter manuellement sur cette machine (ex. 5). Sur chaque palier, le choix sera alors +0 ou +5kg — jamais une valeur intermédiaire. Mets 0 si la machine n'a pas cette option.</div>
       </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Travail unilatéral</label>
+        <div class="toggle-switch-row">
+          <span class="toggle-switch-label-text">Propose, en Séance en direct, de choisir Gauche/Droite/Les deux avant chaque série — pour les exercices qu'on peut faire un côté à la fois (ex. mollets, ischios).</span>
+          <button type="button" class="toggle-switch ${gymSettingsFormDraft.unilateral ? "on" : ""}" id="config-unilateral-toggle" role="switch" aria-checked="${gymSettingsFormDraft.unilateral ? "true" : "false"}">
+            <span class="toggle-switch-knob"></span>
+          </button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:6px;">
+        <label>Alterner avec (optionnel)</label>
+        <select id="config-paired-exercise-select">
+          <option value="">Aucun</option>
+          ${gymExerciseConfigs
+            .filter((c) => c.id !== gymSettingsEditingConfigId)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((c) => `<option value="${c.id}" ${gymSettingsFormDraft.pairedExerciseId === c.id ? "selected" : ""}>${c.name}</option>`)
+            .join("")}
+        </select>
+        <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Pour une paire sur la même machine (ex. Abducteurs/Adducteurs) : un bouton de bascule rapide apparaît alors en Séance en direct pour passer de l'un à l'autre sans repasser par la liste. Le lien fonctionne dans les deux sens.</div>
+      </div>
       <div id="config-form-error"></div>
       <button class="save-btn" id="save-config-btn">${ICONS.check} Enregistrer</button>
       <button class="backup-btn" id="cancel-config-btn" style="margin-top:10px;">Annuler</button>
@@ -559,7 +580,7 @@ function attachGymSettingsListeners() {
       gymSettingsFormOpen = true;
       gymSettingsEditingConfigId = null;
       const defaultCategory = gymSettingsActiveCategory === "other" || gymSettingsActiveCategory === "all" ? "pecs" : gymSettingsActiveCategory;
-      gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0, autoIncrement: false };
+      gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
@@ -576,6 +597,8 @@ function attachGymSettingsListeners() {
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
         autoIncrement: config.autoIncrement || false,
+        unilateral: config.unilateral || false,
+        pairedExerciseId: config.pairedExerciseId || null,
       };
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
@@ -594,6 +617,12 @@ function attachGymSettingsListeners() {
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
         autoIncrement: config.autoIncrement || false,
+        unilateral: config.unilateral || false,
+        // Le jumelage ne se duplique jamais : un exercice jumelé est une
+        // relation à deux (voir switchGymExercisePair) — la copie créerait
+        // sinon un triangle où deux configs pointent vers le même
+        // partenaire, ambigu au moment de choisir avec laquelle basculer.
+        pairedExerciseId: null,
       };
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
@@ -638,6 +667,15 @@ function attachGymSettingsListeners() {
     gymSettingsFormDraft.autoIncrement = !gymSettingsFormDraft.autoIncrement;
     renderGymSettingsContent();
   });
+  document.getElementById("config-unilateral-toggle").addEventListener("click", () => {
+    syncFormFromInputs();
+    gymSettingsFormDraft.unilateral = !gymSettingsFormDraft.unilateral;
+    renderGymSettingsContent();
+  });
+  document.getElementById("config-paired-exercise-select").addEventListener("change", (ev) => {
+    syncFormFromInputs();
+    gymSettingsFormDraft.pairedExerciseId = ev.target.value || null;
+  });
   document.getElementById("config-scan-weights-btn").addEventListener("click", () => {
     // On synchronise le formulaire (nom, incrément) avant de le quitter
     // temporairement, pour ne rien perdre au retour depuis le scanner.
@@ -677,6 +715,15 @@ function attachGymSettingsListeners() {
       return;
     }
     errorSlot.innerHTML = "";
+    const oldConfig = gymSettingsEditingConfigId ? gymExerciseConfigs.find((c) => c.id === gymSettingsEditingConfigId) : null;
+    const oldPairedId = oldConfig ? oldConfig.pairedExerciseId || null : null;
+    const newPairedId = gymSettingsFormDraft.pairedExerciseId || null;
+    // Le partenaire qu'on vient de choisir avait peut-être lui-même un
+    // AUTRE partenaire avant nous — sans quoi ce tiers resterait à pointer
+    // vers lui sans que lui ne pointe plus en retour (lien à sens unique,
+    // fantôme).
+    const newPartnerConfig = newPairedId ? gymExerciseConfigs.find((c) => c.id === newPairedId) : null;
+    const newPartnerOldPairedId = newPartnerConfig ? newPartnerConfig.pairedExerciseId || null : null;
     const newConfig = {
       id: gymSettingsEditingConfigId || uid(),
       name,
@@ -684,11 +731,25 @@ function attachGymSettingsListeners() {
       baseWeights: Array.from(new Set(gymSettingsFormDraft.baseWeights)).sort((a, b) => a - b),
       maxIncrement: gymSettingsFormDraft.maxIncrement || 0,
       autoIncrement: !!gymSettingsFormDraft.autoIncrement,
+      unilateral: !!gymSettingsFormDraft.unilateral,
+      pairedExerciseId: newPairedId,
     };
     if (gymSettingsEditingConfigId) {
       gymExerciseConfigs = gymExerciseConfigs.map((c) => (c.id === gymSettingsEditingConfigId ? newConfig : c));
     } else {
       gymExerciseConfigs.push(newConfig);
+    }
+    // Jumelage bidirectionnel : une paire n'a de sens qu'à deux exercices
+    // exclusifs l'un de l'autre — voir switchGymExercisePair (Live) pour le
+    // bouton de bascule rapide que ce lien permet.
+    if (oldPairedId && oldPairedId !== newPairedId) {
+      gymExerciseConfigs = gymExerciseConfigs.map((c) => (c.id === oldPairedId ? { ...c, pairedExerciseId: null } : c));
+    }
+    if (newPartnerOldPairedId && newPartnerOldPairedId !== newConfig.id) {
+      gymExerciseConfigs = gymExerciseConfigs.map((c) => (c.id === newPartnerOldPairedId ? { ...c, pairedExerciseId: null } : c));
+    }
+    if (newPairedId) {
+      gymExerciseConfigs = gymExerciseConfigs.map((c) => (c.id === newPairedId ? { ...c, pairedExerciseId: newConfig.id } : c));
     }
     saveJSON(KEYS.gymExerciseConfigs, gymExerciseConfigs);
     gymSettingsFormOpen = false;

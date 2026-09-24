@@ -14,7 +14,7 @@ function setBarsHTML(ex, colorOverride) {
       return `
       ${historyRestBadgeHTML(s.restSec)}
       <div class="set-bar-col">
-        <div class="set-bar-reps" style="${repsColorStyle}">${r ? `×${r}` : ""}</div>
+        <div class="set-bar-reps" style="${repsColorStyle}">${r ? `×${r}${s.side === "left" ? " (G)" : s.side === "right" ? " (D)" : ""}` : ""}</div>
         <div class="set-bar" style="height:${heightPx}px;width:${widthPx}px;${barColorStyle}"></div>
         <div class="set-bar-weight">${w ? `${w}kg` : ""}</div>
       </div>`;

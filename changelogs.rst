@@ -28,6 +28,59 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.67.1 - 2026-09-04
+====================
+
+- **Retouche visuelle des deux nouveautés de la version précédente**
+  (exercice jumelé, travail unilatéral), suite à un premier retour :
+  - Le bouton de bascule rapide entre deux exercices jumelés ne cumule
+    plus une flèche simple ET une flèche double — seulement la double
+    flèche (⇄), agrandie, avec le nom de l'exercice juste à côté.
+  - Les boutons Gauche/Droite n'affichent plus l'étiquette "Côté"
+    au-dessus, et sont nettement plus larges/hauts — des boutons dédiés
+    plutôt qu'une réutilisation du toggle générique.
+  - Vérifié que tout l'écran de la série (répétitions, poids, incrément,
+    Gauche/Droite, boutons d'action) tient sur un seul écran sans
+    défiler, y compris sur un petit format (375×667).
+  - Testé : les deux boutons restent parfaitement fonctionnels après ces
+    changements de style.
+
+2.67.0 - 2026-09-04
+====================
+
+- **Exercice jumelé : bascule rapide entre deux exercices de la même
+  machine** (ex. Abducteurs/Adducteurs, Ischios/Quadriceps) — pour
+  alterner en se reposant sur l'un pendant que l'autre travaille, sans
+  avoir à repasser par la grille complète de sélection à chaque fois.
+  - Un nouveau champ "Alterner avec" dans Réglages > Salle de sport,
+    liaison bidirectionnelle automatique (configurer sur l'un configure
+    aussi l'autre). Changer de partenaire délie proprement l'ancien lien,
+    la duplication ne copie jamais le jumelage (éviterait un lien à trois).
+  - En Séance en direct, un bouton "⇄ [Nom]" apparaît à côté de "Changer
+    d'exercice" quand l'exercice actif a un jumeau — un seul tap pour
+    basculer.
+- **Travail unilatéral : choisir Gauche/Droite/Les deux pour n'importe
+  quel exercice** (ex. mollets, ischios) — jusque là impossible à
+  préciser, tout se mélangeait dans le même historique.
+  - Un réglage on/off par exercice dans Réglages > Salle de sport (même
+    principe que "Incrément automatique"). Une fois activé, deux boutons
+    Gauche/Droite apparaissent avant de lancer la série — les deux actifs
+    par défaut, taper sur l'un isole l'autre côté, impossible de
+    désactiver les deux à la fois.
+  - Le choix se fixe à "Débuter la série" et se retient d'une série à
+    l'autre du même exercice, modifiable à tout moment avant la série
+    suivante.
+  - Le côté enregistré s'affiche partout où une série apparaît (suffixe
+    (G)/(D)) : rappel "Précédent" en direct, historique de séance,
+    calendrier partagé.
+  - Bug trouvé en testant : la vue dépliée d'une séance utilise un rendu
+    en barres visuelles bien différent de l'affichage habituel des
+    séries — un endroit que le premier passage avait raté. Corrigé.
+  - Testé en profondeur : liaison bidirectionnelle, cas de partenaire
+    changé ou triangle à trois, suppression du jumelage, non-régression
+    complète sur un exercice sans ces réglages et sur les 14 écrans
+    principaux.
+
 2.66.1 - 2026-09-04
 ====================
 

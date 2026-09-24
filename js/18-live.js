@@ -393,7 +393,7 @@ function liveMuscuSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${lastSet.weight}kg × ${lastSet.reps}` : ""}</div>
+          <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${formatSetChip("muscu", lastSet)}` : ""}</div>
           ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
         </div>
         <div class="live-set-form-actions">
@@ -425,12 +425,36 @@ function liveMuscuSetFormHTML(activeExercise) {
   // avant qu'elle ne soit traitée comme un poids.
   const editConfigOptionHTML = config ? `<option value="__edit_config__">⚙ Modifier les poids…</option>` : "";
   const finalWeight = liveDraftBaseWeight !== null ? liveDraftBaseWeight + (liveDraftWeightMode === "on" ? increment : 0) : null;
+  // Sélecteur Gauche/Droite (voir config.unilateral et toggleLiveSide) —
+  // seulement pour les exercices qui s'y prêtent (ex. mollets, ischios),
+  // pas systématiquement partout. Pas d'étiquette au-dessus (le libellé
+  // des deux boutons suffit à comprendre de quoi il s'agit) et boutons
+  // dédiés plus larges/hauts que le toggle générique — pour rester compact
+  // en hauteur (tout doit tenir sur un écran sans défiler) tout en restant
+  // faciles à toucher.
+  const sideSelectorHTML = config && config.unilateral
+    ? `<div class="live-side-toggle">
+          <button type="button" class="live-side-btn ${liveDraftSide !== "right" ? "active" : ""}" data-live-toggle-side="left">Gauche</button>
+          <button type="button" class="live-side-btn ${liveDraftSide !== "left" ? "active" : ""}" data-live-toggle-side="right">Droite</button>
+        </div>`
+    : "";
+  // Bouton de bascule rapide vers l'exercice jumelé (voir
+  // config.pairedExerciseId, réglé dans Paramètres > Salle de sport) — un
+  // seul tap pour passer de l'un à l'autre, sans repasser par la grille de
+  // sélection complète (voir data-live-change-exercise juste à côté). Une
+  // seule flèche double, plus grosse, pas de chevron en plus à côté — la
+  // double flèche seule dit déjà "on bascule", pas besoin d'un second
+  // symbole redondant.
+  const pairedConfig = config && config.pairedExerciseId ? gymExerciseConfigs.find((c) => c.id === config.pairedExerciseId) : null;
+  const switchPairHTML = pairedConfig
+    ? `<button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-switch-pair="${pairedConfig.id}"><span style="font-size:20px; line-height:1;">⇄</span> ${pairedConfig.name}</button>`
+    : "";
 
   return `
     <div class="live-set-form">
       <div class="live-set-form-scroll">
         <div class="live-exercise-name">${liveDraftName}</div>
-        ${lastSet ? `<div class="live-prev-set">Précédent : ${lastSet.weight}kg × ${lastSet.reps}</div>` : ""}
+        ${lastSet ? `<div class="live-prev-set">Précédent : ${formatSetChip("muscu", lastSet)}</div>` : ""}
         <div class="live-stepper-group">
           <div class="live-stepper-label">Répétitions</div>
           <div class="live-stepper">
@@ -448,9 +472,11 @@ function liveMuscuSetFormHTML(activeExercise) {
               : ""
           }
         </div>
+        ${sideSelectorHTML}
       </div>
       <div class="live-set-form-actions">
         <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
+        ${switchPairHTML}
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
     </div>`;
@@ -964,6 +990,21 @@ function openLiveSegment(name, exType) {
   liveSession.segments.push({ name, exType, start: Date.now(), end: null });
 }
 
+// Bascule Gauche/Droite pour un exercice unilatéral (voir config.unilateral)
+// — chaque bouton est un on/off indépendant, sauf qu'on ne peut jamais
+// éteindre le dernier côté encore actif (on ne peut pas désactiver les
+// deux) : taper dessus dans ce cas précis ne fait alors rien.
+function toggleLiveSide(side) {
+  if (side === "left") {
+    if (liveDraftSide === "both") liveDraftSide = "right";
+    else if (liveDraftSide === "right") liveDraftSide = "both";
+    // sinon (déjà "left", seul actif) : aucun changement
+  } else {
+    if (liveDraftSide === "both") liveDraftSide = "left";
+    else if (liveDraftSide === "left") liveDraftSide = "both";
+  }
+}
+
 function startOrResumeLiveExercise() {
   closeCurrentLiveSegment();
   openLiveSegment(liveDraftName, liveDraftType);
@@ -999,6 +1040,10 @@ function startOrResumeLiveExercise() {
         liveDraftReps = nextTarget.reps !== "" ? parseFloat(nextTarget.reps) || 10 : 10;
       } else {
         liveDraftWeightMode = lastSet ? lastSet.weightMode || "off" : "off";
+        // Reprend le dernier côté travaillé pour CET exercice précis (voir
+        // config.unilateral) — sans quoi la valeur en mémoire pourrait
+        // dater d'un tout autre exercice unilatéral fait juste avant.
+        liveDraftSide = lastSet && lastSet.side ? lastSet.side : "both";
         const config = findExerciseConfig(liveDraftName);
         const increment = config && config.maxIncrement ? config.maxIncrement : 0;
         // Le poids sauvegardé sur la dernière série est le poids FINAL (base +
@@ -1050,6 +1095,10 @@ function startOrResumeLiveExercise() {
       liveDraftBaseWeight = targetSet && targetSet.weight !== "" ? parseFloat(targetSet.weight) : base.length ? base[0] : null;
       liveDraftReps = targetSet && targetSet.reps !== "" ? parseFloat(targetSet.reps) || 10 : 10;
       liveDraftWeightMode = "off";
+      // Nouvel exercice pour cette séance : repart toujours de "les deux
+      // côtés", jamais d'un côté isolé resté en mémoire d'un exercice
+      // unilatéral précédent.
+      liveDraftSide = "both";
     }
   }
   liveStep = "log-set";
@@ -1088,6 +1137,10 @@ function startLiveSet() {
         // entre-temps.
         { id: uid(), weight: 0, reps: 0, timestamp: Date.now() }
       : { id: uid(), weight: finalWeight, reps: liveDraftReps, weightMode: liveDraftWeightMode, timestamp: Date.now() };
+  // Le côté travaillé n'est enregistré que pour les exercices unilatéraux
+  // (voir config.unilateral) — inutile d'alourdir chaque série de tous les
+  // autres exercices avec un champ qui ne les concerne jamais.
+  if (config && config.unilateral) newSet.side = liveDraftSide;
   // Le repos mesuré manuellement juste avant cette série (s'il y en a eu
   // un) lui est attaché ici, puis consommé — il ne doit pas se réappliquer
   // à la série suivante.
@@ -1477,7 +1530,7 @@ function attachLiveNavigationListeners(content) {
         gymSettingsMode = "muscu";
         gymSettingsFormOpen = true;
         gymSettingsEditingConfigId = null;
-        gymSettingsFormDraft = { name: "", category: liveDraftCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false };
+        gymSettingsFormDraft = { name: "", category: liveDraftCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
         gymSettingsFocusTarget = "name";
       }
       currentApp = "settings-gym";
@@ -1564,6 +1617,8 @@ function goEditLiveExerciseConfig() {
     baseWeights: [...config.baseWeights],
     maxIncrement: config.maxIncrement || 0,
     autoIncrement: config.autoIncrement || false,
+    unilateral: config.unilateral || false,
+    pairedExerciseId: config.pairedExerciseId || null,
   };
   gymSettingsFocusTarget = "name";
   currentApp = "settings-gym";
@@ -1597,6 +1652,28 @@ function attachLiveSetFormListeners(content) {
       // base sélectionné dans le menu, ni à sa liste d'options.
       liveDraftWeightMode = liveDraftWeightMode === "on" ? "off" : "on";
       renderLiveApp();
+    });
+  }
+
+  content.querySelectorAll("[data-live-toggle-side]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggleLiveSide(btn.dataset.liveToggleSide);
+      renderLiveApp();
+    });
+  });
+
+  const switchPairBtn = content.querySelector("[data-live-switch-pair]");
+  if (switchPairBtn) {
+    switchPairBtn.addEventListener("click", () => {
+      const pairedConfig = gymExerciseConfigs.find((c) => c.id === switchPairBtn.dataset.liveSwitchPair);
+      if (!pairedConfig) return;
+      liveDraftName = pairedConfig.name;
+      liveDraftCategory = pairedConfig.category || liveDraftCategory;
+      // startOrResumeLiveExercise ferme déjà le segment en cours et en
+      // ouvre un nouveau pour ce nouvel exercice (voir closeCurrentLiveSegment
+      // /openLiveSegment) — même mécanique que "Changer d'exercice", en un
+      // seul tap plutôt qu'un aller-retour par la grille de sélection.
+      startOrResumeLiveExercise();
     });
   }
 

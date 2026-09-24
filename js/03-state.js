@@ -176,6 +176,10 @@ let liveActiveExerciseId = null;
 let liveDraftBaseWeight = null; // poids réellement sélectionné dans le menu déroulant (toujours un palier existant, jamais l'incrément)
 let liveDraftReps = 10;
 let liveDraftWeightMode = "off";
+// Côté travaillé pour un exercice unilatéral (voir config.unilateral) —
+// "both" par défaut (les deux), reste au choix précédent d'une série à
+// l'autre plutôt que de repartir à zéro à chaque fois (voir startLiveSet).
+let liveDraftSide = "both"; // "both" | "left" | "right"
 let liveDraftDistance = null;
 // ---------- Minuteur en boucle (Gainage) ----------
 // Saisi à chaque lancement en Live, jamais enregistré (voir conversation) —
