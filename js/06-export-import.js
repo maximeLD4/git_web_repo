@@ -2,9 +2,9 @@
 async function exportBackup() {
   const backup = {
     sessions, library, weights, gymExerciseConfigs, gainageExerciseConfigs, sessionPlans,
-    runSessions, runLibrary,
-    swimSessions, swimLibrary,
-    bikeSessions, bikeLibrary,
+    runSessions, runLibrary, runSessionPlans,
+    swimSessions, swimLibrary, swimSessionPlans,
+    bikeSessions, bikeLibrary, bikeSessionPlans,
     exportedAt: new Date().toISOString(),
   };
   const json = JSON.stringify(backup, null, 2);
@@ -128,10 +128,13 @@ function restoreFromBackupData(data) {
   sessionPlans = data.sessionPlans || [];
   runSessions = data.runSessions || [];
   runLibrary = data.runLibrary || [];
+  runSessionPlans = data.runSessionPlans || [];
   swimSessions = data.swimSessions || [];
   swimLibrary = data.swimLibrary || [];
+  swimSessionPlans = data.swimSessionPlans || [];
   bikeSessions = data.bikeSessions || [];
   bikeLibrary = data.bikeLibrary || [];
+  bikeSessionPlans = data.bikeSessionPlans || [];
   saveJSON(KEYS.sessions, sessions);
   saveJSON(KEYS.library, library);
   saveJSON(KEYS.weights, weights);
@@ -140,9 +143,12 @@ function restoreFromBackupData(data) {
   saveJSON(KEYS.sessionPlans, sessionPlans);
   saveJSON(KEYS.runSessions, runSessions);
   saveJSON(KEYS.runLibrary, runLibrary);
+  saveJSON(KEYS.runSessionPlans, runSessionPlans);
   saveJSON(KEYS.swimSessions, swimSessions);
   saveJSON(KEYS.swimLibrary, swimLibrary);
+  saveJSON(KEYS.swimSessionPlans, swimSessionPlans);
   saveJSON(KEYS.bikeSessions, bikeSessions);
   saveJSON(KEYS.bikeLibrary, bikeLibrary);
+  saveJSON(KEYS.bikeSessionPlans, bikeSessionPlans);
   saveJSON(KEYS.lastImport, new Date().toISOString());
 }

@@ -28,6 +28,39 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.67.3 - 2026-09-04
+====================
+
+- **Une série unilatérale (Gauche/Droite) compte désormais à moitié dans
+  le calcul de progression (Performance)** — point de méthode laissé en
+  suspens à la précédente revue de code. Choisi ainsi plutôt qu'à poids
+  plein ou exclue du calcul : qu'un exercice soit fait "les deux" en une
+  série ou "gauche" puis "droite" en deux séries séparées, le score final
+  reste cohérent d'une approche à l'autre.
+  - S'applique à l'indice de progression ET à "Meilleure série" (qui
+    affiche désormais (G)/(D) quand la série gagnante est unilatérale) —
+    "Poids max" n'est volontairement pas concerné, le poids réellement
+    soulevé ne change pas selon le côté.
+  - Testé : une séance "les deux" vs son équivalent en deux séries
+    séparées donnent un volume comparable ; une série unilatérale seule
+    vaut bien la moitié d'une série bilatérale équivalente ; une série
+    unilatérale plus lourde ne dépossède pas à tort une série bilatérale
+    plus légère du titre de "meilleure série" ; "Poids max" reste
+    inchangé par le côté.
+
+2.67.2 - 2026-09-04
+====================
+
+- **Corrigé un bug critique trouvé en revue de code : les Plans de
+  Course/Natation/Vélo (2.65.0) étaient absents de l'export et de
+  l'import de sauvegarde.** Seuls les Plans Salle de sport survivaient à
+  un export/import — un utilisateur changeant d'appareil ou restaurant
+  une sauvegarde aurait perdu silencieusement tous ses plans des 3
+  autres sports, sans le moindre message d'erreur.
+  - Testé : les 3 tableaux de plans survivent maintenant correctement à
+    un cycle export/import complet, avec persistance vérifiée en
+    stockage local.
+
 2.67.1 - 2026-09-04
 ====================
 

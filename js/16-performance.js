@@ -97,7 +97,17 @@ function getExerciseHistory(exerciseName) {
         return !isNaN(w) && w > 0 && !isNaN(r) && r > 0;
       });
       if (validSets.length === 0) return;
-      const volume = validSets.reduce((sum, s) => sum + parseFloat(s.weight) * parseFloat(s.reps), 0);
+      // Une série unilatérale (voir config.unilateral) compte à moitié —
+      // elle ne mobilise qu'un membre à la fois, environ la moitié du
+      // travail réel d'une série "les deux". Choisi ainsi plutôt qu'à poids
+      // plein ou exclue du calcul : qu'on fasse "les deux" en une série ou
+      // "gauche" puis "droite" en deux séries séparées, le score final
+      // reste cohérent d'une approche à l'autre.
+      const volume = validSets.reduce((sum, s) => {
+        const setVolume = parseFloat(s.weight) * parseFloat(s.reps);
+        const sideFactor = s.side === "left" || s.side === "right" ? 0.5 : 1;
+        return sum + setVolume * sideFactor;
+      }, 0);
       // Indice de performance : volume total (poids × reps sommé sur toutes
       // les séries), avec un petit bonus de +5% par série au-delà de la
       // première — reconnaît que répartir l'effort sur plusieurs séries
@@ -130,9 +140,15 @@ function getPersonalRecords(history) {
         maxWeight = w;
         maxWeightDate = occ.date;
       }
-      const setVolume = w * r;
-      if (bestSet === null || setVolume > bestSet.weight * bestSet.reps) {
-        bestSet = { weight: w, reps: r };
+      // Même pondération que pour le volume global (voir getExerciseHistory)
+      // : une série unilatérale compte à moitié, pour rester cohérente avec
+      // le reste du calcul plutôt que de fausser "meilleure série" en
+      // faveur d'une série gauche/droite non comparable à une série
+      // "les deux".
+      const sideFactor = s.side === "left" || s.side === "right" ? 0.5 : 1;
+      const setVolume = w * r * sideFactor;
+      if (bestSet === null || setVolume > bestSet.weight * bestSet.reps * (bestSet.sideFactor || 1)) {
+        bestSet = { weight: w, reps: r, sideFactor, side: s.side || null };
         bestSetDate = occ.date;
       }
     });
@@ -386,7 +402,7 @@ function renderPerformanceDetailContent(config) {
       </div>
       <div class="perf-record-card">
         <div class="perf-record-label">Meilleure série</div>
-        <div class="perf-record-value" data-count-to="${records.bestSet.weight}" data-count-suffix="kg × ${records.bestSet.reps}">0kg × ${records.bestSet.reps}</div>
+        <div class="perf-record-value" data-count-to="${records.bestSet.weight}" data-count-suffix="kg × ${records.bestSet.reps}${records.bestSet.side === "left" ? " (G)" : records.bestSet.side === "right" ? " (D)" : ""}">0kg × ${records.bestSet.reps}</div>
         <div class="perf-record-date">${formatDateFR(records.bestSetDate)}</div>
       </div>
     </div>
