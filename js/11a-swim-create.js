@@ -586,7 +586,10 @@ function attachSwimLogActionsBarListeners() {
     renderContentPreservingScroll(renderSwimContent, () => {
       const newCard = document.querySelector(`.exercise-card[data-id="${newBlock.id}"]`);
       if (newCard) newCard.classList.add("exercise-card-enter");
-      scrollCardBottomIntoView(newCard);
+      // Le haut du bloc, pas son bas — même raison que pour "Ajouter un
+      // exercice" (Salle de sport) : un bloc neuf n'a rien à montrer avant
+      // son propre haut.
+      scrollCardTopIntoView(newCard, 16, true);
     });
   });
 

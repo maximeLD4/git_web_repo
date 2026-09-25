@@ -1172,13 +1172,14 @@ function attachLogListeners() {
         target.sets.push(newSet);
         draft.exercises = exs;
         saveJSON(KEYS.draft, draft);
-        // On retrouve la carte par son id après le rendu (l'ancienne
-        // référence "card" n'existe plus dans le DOM), puis on aligne son
-        // bas avec le bas de l'écran.
+        // On aligne le bas de la SÉRIE qu'on vient d'ajouter avec le bas de
+        // l'écran — ni toute la carte (voir plus haut, poussait le nom de
+        // l'exercice et les séries hors écran), ni le bouton lui-même
+        // (laissait la nouvelle série coupée, à peine visible juste
+        // au-dessus) : viser la ligne elle-même la montre entièrement.
         renderContentPreservingScroll(renderContent, () => {
-          const updatedCard = document.querySelector(`.exercise-card[data-id="${exerciseId}"]`);
-          scrollCardBottomIntoView(updatedCard);
           const newRow = document.querySelector(`.set-row[data-id="${newSet.id}"]`);
+          scrollCardBottomIntoView(newRow);
           if (newRow) newRow.classList.add("set-row-enter");
         });
       });
@@ -1207,7 +1208,11 @@ function attachLogActionsBarListeners() {
     renderContentPreservingScroll(renderContent, () => {
       const newCard = document.querySelector(`.exercise-card[data-id="${newExercise.id}"]`);
       if (newCard) newCard.classList.add("exercise-card-enter");
-      scrollCardBottomIntoView(newCard);
+      // Le haut de la carte, pas son bas (voir scrollCardBottomIntoView,
+      // utilisée pour "Ajouter une série") : une carte toute neuve n'a
+      // encore rien à montrer que son sélecteur Muscu/Cardio tout en haut —
+      // aligner son bas la faisait apparaître un peu plus bas que prévu.
+      scrollCardTopIntoView(newCard, 16, true);
     });
   });
 

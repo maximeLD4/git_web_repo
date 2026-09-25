@@ -28,6 +28,59 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.68.4 - 2026-09-04
+====================
+
+- **"Ajouter un exercice" (et "Ajouter un bloc" pour Course/Natation/Vélo)
+  atterrit maintenant sur le HAUT de la nouvelle carte**, pas son bas —
+  suite à un retour sur la version précédente. Une carte toute neuve n'a
+  rien à montrer avant son propre sélecteur Muscu/Cardio (ou son premier
+  champ) tout en haut ; aligner son bas la faisait apparaître un peu plus
+  bas que prévu. "Ajouter une série" reste inchangée (alignée sur son
+  bas, ce qui était déjà correct).
+  - Toujours progressif (voir 2.68.3), pas de retour à un saut instantané.
+  - Testé : défilement progressif confirmé, nouvelle carte bien alignée
+    près du haut visible (Salle de sport et Course à pied), "Ajouter une
+    série" toujours correcte, aucune régression sur le reste de l'app.
+
+2.68.3 - 2026-09-04
+====================
+
+- **Le défilement vers le nouveau bloc ("Ajouter un exercice", "Ajouter
+  une série", "Ajouter un bloc") est maintenant progressif**, plutôt
+  qu'une téléportation instantanée suivie d'une apparition — les deux se
+  jouent maintenant en même temps, comme demandé : on voit le nouveau
+  bloc apparaître pendant qu'on y arrive, pas déjà en place l'instant
+  d'après.
+  - Seul ce cas précis change : la sélection rapide type/catégorie/nom
+    (qui s'enchaîne bien plus vite) reste volontairement instantanée,
+    pour ne jamais risquer qu'un tap suivant atterrisse sur une cible
+    encore en mouvement.
+  - Testé : le défilement passe bien par des positions intermédiaires
+    (pas juste un saut début/fin) aussi bien pour la Salle de sport que
+    pour la Course à pied, la position finale reste correcte, et aucune
+    régression sur le reste de l'app.
+
+2.68.2 - 2026-09-04
+====================
+
+- **Corrigé : "Ajouter une série" (Salle de sport) faisait défiler l'écran
+  trop loin**, poussant le nom de l'exercice, sa catégorie et les séries
+  précédentes complètement hors de l'écran — ne laissant que les icônes
+  de réorganisation et le bouton flottant dans le vide, dès qu'un exercice
+  atteignait 2 séries ou plus sur un écran de taille courante.
+  - Cause : le calcul alignait le bas de **toute la carte d'exercice**
+    avec le bas de l'écran, plutôt que le bas de la série qu'on vient
+    d'ajouter — dès que la carte dépassait la hauteur visible (vite
+    atteint), aligner son bas poussait nécessairement son haut hors
+    champ.
+  - Corrigé en alignant la série ajoutée elle-même : elle reste
+    entièrement visible, avec le bouton juste en dessous.
+  - Vérifié en même temps que "Ajouter un exercice" (Salle de sport) et
+    "Ajouter un bloc" (Course, Natation, Vélo) n'ont pas ce problème — les
+    exercices précédents se replient automatiquement pour le premier, et
+    les blocs des 3 autres sports restent naturellement compacts.
+
 2.68.1 - 2026-09-04
 ====================
 

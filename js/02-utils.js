@@ -87,7 +87,7 @@ function renderContentAnimatingCardHeight(cardId, renderFn, afterRenderScroll) {
   newCard.addEventListener("transitionend", cleanup);
 }
 
-function scrollCardTopIntoView(card, topMargin = 16) {
+function scrollCardTopIntoView(card, topMargin = 16, smooth = false) {
   if (!card) return;
   const contentEl = document.getElementById("content");
   if (!contentEl || typeof contentEl.getBoundingClientRect !== "function" || typeof contentEl.scrollBy !== "function") return;
@@ -102,13 +102,16 @@ function scrollCardTopIntoView(card, topMargin = 16) {
   // écart d'arrondi de quelques pixels déclenchait une animation de
   // scroll perceptible alors qu'on était déjà pile au bon endroit.
   if (Math.abs(delta) < 6) return;
-  // Volontairement instantané (pas "smooth") : un réalignement animé
-  // laissait une fenêtre de quelques centaines de ms pendant laquelle un tap
-  // rapide sur le bouton suivant (catégorie, Gainage, Ajouter une série...)
-  // pouvait atterrir sur une cible encore en mouvement, ou être absorbé par
-  // le navigateur comme un geste "stopper le défilement" plutôt qu'un vrai
-  // tap — d'où le besoin occasionnel de cliquer deux fois.
-  contentEl.scrollBy({ top: delta, behavior: "auto" });
+  // Instantané par défaut : un réalignement animé laissait une fenêtre de
+  // quelques centaines de ms pendant laquelle un tap rapide sur le bouton
+  // suivant (catégorie, Gainage, Ajouter une série...) pouvait atterrir sur
+  // une cible encore en mouvement, ou être absorbé par le navigateur comme
+  // un geste "stopper le défilement" plutôt qu'un vrai tap — d'où le besoin
+  // occasionnel de cliquer deux fois. "Ajouter un exercice/bloc" n'est pas
+  // un geste qu'on enchaîne aussi vite : demande explicitement l'animation
+  // (voir add-exercise-btn) pour montrer la nouvelle carte apparaître
+  // plutôt que de se retrouver déjà dessus l'instant d'après.
+  contentEl.scrollBy({ top: delta, behavior: smooth ? "smooth" : "auto" });
 }
 
 function scrollCardBottomIntoView(card) {
@@ -131,10 +134,13 @@ function scrollCardBottomIntoView(card) {
   // Même seuil que pour l'alignement en haut : évite un scroll perceptible
   // pour un écart insignifiant.
   if (Math.abs(delta) < 6) return;
-  // Même raison qu'en haut (voir scrollCardTopIntoView) : instantané plutôt
-  // qu'animé, pour ne jamais laisser de fenêtre où un tap rapide sur le
-  // bouton suivant pourrait être raté ou absorbé par le défilement en cours.
-  contentEl.scrollBy({ top: delta, behavior: "auto" });
+  // Animé (contrairement à scrollCardTopIntoView, resté instantané) : ici,
+  // l'utilisateur vient de taper "Ajouter..." et doit voir le nouveau bloc
+  // apparaître pendant qu'on y arrive, pas se retrouver déjà dessus l'instant
+  // d'après. scrollCardTopIntoView protège une séquence de taps rapides
+  // (type → catégorie → nom) où un défilement animé gênerait ; ce n'est
+  // pas le cas ici, l'ajout n'est pas un geste qu'on enchaîne aussi vite.
+  contentEl.scrollBy({ top: delta, behavior: "smooth" });
 }
 
 // Glissement latéral au changement de mois, réutilisable par tous les
