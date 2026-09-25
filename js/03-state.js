@@ -57,6 +57,9 @@ let gymSettingsFormOpen = false;
 let gymSettingsFocusTarget = "name"; // "name" (à l'ouverture du formulaire), "weight" (après un ajout de poids), ou null (aucun focus à redonner)
 let gymSettingsEditingConfigId = null;
 let gymSettingsFormDraft = { name: "", category: "pecs", baseWeights: [], maxIncrement: 0 };
+// Quelles aides ("?") sont actuellement dépliées dans le formulaire
+// d'exercice (voir field-help-btn) — clé = nom du champ, true = dépliée.
+let gymSettingsHelpOpen = {};
 let gymSettingsActiveCategory = "all";
 // Bascule entre la gestion des exercices Muscu (poids) et celle des
 // exercices de Gainage (temps uniquement) dans l'écran Paramètres > Salle

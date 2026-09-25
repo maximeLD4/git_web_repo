@@ -28,6 +28,40 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.68.1 - 2026-09-04
+====================
+
+- **"Alterner avec" redevient un menu déroulant**, suite à un retour sur
+  la version précédente (les puces cliquables cassaient un peu trop avec
+  le reste du formulaire). Un vrai `<select>`, mais habillé dans le même
+  style "soulignement" que "Nom de l'exercice / machine" juste au-dessus
+  — plus l'apparence par défaut, disgracieuse, du navigateur.
+  - Testé : sélection, enregistrement, et liaison bidirectionnelle
+    toujours correcte (choisir un partenaire met bien à jour les deux
+    exercices, dans les deux sens).
+
+2.68.0 - 2026-09-04
+====================
+
+- **Formulaire de configuration d'exercice (Réglages > Salle de sport)
+  entièrement retouché** — jusque là surchargé de pavés de texte
+  explicatif affichés en permanence, rendant l'ensemble difficile à lire.
+  - Chaque texte d'aide (Incrément automatique, Incrément possible,
+    Travail unilatéral, Alterner avec) est maintenant masqué par défaut,
+    accessible via un petit bouton "?" à côté du titre du champ — clic
+    pour déplier, reclic pour replier.
+  - "Incrément automatique" et "Travail unilatéral" tiennent chacun sur
+    une seule ligne (titre + "?" + interrupteur), au lieu d'un gros pavé
+    de texte entre le titre et l'interrupteur.
+  - "Alterner avec (optionnel)" n'est plus une liste déroulante native
+    (visuellement à part du reste de l'app) mais des puces cliquables —
+    le même composant déjà utilisé pour "Suggestions" juste au-dessus,
+    pour rester cohérent avec le reste des modules.
+  - Testé : aide repliée par défaut, dépliage/repliage au clic, la
+    nouvelle sélection par puces enregistre bien le jumelage, ré-édition
+    d'un exercice déjà configuré recharge correctement tous les champs, et
+    non-régression complète sur les 14 écrans principaux.
+
 2.67.3 - 2026-09-04
 ====================
 

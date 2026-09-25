@@ -1531,6 +1531,7 @@ function attachLiveNavigationListeners(content) {
         gymSettingsFormOpen = true;
         gymSettingsEditingConfigId = null;
         gymSettingsFormDraft = { name: "", category: liveDraftCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
+        gymSettingsHelpOpen = {};
         gymSettingsFocusTarget = "name";
       }
       currentApp = "settings-gym";
@@ -1620,6 +1621,7 @@ function goEditLiveExerciseConfig() {
     unilateral: config.unilateral || false,
     pairedExerciseId: config.pairedExerciseId || null,
   };
+  gymSettingsHelpOpen = {};
   gymSettingsFocusTarget = "name";
   currentApp = "settings-gym";
   render();

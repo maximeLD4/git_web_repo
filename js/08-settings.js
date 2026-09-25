@@ -298,31 +298,43 @@ function gymSettingsFormHTML() {
         </div>
       </div>
       <div class="field" style="margin-bottom:14px;">
-        <label>Incrément automatique</label>
-        <div class="toggle-switch-row">
-          <span class="toggle-switch-label-text">Passe automatiquement au palier de poids supérieur d'une série à l'autre en Séance en direct. Laisse sur off si tu préfères refaire plusieurs séries au même poids.</span>
+        <div class="toggle-switch-row-compact">
+          <div class="field-label-row">
+            <label style="margin-bottom:0;">Incrément automatique</label>
+            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.autoIncrement ? "active" : ""}" data-field-help="autoIncrement">?</button>
+          </div>
           <button type="button" class="toggle-switch ${gymSettingsFormDraft.autoIncrement ? "on" : ""}" id="config-auto-increment-toggle" role="switch" aria-checked="${gymSettingsFormDraft.autoIncrement ? "true" : "false"}">
             <span class="toggle-switch-knob"></span>
           </button>
         </div>
+        ${gymSettingsHelpOpen.autoIncrement ? `<div class="field-help-text">Passe automatiquement au palier de poids supérieur d'une série à l'autre en Séance en direct. Laisse sur off si tu préfères refaire plusieurs séries au même poids.</div>` : ""}
       </div>
       <div class="field" style="margin-bottom:6px;">
-        <label>Incrément possible (kg)</label>
+        <div class="field-label-row" style="margin-bottom:5px;">
+          <label style="margin-bottom:0;">Incrément possible (kg)</label>
+          <button type="button" class="field-help-btn ${gymSettingsHelpOpen.maxIncrement ? "active" : ""}" data-field-help="maxIncrement">?</button>
+        </div>
         <input type="text" inputmode="decimal" min="0" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}">
-        <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Poids fixe qu'on peut ajouter manuellement sur cette machine (ex. 5). Sur chaque palier, le choix sera alors +0 ou +5kg — jamais une valeur intermédiaire. Mets 0 si la machine n'a pas cette option.</div>
+        ${gymSettingsHelpOpen.maxIncrement ? `<div class="field-help-text">Poids fixe qu'on peut ajouter manuellement sur cette machine (ex. 5). Sur chaque palier, le choix sera alors +0 ou +5kg — jamais une valeur intermédiaire. Mets 0 si la machine n'a pas cette option.</div>` : ""}
       </div>
       <div class="field" style="margin-bottom:14px;">
-        <label>Travail unilatéral</label>
-        <div class="toggle-switch-row">
-          <span class="toggle-switch-label-text">Propose, en Séance en direct, de choisir Gauche/Droite/Les deux avant chaque série — pour les exercices qu'on peut faire un côté à la fois (ex. mollets, ischios).</span>
+        <div class="toggle-switch-row-compact">
+          <div class="field-label-row">
+            <label style="margin-bottom:0;">Travail unilatéral</label>
+            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.unilateral ? "active" : ""}" data-field-help="unilateral">?</button>
+          </div>
           <button type="button" class="toggle-switch ${gymSettingsFormDraft.unilateral ? "on" : ""}" id="config-unilateral-toggle" role="switch" aria-checked="${gymSettingsFormDraft.unilateral ? "true" : "false"}">
             <span class="toggle-switch-knob"></span>
           </button>
         </div>
+        ${gymSettingsHelpOpen.unilateral ? `<div class="field-help-text">Propose, en Séance en direct, de choisir Gauche/Droite/Les deux avant chaque série — pour les exercices qu'on peut faire un côté à la fois (ex. mollets, ischios).</div>` : ""}
       </div>
       <div class="field" style="margin-bottom:6px;">
-        <label>Alterner avec (optionnel)</label>
-        <select id="config-paired-exercise-select">
+        <div class="field-label-row" style="margin-bottom:5px;">
+          <label style="margin-bottom:0;">Alterner avec (optionnel)</label>
+          <button type="button" class="field-help-btn ${gymSettingsHelpOpen.paired ? "active" : ""}" data-field-help="paired">?</button>
+        </div>
+        <select class="field-select" id="config-paired-exercise-select">
           <option value="">Aucun</option>
           ${gymExerciseConfigs
             .filter((c) => c.id !== gymSettingsEditingConfigId)
@@ -330,7 +342,7 @@ function gymSettingsFormHTML() {
             .map((c) => `<option value="${c.id}" ${gymSettingsFormDraft.pairedExerciseId === c.id ? "selected" : ""}>${c.name}</option>`)
             .join("")}
         </select>
-        <div style="color:var(--text-dim); font-size:12px; margin-top:4px;">Pour une paire sur la même machine (ex. Abducteurs/Adducteurs) : un bouton de bascule rapide apparaît alors en Séance en direct pour passer de l'un à l'autre sans repasser par la liste. Le lien fonctionne dans les deux sens.</div>
+        ${gymSettingsHelpOpen.paired ? `<div class="field-help-text">Pour une paire sur la même machine (ex. Abducteurs/Adducteurs) : un bouton de bascule rapide apparaît alors en Séance en direct pour passer de l'un à l'autre sans repasser par la liste. Le lien fonctionne dans les deux sens.</div>` : ""}
       </div>
       <div id="config-form-error"></div>
       <button class="save-btn" id="save-config-btn">${ICONS.check} Enregistrer</button>
@@ -581,6 +593,7 @@ function attachGymSettingsListeners() {
       gymSettingsEditingConfigId = null;
       const defaultCategory = gymSettingsActiveCategory === "other" || gymSettingsActiveCategory === "all" ? "pecs" : gymSettingsActiveCategory;
       gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
+      gymSettingsHelpOpen = {};
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
@@ -600,6 +613,7 @@ function attachGymSettingsListeners() {
         unilateral: config.unilateral || false,
         pairedExerciseId: config.pairedExerciseId || null,
       };
+      gymSettingsHelpOpen = {};
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
@@ -624,6 +638,7 @@ function attachGymSettingsListeners() {
         // partenaire, ambigu au moment de choisir avec laquelle basculer.
         pairedExerciseId: null,
       };
+      gymSettingsHelpOpen = {};
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
     });
@@ -675,6 +690,19 @@ function attachGymSettingsListeners() {
   document.getElementById("config-paired-exercise-select").addEventListener("change", (ev) => {
     syncFormFromInputs();
     gymSettingsFormDraft.pairedExerciseId = ev.target.value || null;
+  });
+  document.querySelectorAll("[data-field-help]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.fieldHelp;
+      // On synchronise d'abord (comme pour tout ce qui redessine ce
+      // formulaire) : sans ça, déplier une aide en plein milieu de la
+      // saisie du nom effacerait ce qui vient d'être tapé — même piège que
+      // celui déjà rencontré et corrigé pour les steppers de boucle
+      // Gainage (voir 2.59.2).
+      syncFormFromInputs();
+      gymSettingsHelpOpen[key] = !gymSettingsHelpOpen[key];
+      renderGymSettingsContent();
+    });
   });
   document.getElementById("config-scan-weights-btn").addEventListener("click", () => {
     // On synchronise le formulaire (nom, incrément) avant de le quitter

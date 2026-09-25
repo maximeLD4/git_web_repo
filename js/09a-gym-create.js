@@ -881,6 +881,7 @@ function attachLogListeners() {
         gymSettingsFormOpen = true;
         gymSettingsEditingConfigId = null;
         gymSettingsFormDraft = { name: "", category: targetCategory || "pecs", baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
+        gymSettingsHelpOpen = {};
         gymSettingsFocusTarget = "name";
         currentApp = "settings-gym";
         render();

@@ -196,6 +196,21 @@ input[type="text"], input[type="date"], input[type="number"] {
 }
 input::placeholder { color: rgba(var(--ink-rgb), 0.62); font-weight: 600; }
 input:disabled { opacity: 1; background: transparent; border-bottom: 1.5px dashed var(--rule); color: var(--text-dim); cursor: not-allowed; }
+/* Menu déroulant dans le même style "soulignement" que les champs texte
+   juste au-dessus (ex. Nom de l'exercice) — plutôt que l'apparence par
+   défaut du navigateur, incohérente avec le reste du formulaire. La
+   flèche utilise currentColor : elle suit automatiquement la couleur du
+   texte, sans variante à prévoir par mode jour/nuit/Anne. */
+select.field-select {
+  background-color: transparent; border: none; border-bottom: 1.5px solid var(--rule);
+  color: var(--text); border-radius: var(--radius); padding: 8px 22px 8px 0; font-size: 16px;
+  font-family: var(--font); font-weight: 700; letter-spacing: -0.2px;
+  width: 100%; max-width: 100%; min-width: 0; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 2px center; background-size: 15px;
+}
+select.field-select:focus { outline: none; }
 input[type="date"] { max-width: 165px; }
 input:focus { outline: none; border-bottom-color: var(--ink); background: transparent; box-shadow: var(--shadow-card); }
 
@@ -220,6 +235,24 @@ input:focus { outline: none; border-bottom-color: var(--ink); background: transp
 .toggle-switch.on { background: var(--ok); }
 .toggle-switch-knob { position: absolute; top: 2px; left: 2px; width: 23px; height: 23px; border-radius: var(--radius); background: #fff; box-shadow: var(--shadow-card); transition: transform 0.2s ease; }
 .toggle-switch.on .toggle-switch-knob { transform: translateX(19px); }
+/* ---------- Aide repliable (le petit "?") : le texte d'explication n'est
+   plus affiché par défaut, seulement au clic — pour ne pas noyer chaque
+   champ sous un pavé de texte qu'on ne lit qu'une fois. ---------- */
+.field-label-row { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.field-help-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--rule);
+  background: none; color: var(--text-dim); font-size: 9px; font-weight: 700;
+  font-family: var(--font-mono); cursor: pointer; padding: 0; line-height: 1;
+}
+.field-help-btn:hover, .field-help-btn.active { background: var(--surface-2); color: var(--text); border-color: var(--text-dim); }
+.field-help-text { font-size: 12px; color: var(--text-dim); line-height: 1.45; margin-top: 8px; }
+/* Ligne compacte label + (?) + switch, tout sur une seule ligne (ex.
+   Incrément automatique, Travail unilatéral) — remplace l'ancien pavé de
+   texte permanent entre le libellé et le switch (voir
+   .toggle-switch-label-text ci-dessus, qui ne sert plus qu'en secours si
+   jamais un futur écran veut revenir à ce format). */
+.toggle-switch-row-compact { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .rep-step-btn { width: 32px; height: 32px; border-radius: var(--radius); border: none; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 19px; font-weight: 400; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; box-shadow: var(--shadow-card); }
 .rep-step-btn:active { background: var(--ink); color: var(--on-ink); }
 .rep-value { font-family: var(--font); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 26px; text-align: center; }
