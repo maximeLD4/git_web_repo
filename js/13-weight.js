@@ -2,10 +2,10 @@
 function renderWeightApp() {
   app.className = "theme-weight";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.scale}</div>
-      <div class="header-sub">${weights.length} pesée${weights.length !== 1 ? "s" : ""} enregistrée${weights.length !== 1 ? "s" : ""}</div>
+    <div class="header header-plain-title">
+      <button type="button" class="back-btn-text" data-go-home>${ICONS.back} Accueil</button>
+      <div class="screen-title">Poids</div>
+      <div class="header-sub screen-subtitle">${weights.length} pesée${weights.length !== 1 ? "s" : ""} enregistrée${weights.length !== 1 ? "s" : ""}</div>
     </div>
     <div class="content" id="content" style="padding-bottom: 24px;"></div>
   `;
@@ -27,10 +27,12 @@ function weightTabHTML() {
       <div class="weight-stat-card">
         <div class="weight-stat-label">Dernier poids</div>
         <div class="weight-stat-value">${latest.weight} kg</div>
+        <div class="weight-stat-date">${formatDateFR(latest.date)}</div>
       </div>
-      <div class="weight-stat-card">
+      <div class="weight-stat-card weight-stat-card-dark">
         <div class="weight-stat-label">Variation</div>
         <div class="weight-stat-value">${diff === null ? "—" : `${diff > 0 ? "+" : ""}${diff} kg`}</div>
+        <div class="weight-stat-date">sur 7 jours</div>
       </div>
     </div>`;
   }
@@ -66,7 +68,7 @@ function weightTabHTML() {
   const listHTML =
     sorted.length === 0
       ? `<div class="empty-state"><div class="bar-icon">${ICONS.scale}</div>Aucune pesée enregistrée pour l'instant.</div>`
-      : sorted
+      : `<div class="weight-history-card">${sorted
           .map((e) =>
             wrapSwipeToDeleteRow(
               e.id,
@@ -77,16 +79,18 @@ function weightTabHTML() {
       </div>`
             )
           )
-          .join("");
+          .join("")}</div>`;
 
   return `
     ${statsHTML}
     ${chartHTML}
-    <div class="field-row">
-      <div class="field"><label>Date</label><input type="date" id="w-date" value="${todayISO()}"></div>
-      <div class="field"><label>Poids (kg)</label><input type="text" inputmode="decimal" id="w-value" placeholder="72.5"></div>
+    <div class="home-section-label" style="margin-top:0;">Nouvelle pesée</div>
+    <div class="field-list-card">
+      <label class="field-list-row" for="w-date"><span>Date</span><input type="date" id="w-date" value="${todayISO()}"></label>
+      <label class="field-list-row" for="w-value"><span>Poids</span><input type="text" inputmode="decimal" id="w-value" placeholder="72.5"></label>
     </div>
     <button class="save-btn" id="save-weight-btn" style="margin-bottom:20px;">${ICONS.check} Enregistrer le poids</button>
+    <div class="home-section-label" style="margin-top:0;">Historique</div>
     ${listHTML}
   `;
 }

@@ -182,12 +182,12 @@ function renderBikeApp() {
   if (bikeTab === "log" && bikeDraft.kind && bikeDraft.kind !== bikeTopMode) bikeTopMode = bikeDraft.kind;
   const isPlanMode = bikeTopMode === "plan";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.bike}</div>
-      <div class="header-sub">${isPlanMode ? `${bikeSessionPlans.length} plan${bikeSessionPlans.length !== 1 ? "s" : ""} enregistré${bikeSessionPlans.length !== 1 ? "s" : ""}` : `${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""} enregistrée${bikeSessions.length !== 1 ? "s" : ""}`}</div>
+    <div class="header header-plain-title">
+      <button type="button" class="back-btn-text" data-go-home>${ICONS.back} Accueil</button>
+      <div class="screen-title">Vélo</div>
+      <div class="header-sub screen-subtitle">${isPlanMode ? `${bikeSessionPlans.length} plan${bikeSessionPlans.length !== 1 ? "s" : ""} enregistré${bikeSessionPlans.length !== 1 ? "s" : ""}` : `${bikeSessions.length} séance${bikeSessions.length !== 1 ? "s" : ""} enregistrée${bikeSessions.length !== 1 ? "s" : ""}`}</div>
     </div>
-    <div class="ex-type-toggle" id="bike-top-mode-toggle" style="margin: 14px 16px 0 18px;">
+    <div class="ex-type-toggle ex-type-toggle-pill" id="bike-top-mode-toggle" style="margin: 14px 16px 0 18px;">
       <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-bike-top-mode="session">Séance effectuée</button>
       <button type="button" class="ex-type-btn ${isPlanMode ? "active" : ""}" data-bike-top-mode="plan">Plan à préparer</button>
     </div>
@@ -264,11 +264,11 @@ function bikeLogTabHTML() {
       : "";
   const isPlan = bikeDraft.kind === "plan";
   const fieldsHTML = isPlan
-    ? `<div class="field"><label>Nom du plan</label><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></div>`
+    ? `<div class="field-list-card"><label class="field-list-row" for="bike-label"><span>Nom du plan</span><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></label></div>`
     : `
-    <div class="field-row">
-      <div class="field field-date"><label>Date</label><input type="date" id="bike-date" value="${bikeDraft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></div>
+    <div class="field-list-card">
+      <label class="field-list-row" for="bike-date"><span>Date</span><input type="date" id="bike-date" value="${bikeDraft.date}"></label>
+      <label class="field-list-row" for="bike-label"><span>Séance</span><input type="text" id="bike-label" placeholder="Sortie route…" value="${(bikeDraft.label || "").replace(/"/g, "&quot;")}"></label>
     </div>`;
   return `
     <div class="backup-row">

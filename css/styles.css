@@ -15,11 +15,11 @@
 
 /* ========== VARIABLES & THÈMES (couleur d'accent par module) ========== */
 :root {
-  --bg: #FAF3EC;
+  --bg: #F3ECE4;
   --surface: #FFFDF8;
   --surface-2: rgba(var(--ink-rgb), 0.055);
-  --border: rgba(var(--ink-rgb), 0.09);
-  --rule: rgba(var(--ink-rgb), 0.12);
+  --border: rgba(var(--ink-rgb), 0.16);
+  --rule: rgba(var(--ink-rgb), 0.16);
   --text: #3D3230;
   --text-dim: rgba(var(--ink-rgb), 0.62);
   --ink: #3D3230;
@@ -48,10 +48,23 @@
   --rust: var(--danger);
   --rust-strong: var(--danger);
   --green: var(--ok);
-  --radius: 3px;
-  --radius-sm: 3px;
+  /* Échelle d'arrondis — nouvelle identité, plus généreuse (14/18/22px)
+     que l'ancienne géométrie primaire (3px partout, "aucun arrondi
+     intermédiaire"). --radius reste le nom utilisé partout dans le reste
+     de cette feuille (cartes, boutons) ; --radius-lg/xl s'ajoutent pour
+     les gros conteneurs (listes, tuile héros) sans toucher aux endroits
+     qui utilisaient déjà --radius-sm (puces, petits contrôles). */
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
   --shadow-card: none;
-  --font: "Jost", -apple-system, system-ui, sans-serif;
+  /* Police par défaut : système (comme le corps du texte dans les
+     maquettes) — Jost devient l'exception, réservée aux gros titres
+     d'écran et aux grands chiffres (voir --font-display), plutôt que la
+     police de tout, partout. */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+  --font-display: "Jost", -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   --shadow-sm: none;
   --shadow-md: none;
@@ -152,7 +165,7 @@ a:hover { color: var(--action); }
 .header-icon-only { display: inline-flex; align-items: center; justify-content: flex-start; color: var(--accent); }
 .header-icon-only svg { width: 24px; height: 24px; }
 .home-wordmark {
-  font-family: var(--font); font-weight: 900; font-size: 42px;
+  font-family: var(--font-display); font-weight: 900; font-size: 42px;
   line-height: 0.92; letter-spacing: -2px; color: var(--text);
 }
 .header-sub {
@@ -421,10 +434,12 @@ select.ex-name-pill:focus { outline: none; }
   display: flex; gap: 6px; background: rgba(var(--surface-rgb), 0.92); backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--rule);
   padding: 8px 20px calc(10px + env(safe-area-inset-bottom));
+  z-index: 100;
 }
 .log-actions-bar {
   position: fixed; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
   background: rgba(var(--surface-rgb), 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  z-index: 100;
   border-top: 1px solid var(--rule); padding: 12px 20px;
 }
 .log-actions-bar .add-exercise-btn, .log-actions-bar .save-btn { margin-bottom: 9px; }
@@ -481,7 +496,7 @@ select.ex-name-pill:focus { outline: none; }
 .weight-stat-card:last-child .weight-stat-label { color: rgba(var(--on-ink-rgb), 0.7); }
 .weight-stat-card:last-child .weight-stat-value { color: var(--on-ink); }
 .weight-stat-label { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-dim); margin-bottom: 8px; font-weight: 600; }
-.weight-stat-value { font-family: var(--font); font-weight: 900; font-size: 30px; line-height: 0.95; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.weight-stat-value { font-family: var(--font-display); font-weight: 900; font-size: 30px; line-height: 0.95; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
 .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 14px 12px; margin-bottom: 16px; box-shadow: var(--shadow-card); }
 .chart-title { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-dim); padding: 0; margin-bottom: 10px; font-weight: 600; }
 .chart-labels { display: flex; justify-content: space-between; padding: 8px 0 0; font-family: var(--font-mono); font-size: 9.5px; color: rgba(var(--ink-rgb), 0.62); font-weight: 500; text-transform: uppercase; }
@@ -667,7 +682,7 @@ select.ex-name-pill:focus { outline: none; }
 .perf-record-card:first-child .perf-record-value { color: var(--on-ink); }
 .perf-record-card:first-child .perf-record-date { color: rgba(var(--on-ink-rgb), 0.7); }
 .perf-record-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.14em; }
-.perf-record-value { font-family: var(--font); font-size: 26px; font-weight: 900; line-height: 0.95; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; color: var(--text); margin-top: 8px; }
+.perf-record-value { font-family: var(--font-display); font-size: 26px; font-weight: 900; line-height: 0.95; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; color: var(--text); margin-top: 8px; }
 .perf-record-date { font-family: var(--font-mono); font-size: 9.5px; color: rgba(var(--ink-rgb), 0.62); margin-top: 6px; text-transform: uppercase; }
 .perf-chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 14px; box-shadow: var(--shadow-card); margin-bottom: 16px; }
 .scanner-wrap { display: flex; flex-direction: column; }
@@ -743,7 +758,7 @@ select.ex-name-pill:focus { outline: none; }
    dominant, l'unité en libellé mono — possible depuis que 07-home.js émet
    .tile-count et .tile-unit séparément. */
 .home-tile-hscroll .home-tile-sub { order: -1; display: flex; flex-direction: column; gap: 2px; margin-top: 0; margin-bottom: auto; }
-.home-tile-hscroll .tile-count { font-family: var(--font); font-weight: 900; font-size: 30px; line-height: 0.85; letter-spacing: -1.4px; color: var(--text); font-variant-numeric: tabular-nums; }
+.home-tile-hscroll .tile-count { font-family: var(--font-display); font-weight: 900; font-size: 30px; line-height: 0.85; letter-spacing: -1.4px; color: var(--text); font-variant-numeric: tabular-nums; }
 .home-tile-hscroll .tile-unit { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
 .home-tile-wide .tile-count { font-weight: 800; color: inherit; }
 .home-tile-sub { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: 4px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; line-height: 1.35; }
@@ -793,7 +808,7 @@ select.ex-name-pill:focus { outline: none; }
 .live-rest-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: var(--yellow); border-radius: var(--radius); padding: 18px 14px; margin-bottom: 12px; flex-shrink: 0; }
 .live-rest-hero-label { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; font-weight: 600; color: var(--ink); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .live-rest-hero-label svg { width: 13px; height: 13px; flex-shrink: 0; }
-.live-rest-hero-value { font-family: var(--font); font-size: 50px; font-weight: 800; letter-spacing: -2.5px; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.05; }
+.live-rest-hero-value { font-family: var(--font-display); font-size: 50px; font-weight: 800; letter-spacing: -2.5px; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.05; }
 /* Série en cours : bloc encre plein — l'effort, pas un danger. Le contraste
    avec l'aplat moutarde du repos tient au fond, pas à la teinte. */
 .live-rest-hero-active { background: var(--ink); }
@@ -859,7 +874,7 @@ select.ex-name-pill:focus { outline: none; }
 .live-set-form-scroll { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; min-height: 0; overflow-y: auto; }
 .live-set-form-scroll-fixed { overflow-y: hidden; }
 .live-set-form-actions { flex-shrink: 0; display: flex; flex-direction: column; gap: 9px; padding-top: 12px; }
-.live-exercise-name { text-align: center; font-family: var(--font); font-weight: 900; font-size: 26px; letter-spacing: -1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-exercise-name { text-align: center; font-family: var(--font-display); font-weight: 900; font-size: 26px; letter-spacing: -1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .live-prev-set { text-align: center; font-family: var(--font-mono); color: var(--text-dim); font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin-top: -10px; }
 .live-stepper-group { display: flex; flex-direction: column; gap: 7px; }
 .live-loop-config { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--border); }
@@ -874,7 +889,7 @@ select.ex-name-pill:focus { outline: none; }
    besoin d'étiquette supplémentaire. */
 .live-stepper-tiny-btn { width: 28px; height: 28px; border-radius: var(--radius); border: none; background: var(--surface); color: var(--text); font-family: var(--font); font-size: 15px; font-weight: 400; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; }
 .live-stepper-tiny-btn:active { background: var(--ink); color: var(--on-ink); }
-.live-stepper-value { font-family: var(--font); font-size: 34px; font-weight: 900; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; flex: 1; text-align: center; }
+.live-stepper-value { font-family: var(--font-display); font-size: 34px; font-weight: 900; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; flex: 1; text-align: center; }
 .live-weight-select { width: 100%; font-family: var(--font); font-size: 20px; padding: 16px; text-align: center; text-align-last: center; border-radius: var(--radius); background: var(--surface-2); border: 1px solid transparent; color: var(--text); font-weight: 800; letter-spacing: -0.5px; -webkit-appearance: none; appearance: none; }
 .live-increment-btn { width: 100%; margin-top: 8px; padding: 12px; border-radius: var(--radius); }
 .live-validate-btn { width: 100%; background: var(--ink); color: var(--on-ink); border: none; border-radius: var(--radius); padding: 20px; font-family: var(--font); font-size: 16px; font-weight: 800; letter-spacing: -0.2px; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 9px; }
@@ -882,7 +897,10 @@ select.ex-name-pill:focus { outline: none; }
 /* « Finir la série » mène au repos, donc moutarde — et se distingue ainsi de
    « Débuter » qui reste encre, sans emprunter le rouge du destructif. */
 .live-validate-btn.live-finish-btn { background: var(--yellow); color: var(--ink); box-shadow: var(--shadow-card); }
-.live-in-progress-banner { text-align: center; background: rgba(var(--ink-rgb), 0.06); color: var(--text); border-radius: var(--radius); padding: 14px; font-family: var(--font); font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+.live-in-progress-banner {
+  text-align: center; background: none; color: var(--text-dim); border-radius: 0; padding: 0;
+  font-family: var(--font); font-size: 15px; font-weight: 500; letter-spacing: normal;
+}
 .live-header-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
 .live-timeline { display: flex; gap: 5px; overflow-x: auto; padding: 2px 2px 10px; flex-shrink: 0; -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--rule); margin-bottom: 12px; }
 .live-timeline-chip { position: relative; flex-shrink: 0; background: var(--surface-2); border-radius: var(--radius); padding: 7px 11px; text-align: left; white-space: nowrap; display: flex; flex-direction: column; gap: 3px; cursor: pointer; transition: background 0.15s ease; }
@@ -1026,7 +1044,7 @@ html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .auth-mark svg { width: 28px; height: 28px; }
-.auth-wordmark { font-family: var(--font); font-weight: 900; font-size: 44px; line-height: 0.9; letter-spacing: -2.2px; color: var(--text); }
+.auth-wordmark { font-family: var(--font-display); font-weight: 900; font-size: 44px; line-height: 0.9; letter-spacing: -2.2px; color: var(--text); }
 .auth-tagline {
   font-family: var(--font-mono); font-size: 10px; font-weight: 600; line-height: 1.6;
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); margin-top: 8px;
@@ -1481,3 +1499,429 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
   background-color: var(--ink);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E2A66B'%3E%3Cpolygon points='5 4 19 12 5 20 5 4'/%3E%3C/svg%3E");
 }
+
+/* ==========================================================================
+   IDENTITÉ iOS — ACCUEIL (nouvelle direction visuelle, à partir des
+   maquettes fournies)
+   Reprise en couche ajoutée en fin de fichier — même principe que les
+   sections BAUHAUS/PALETTE FERMÉE ci-dessus, pour l'emporter sans réécrire
+   ces sections en place : badges d'icône circulaires VISIBLES (la section
+   BAUHAUS les masque plus haut), grille 2x2 pour les sports plutôt qu'un
+   défilement horizontal, liste à lignes pour "Suivi" plutôt que des
+   tuiles, gros bouton rond pour la séance en direct plutôt qu'une barre de
+   couleur en guise d'icône.
+   ========================================================================== */
+
+/* ---------- Tuile héros : bouton rond plutôt que barre d'icône ---------- */
+.home-tile.home-tile-wide { align-items: center; }
+.home-tile-eyebrow { font-family: var(--font); font-size: 13px; font-weight: 600; color: rgba(var(--on-ink-rgb), 0.75); margin-bottom: 2px; }
+.home-tile.home-tile-wide .home-tile-title { font-family: var(--font-display); }
+.home-tile-play-btn {
+  width: 56px; height: 56px; border-radius: 50% !important; background: var(--ink); color: var(--yellow);
+  display: flex !important; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto;
+}
+.home-tile-play-btn svg { display: block !important; width: 22px; height: 22px; }
+.home-tile.live-recording .home-tile-play-btn { background: #241E1A; color: var(--yellow); }
+.home-tile.home-tile-wide[data-open-app="live"]::after,
+.home-tile.home-tile-wide[data-open-app="live"]::before { display: none !important; }
+/* Neutralise l'ancienne réserve d'espace pensée pour le bouton en position
+   absolue (voir ligne ~709 plus haut) — inutile et nuisible maintenant que
+   .home-tile-play-btn prend sa place normalement dans le flux flex, et
+   volait justement l'espace qui manquait à "Séance en direct" pour tenir
+   sur une seule ligne. */
+.home-tile.home-tile-wide[data-open-app="live"] .home-tile-wide-text { padding-right: 0; flex: 1; min-width: 0; }
+
+/* ---------- Sports : grille 2x2, icônes visibles, fond neutre ---------- */
+.home-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.home-tile.home-tile-grid {
+  background: var(--surface) !important; height: 104px; padding: 14px !important;
+  display: flex !important; flex-direction: column; justify-content: space-between; gap: 8px;
+}
+.home-tile-icon-circle {
+  width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.home-tile-icon-circle svg { display: block !important; width: 18px; height: 18px; }
+.home-tile-grid-text { display: flex; flex-direction: column; gap: 1px; }
+.home-tile-grid .home-tile-title { font-size: 15px; font-weight: 600; }
+.home-tile-sub-plain { font-family: var(--font); font-size: 12px; color: var(--text-dim); font-weight: 500; text-transform: none; letter-spacing: normal; }
+
+/* ---------- Suivi : liste à lignes, une seule carte ---------- */
+.home-list { background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; }
+.home-list-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
+.home-list-row + .home-list-row { border-top: 1px solid var(--rule); }
+.home-list-icon {
+  width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.home-list-icon svg { display: block !important; width: 18px; height: 18px; }
+.home-list-label { flex: 1; min-width: 0; font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--text); }
+.home-list-value { font-family: var(--font); font-size: 14px; color: var(--text-dim); }
+.home-list-chevron { color: var(--text-dim); flex-shrink: 0; display: flex; }
+.home-list-chevron svg { width: 16px; height: 16px; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — EN-TÊTE "TITRE EN CLAIR" (Salle de sport, puis les autres
+   modules structurés pareil dans les prochaines étapes)
+   Remplace le bloc encre plein (voir la section BAUHAUS plus haut, "L'EN-
+   TÊTE EST UN APLAT ENCRE") par un lien de retour en texte coloré, suivi
+   d'un grand titre Jost et d'un sous-titre — comme dans les maquettes.
+   Toujours une couche ajoutée en fin de fichier, même principe qu'avant.
+   ========================================================================== */
+.header.header-plain-title {
+  background: var(--bg) !important; padding: calc(16px + env(safe-area-inset-top)) 20px 14px;
+  gap: 6px;
+}
+.header.header-plain-title::after { display: none; }
+.back-btn-text {
+  display: inline-flex; align-items: center; gap: 2px; background: none; border: none; padding: 0;
+  color: var(--accent); font-family: var(--font); font-size: 16px; font-weight: 600; cursor: pointer;
+  margin-bottom: 6px; align-self: flex-start;
+}
+.back-btn-text svg { width: 18px; height: 18px; }
+.screen-title {
+  font-family: var(--font-display); font-size: 34px; font-weight: 800; letter-spacing: -1px;
+  line-height: 1.05; color: var(--text);
+}
+.header-sub.screen-subtitle {
+  font-family: var(--font); font-size: 15px; font-weight: 500; color: var(--text-dim);
+  letter-spacing: normal; text-transform: none; margin-top: 2px;
+}
+/* Bascule en pilule (Séances/Plans, Séance effectuée/Plan à préparer...) —
+   même contenu/logique, fond arrondi englobant plutôt que deux boutons
+   à bords carrés côte à côte. */
+.ex-type-toggle.ex-type-toggle-pill {
+  background: var(--surface-2); border-radius: var(--radius-sm); padding: 3px; gap: 2px;
+}
+.ex-type-toggle-pill .ex-type-btn { border: none; border-radius: calc(var(--radius-sm) - 2px); }
+.ex-type-toggle-pill .ex-type-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.18); }
+
+/* ==========================================================================
+   IDENTITÉ iOS — CARTE D'EXERCICE (détails, Salle de sport/Course/Natation/
+   Vélo Créer) : la carte elle-même profitait déjà des fondations (rayons,
+   police) — ajustements ciblés qui restaient pour coller aux maquettes.
+   ========================================================================== */
+/* Pastille ronde autour du numéro de série, plutôt qu'un simple chiffre —
+   comme les puces numérotées des maquettes. */
+.set-num {
+  width: 20px; height: 20px; border-radius: 50%; background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent); font-family: var(--font); font-weight: 700; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+/* "Dernière fois" en casse normale, plus proche d'une phrase que d'une
+   étiquette technique tout en capitales. */
+.last-perf {
+  font-family: var(--font); font-size: 12.5px; font-weight: 500; letter-spacing: normal;
+  text-transform: none; color: var(--text-dim);
+}
+
+/* ---------- Séance en direct : sous-titre sous le nom de l'exercice ---------- */
+.live-exercise-subtitle {
+  text-align: center; font-family: var(--font); font-size: 14px; font-weight: 500;
+  color: var(--text-dim); margin-top: -4px;
+}
+
+/* ==========================================================================
+   IDENTITÉ iOS — ACCUEIL, CORRECTIFS (suite au retour direct sur la
+   maquette réelle : la grille des sports ne remplissait pas toute la
+   largeur disponible, et le titre "GYMLOG" ne devait plus apparaître —
+   la maquette n'en affiche aucun, l'identité de l'écran tient à son
+   contenu.)
+   ========================================================================== */
+/* Le logout, déjà disponible et fonctionnel depuis Réglages, n'a plus
+   besoin d'un raccourci redondant ici — l'Accueil démarre directement sur
+   son contenu, sans bandeau ni titre. */
+.home-content-no-header { padding-top: calc(clamp(20px, calc(12vh - 43px), 58px) + env(safe-area-inset-top)) !important; }
+
+/* Bug corrigé : .home-fluid-block est un conteneur flex (voir plus haut,
+   pensé à l'origine pour .home-hscroll/.home-tile-wide, qui reçoivent déjà
+   flex:1) — ma grille 2x2 et ma liste Suivi n'avaient jamais reçu la même
+   instruction et se contentaient donc de leur largeur de contenu naturelle
+   au lieu de remplir tout l'espace disponible (~350px), d'où une grille
+   visiblement trop étroite. */
+.home-fluid-block .home-grid-2col,
+.home-fluid-block .home-list { flex: 1; width: 100%; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — ACCUEIL, AFFICHAGE DYNAMIQUE (retour utilisateur : sur
+   ordinateur, avec une fenêtre moins haute qu'un téléphone, le bloc Suivi
+   se superposait au bloc Sports)
+   Cause : chaque .home-fluid-block se voyait imposer une part ÉGALE de
+   l'espace restant (flex: 1 1 0), sans jamais pouvoir défiler (overflow-y:
+   hidden sur .content) — correct tant que la fenêtre fait au moins ~844px
+   de haut (un téléphone), mais une fenêtre plus courte forçait chaque bloc
+   sous sa taille naturelle, écrasant son contenu au lieu de s'adapter.
+   Remplacé par : chaque bloc garde sa taille naturelle (ni étiré, ni
+   comprimé), et la page défile si jamais tout ne tient pas — la taille de
+   chaque élément dépend alors réellement de la place qu'il lui faut,
+   quelle que soit la fenêtre.
+   ========================================================================== */
+#app.theme-home .content { overflow-y: auto !important; }
+.home-fluid-block { flex: 0 0 auto !important; overflow: visible !important; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — ACCUEIL : BARRE DE NAVIGATION DU BAS (Accueil/Calendrier/
+   Réglages), comme dans la maquette. Contrairement au reste de l'app (qui
+   garde sa navigation actuelle, un bouton retour par écran), cette barre
+   n'apparaît que sur l'Accueil pour l'instant — Calendrier et Réglages y
+   sont désormais atteignables directement, sans passer par la liste
+   "Suivi" (qui ne garde donc que Performance et Poids).
+   ========================================================================== */
+.home-bottom-nav {
+  position: absolute; left: 0; right: 0; bottom: 0; height: calc(83px + env(safe-area-inset-bottom));
+  box-sizing: border-box; padding: 7px 8px calc(env(safe-area-inset-bottom)) 8px;
+  background: rgba(var(--surface-rgb), 0.94); backdrop-filter: blur(8px);
+  border-top: 0.5px solid var(--rule);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start;
+  z-index: 100;
+}
+.home-bottom-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 44px;
+  background: none; border: none; cursor: pointer; color: var(--text-dim);
+  font-family: var(--font); font-size: 10px; font-weight: 600; padding: 0;
+}
+.home-bottom-nav-item svg { width: 25px; height: 25px; }
+.home-bottom-nav-item-active { color: var(--text); }
+/* Le contenu ne doit pas passer sous cette barre fixe. */
+#app.theme-home .content { padding-bottom: calc(93px + env(safe-area-inset-bottom)) !important; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — ACCUEIL, TAILLES PROPORTIONNELLES À LA HAUTEUR DISPONIBLE
+   (retour utilisateur : tout doit tenir sur l'écran sans défiler). Les
+   hauteurs fixes (tuile héros, tuiles Sports, lignes Suivi, espacements)
+   sont remplacées par des clamp() basés sur la hauteur de la fenêtre :
+   grandes et confortables quand la place ne manque pas (téléphone, grand
+   écran), mais qui se compressent réellement sur une fenêtre courte
+   plutôt que de forcer un défilement.
+   ========================================================================== */
+#app.theme-home .content { gap: clamp(4px, 1.6vh, 10px) !important; }
+.home-tile.home-tile-wide {
+  min-height: clamp(72px, 15vh, 132px) !important;
+  padding: clamp(10px, 2vh, 18px) 18px clamp(10px, 2vh, 18px) 20px !important;
+}
+.home-tile-play-btn { width: clamp(40px, 7vh, 56px); height: clamp(40px, 7vh, 56px); }
+.home-tile-play-btn svg { width: clamp(16px, 3vh, 22px); height: clamp(16px, 3vh, 22px); }
+.home-tile.home-tile-grid {
+  height: clamp(92px, 13vh, 116px) !important;
+  padding: clamp(10px, 1.8vh, 14px) clamp(10px, 1.8vh, 14px) clamp(16px, 2.8vh, 20px) clamp(10px, 1.8vh, 14px) !important;
+  gap: clamp(3px, 0.8vh, 8px) !important;
+}
+.home-grid-2col { gap: clamp(6px, 1.2vh, 12px) !important; }
+.home-tile-icon-circle { width: clamp(24px, 4.5vh, 32px); height: clamp(24px, 4.5vh, 32px); }
+.home-tile-icon-circle svg { width: clamp(14px, 2.5vh, 18px) !important; height: clamp(14px, 2.5vh, 18px) !important; }
+.home-list-row { padding: clamp(7px, 1.5vh, 14px) 16px !important; gap: clamp(8px, 1.5vh, 12px) !important; }
+.home-list-icon { width: clamp(24px, 4.5vh, 32px); height: clamp(24px, 4.5vh, 32px); }
+.home-section-label { margin: clamp(2px, 2.4vh, 10px) 2px 0 !important; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — RÉGLAGES : carte profil + liste à icônes carrées
+   Réutilise .home-list/.home-list-row (déjà construits pour "Suivi" sur
+   l'Accueil) plutôt que les anciennes cartes séparées .home-card — mais
+   avec des icônes carrées à fond plein coloré (pas circulaires/teintées
+   comme sur l'Accueil), comme dans la maquette Réglages.
+   ========================================================================== */
+.settings-profile-card {
+  display: flex; align-items: center; gap: 14px; background: var(--surface);
+  border-radius: var(--radius-lg); padding: 16px;
+}
+.settings-profile-avatar {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--yellow); color: var(--ink);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-family: var(--font-display); font-size: 24px; font-weight: 800;
+}
+.settings-profile-title { font-family: var(--font); font-size: 17px; font-weight: 700; color: var(--text); }
+.settings-profile-sub { font-family: var(--font); font-size: 14px; color: var(--text-dim); margin-top: 2px; }
+.home-list-icon.home-list-icon-square { border-radius: var(--radius-sm); color: var(--on-ink); }
+
+/* ==========================================================================
+   IDENTITÉ iOS — LIGNES DE SÉANCE (Historique, tous les sports) : le nom
+   de la séance devient le titre en gras, la date + les infos deviennent
+   le sous-texte — c'était inversé avant. Icône ronde ajoutée à gauche,
+   comme dans les maquettes. .history-label perd sa casse tout-capitales
+   technique au passage (déjà utilisée ainsi, en minuscules, par
+   Performance — cohérent, pas une rupture).
+   ========================================================================== */
+.history-row-icon {
+  width: 36px; height: 36px; border-radius: 50%; background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.history-row-icon svg { width: 18px; height: 18px; }
+.history-head { gap: 12px; }
+.history-label {
+  font-family: var(--font) !important; font-size: 13px !important; font-weight: 500 !important;
+  letter-spacing: normal !important; text-transform: none !important; color: var(--text-dim);
+}
+
+/* ==========================================================================
+   IDENTITÉ iOS — CONNEXION, refonte à partir de la maquette réelle
+   ========================================================================== */
+/* Logo "GymLog" en casse normale (pas tout capitales) et à sa bonne
+   taille — une couche antérieure ("palette fermée") l'avait agrandi à
+   52px, plus proche de la maquette à 44px. */
+.auth-wordmark { font-size: 44px !important; letter-spacing: -1.6px !important; text-transform: none; }
+.auth-tagline {
+  font-family: var(--font) !important; font-size: 17px !important; font-weight: 400 !important;
+  letter-spacing: normal !important; text-transform: none !important; color: var(--text-dim); margin-top: 4px !important;
+}
+.auth-mark { width: 64px; height: 64px; border-radius: 16px; }
+.auth-mark svg { width: 32px; height: 32px; }
+/* Les deux champs réunis dans une seule carte blanche, en lignes façon
+   liste (libellé à gauche, champ à droite) — comme Réglages/Suivi —
+   plutôt que deux champs séparés avec libellé au-dessus et soulignement. */
+.auth-field-card { background: var(--surface); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; margin-bottom: 16px; }
+.auth-field-row {
+  box-sizing: border-box; height: 52px; display: flex; align-items: center; gap: 12px;
+  padding: 0 14px; cursor: text;
+}
+.auth-field-row + .auth-field-row { border-top: 0.5px solid var(--rule); }
+.auth-field-row span { width: 124px; flex-shrink: 0; font-family: var(--font); font-size: 17px; color: var(--text); }
+.auth-field-row input[type="email"], .auth-field-row input[type="password"] {
+  flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+  font-family: var(--font); font-size: 17px; font-weight: 400; letter-spacing: normal; color: var(--text); padding: 0;
+}
+.auth-field-row input::placeholder { color: var(--text-dim); font-weight: 400; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — FENÊTRE DE CONFIRMATION, refaite façon alerte iOS
+   ========================================================================== */
+.modal-box {
+  background: rgba(var(--surface-rgb), 0.97) !important; border-radius: var(--radius) !important;
+  padding: 0 !important; max-width: 290px !important; box-shadow: none !important; text-align: center;
+}
+.modal-message { font-family: var(--font); font-size: 17px !important; font-weight: 600 !important; color: var(--text) !important; line-height: 1.3; margin: 20px 16px 4px 16px !important; }
+.modal-detail { font-family: var(--font); font-size: 13px; line-height: 1.4; color: var(--text-dim); margin: 0 16px 16px 16px; }
+.modal-actions {
+  display: grid !important; grid-template-columns: 1fr 1fr; gap: 0 !important; justify-content: stretch !important;
+  border-top: 0.5px solid var(--rule);
+}
+.modal-btn {
+  height: 44px; padding: 0 !important; border-radius: 0 !important; font-size: 17px !important;
+  font-weight: 400 !important; background: none !important; display: flex; align-items: center; justify-content: center;
+}
+.modal-cancel { color: var(--text) !important; border-right: 0.5px solid var(--rule); }
+.modal-confirm { color: var(--accent) !important; font-weight: 600 !important; }
+.modal-confirm.danger { color: #A84B3D !important; }
+
+/* La variante empilée (3 boutons, fin de séance) garde son propre style
+   en colonne à boutons pleins arrondis — ne doit pas hériter de la
+   grille à 2 colonnes à filets ci-dessus, pensée pour Annuler/Confirmer
+   uniquement. */
+.modal-actions.modal-actions-stack {
+  display: flex !important; flex-direction: column; gap: 8px; border-top: none;
+  padding: 0 16px 16px 16px;
+}
+.modal-actions-stack .modal-btn {
+  height: auto; padding: 12px 18px !important; border-radius: var(--radius) !important;
+  font-size: 13px !important; font-weight: 700 !important; background: rgba(var(--ink-rgb), 0.07) !important;
+  color: var(--text-dim) !important; border-right: none !important;
+}
+.modal-actions-stack .modal-btn.danger { background: #A84B3D !important; color: #fff !important; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — CARTE DE CHAMPS EN LISTE, générique (Date/Nom en haut de
+   Créer, tous les sports) — même patron que Connexion/Réglages : une
+   carte blanche, des lignes libellé-à-gauche/champ-à-droite séparées par
+   un filet, plutôt que des champs soulignés séparés avec libellé au-dessus.
+   ========================================================================== */
+.field-list-card { background: var(--surface); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; margin-bottom: 16px; }
+.field-list-row {
+  box-sizing: border-box; min-height: 52px; display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; cursor: text;
+}
+.field-list-row + .field-list-row { border-top: 0.5px solid var(--rule); }
+.field-list-row span { flex-shrink: 0; font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--text); }
+.field-list-row input[type="text"], .field-list-row input[type="date"] {
+  flex: 1; min-width: 0; border: none; background: transparent; outline: none; text-align: right;
+  font-family: var(--font); font-size: 15px; font-weight: 500; letter-spacing: normal; color: var(--text); padding: 0;
+}
+.field-list-row input::placeholder { color: var(--text-dim); font-weight: 400; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — POIDS, refonte à partir de la maquette réelle
+   ========================================================================== */
+/* Cartes stat : le chiffre passait à la ligne (46px hérité d'une couche
+   antérieure, beaucoup trop grand pour tenir sur une ligne dans une
+   carte étroite) — ramené à une taille qui tient, libellé en casse
+   normale plutôt qu'en petites capitales techniques, date ajoutée en
+   dessous du chiffre. */
+.weight-stat-card {
+  border-radius: var(--radius-lg) !important; border: none !important; box-shadow: none !important;
+}
+.weight-stat-label {
+  font-family: var(--font) !important; font-size: 13px !important; font-weight: 600 !important;
+  text-transform: none !important; letter-spacing: normal !important; margin-bottom: 6px !important;
+}
+.weight-stat-value { font-size: 28px !important; letter-spacing: -1px !important; white-space: nowrap; }
+.weight-stat-date { font-family: var(--font); font-size: 13px; color: var(--text-dim); margin-top: 6px; }
+.weight-stat-card:last-child .weight-stat-date { color: rgba(var(--on-ink-rgb), 0.6); }
+
+/* Historique : une seule carte englobante avec des lignes séparées par un
+   filet, plutôt qu'une pile de petites cartes individuelles espacées —
+   le geste de glissé-pour-supprimer reste inchangé sur chaque ligne. */
+.weight-history-card { background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; }
+.weight-history-card .swipe-row { margin-bottom: 0 !important; border-radius: 0 !important; }
+.weight-history-card .swipe-row + .swipe-row { border-top: 0.5px solid var(--rule); }
+.weight-history-card .weight-entry-row { background: var(--surface) !important; margin-bottom: 0 !important; padding: 14px 16px !important; }
+.weight-entry-date {
+  font-family: var(--font) !important; font-size: 15px !important; font-weight: 500 !important;
+  text-transform: none !important; color: var(--text) !important;
+}
+.weight-entry-value { color: var(--text-dim) !important; font-weight: 600 !important; }
+
+/* ==========================================================================
+   IDENTITÉ iOS — CALENDRIER, refonte du contenu (le bandeau + la barre du
+   bas étaient déjà faits — reste : pastilles de filtre en défilement,
+   calendrier dans une carte, état "Aujourd'hui" par défaut)
+   ========================================================================== */
+.ex-type-toggle.scroll-toggle {
+  display: flex; flex-wrap: nowrap; overflow-x: auto; margin: 0 -20px 16px; padding: 0 20px;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.ex-type-toggle.scroll-toggle::-webkit-scrollbar { display: none; }
+.ex-type-toggle.scroll-toggle .ex-type-btn { flex: 0 0 auto; white-space: nowrap; }
+.cal-card { background: var(--surface); border-radius: var(--radius-lg); padding: 18px 16px 16px; }
+.cal-empty-card {
+  background: var(--surface); border-radius: var(--radius-lg); padding: 20px; text-align: center;
+  color: var(--text-dim); font-family: var(--font); font-size: 15px; margin-bottom: 8px;
+}
+.cal-empty-hint { font-family: var(--font); font-size: 13px; color: var(--text-dim); padding: 0 4px; }
+
+/* ---------- Petit texte d'aide sous un groupe de réglages ---------- */
+.field-hint { font-family: var(--font); font-size: 13px; line-height: 1.4; color: var(--text-dim); margin: 10px 4px 0; }
+
+/* ---------- Réglages > Son : carte volume + bouton de test ---------- */
+.sound-card { background: var(--surface); border-radius: var(--radius-lg); padding: 18px 16px; margin-bottom: 10px; }
+.sound-slider-row { display: flex; align-items: center; gap: 12px; color: var(--text-dim); margin-bottom: 18px; }
+.sound-slider-row input[type="range"] { flex: 1; accent-color: var(--ink); }
+.sound-percent { font-family: var(--font); font-size: 19px; font-weight: 700; color: var(--text); min-width: 52px; text-align: right; }
+.sound-test-btn {
+  display: flex; align-items: center; gap: 12px; background: none; border: none; padding: 0;
+  font-family: var(--font); font-size: 16px; color: var(--text); cursor: pointer;
+}
+.sound-test-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm); background: rgb(var(--rgb-swim)); color: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* ---------- Réglages > Exercices : bouton "Ajouter" en lien simple ---------- */
+/* Garde .add-exercise-btn (barre fixe, toujours accessible sans défiler)
+   mais sans son habillage "grosse case en pointillés", pensé pour un
+   contexte différent (Créer) — ici la maquette veut un simple lien avec
+   icône +, pas une case. */
+.add-exercise-btn.add-exercise-btn-plain {
+  border: none !important; background: none !important; text-transform: none; letter-spacing: normal;
+  font-size: 16px; font-weight: 600; color: var(--accent);
+}
+
+/* ==========================================================================
+   IDENTITÉ iOS — SÉANCE EN DIRECT : tuiles d'activité Cardio/Gainage
+   (Rameur/Vélo/Course/Gainage), avec icône ronde + titre — même patron que
+   les tuiles Sports de l'Accueil — plutôt que de simples boutons texte
+   centrés.
+   ========================================================================== */
+.live-btn[data-live-cardio-category] {
+  justify-content: space-between !important; align-items: flex-start !important; text-align: left !important;
+  height: 104px; padding: 14px !important;
+}
+.live-cardio-cat-label { font-family: var(--font); font-size: 15px; font-weight: 700; color: var(--text); }
+.live-btn[data-live-cardio-category]:active .live-cardio-cat-label { color: var(--on-ink); }

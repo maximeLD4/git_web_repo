@@ -28,6 +28,524 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.76.1 - 2026-09-04
+====================
+
+- **Séance en direct : 3 écrans avancés**, à partir des maquettes
+  fournies (chantier de 10 écrans, suite en cours).
+  - **"Quelle activité ?"** (Cardio/Gainage) : titre manquant ajouté, les
+    4 tuiles Rameur/Vélo/Course/Gainage reprennent le patron icône ronde +
+    titre (comme les tuiles Sports de l'Accueil) plutôt que de simples
+    boutons texte centrés sans icône. Nouvelle icône ajoutée pour le
+    rameur.
+  - **Réglage de la boucle** (Gainage) : restructuré en une carte unifiée
+    (Tours/Travail/Repos) avec un vrai stepper +/-, plutôt que 3 blocs
+    empilés séparés avec un gros chiffre chacun. Sous-titre et texte
+    d'aide ajoutés.
+  - **Bannière "en cours"** (Série en cours, boucle en cours) : simplifiée
+    en simple sous-texte gris, plutôt qu'une boîte grise en gras tout
+    capitales — comme le montrent les maquettes Muscu et Gainage.
+  - Testé : sélection d'activité, stepper, démarrage de boucle toujours
+    fonctionnels, rendu vérifié sur les 3 modes couleur, aucune régression
+    sur les 10 écrans principaux.
+  - Reste à faire sur ce chantier : Choix du plan, Avec plan (bandeau
+    "Ton plan"), Catégorie (Muscu), Série/Série en cours (détails fins).
+
+2.76.0 - 2026-09-04
+====================
+
+- **Formulaire "Nouvel exercice" refait**, à partir de la maquette
+  fournie — regroupé en sections (Exercice, Suggestions, Poids possibles,
+  Incrément), plutôt qu'une suite de champs à la file.
+  - "Incrément possible" devient un vrai stepper +/- (paliers de 2,5kg),
+    plutôt qu'un champ texte libre.
+  - "Scanner depuis une photo" devient une ligne de liste avec icône,
+    plutôt qu'un gros bouton.
+  - Les réglages qui n'apparaissent pas dans la maquette (Travail
+    unilatéral, Alterner avec) sont conservés dans une section "Options
+    avancées" séparée — aucune fonctionnalité retirée.
+  - Bug trouvé et corrigé en testant : le bouton "Ajouter" (à côté du
+    champ pour ajouter un poids) écrasait le champ à 0px de large. Cause :
+    `.save-btn` a `width: 100%` dans son style de base (correct partout
+    ailleurs), entrant en conflit dans ce nouveau contexte — corrigé en
+    ciblant uniquement ce bouton, sans toucher au style partagé.
+  - Testé : nom, catégorie, suggestions, poids (ajout/suppression),
+    stepper d'incrément, bascules, sélection "Alterner avec" et
+    enregistrement tous fonctionnels, rendu vérifié sur les 3 modes
+    couleur, aucune régression sur les 14 écrans principaux.
+
+2.75.1 - 2026-09-04
+====================
+
+- **Réglages > Exercices (Muscu et Gainage) refaits**, à partir des
+  maquettes fournies.
+  - En-tête converti au patron "titre en clair", sous-titre "Préconfigurés
+    pour la séance en direct" ajouté.
+  - Icône ronde ajoutée à gauche de chaque ligne (haltère pour Muscu,
+    chronomètre pour Gainage), catégorie ajoutée en préfixe du sous-texte
+    ("Bras · 10, 12, 14, 16 kg").
+  - Gainage affichait seulement le nom de l'exercice, sans aucune info —
+    le sous-texte ("6 tours · 40 s de travail · 20 s de repos") manquait
+    entièrement. Ajouté.
+  - Bouton "Ajouter un exercice" allégé en simple lien avec icône +,
+    plutôt qu'une grosse case en pointillés — en gardant sa barre fixe en
+    bas d'écran (toujours accessible sans défiler), seul l'habillage
+    change.
+  - Testé : bouton Ajouter, édition, glissé-pour-supprimer toujours
+    fonctionnels sur les deux listes, rendu vérifié en mode Nuit, aucune
+    régression sur les 14 écrans principaux.
+
+2.75.0 - 2026-09-04
+====================
+
+- **Trois sous-écrans de Réglages refaits**, à partir des maquettes
+  fournies (le reste de Réglages avait déjà été fait plus tôt).
+  - **Apparence** : liste Jour/Nuit/Anne avec icônes carrées colorées et
+    coche sur le mode actif, plutôt qu'un sélecteur à 3 boutons. Texte
+    d'aide ajouté en dessous.
+  - **Son** : carte avec curseur de volume + pourcentage qui se met à
+    jour en direct, bouton "Tester le son" avec icône carrée.
+  - **Sauvegarde** : "Exporter mes données"/"Importer une sauvegarde" en
+    liste avec icônes carrées, section "Historique" séparée (Dernier
+    export/import).
+  - Ajustement fait en cours de route : une coche sur "Apparence" allait
+    accidentellement réutiliser (et donc recolorer) la classe du chevron
+    partagée avec l'Accueil et le reste de Réglages — repéré avant de
+    tester, isolé proprement pour ne rien changer ailleurs.
+  - Testé : changement de mode, curseur de volume, export/import de
+    sauvegarde toujours fonctionnels, rendu vérifié sur les 3 modes
+    couleur, aucune régression sur les 14 écrans principaux.
+
+2.74.1 - 2026-09-04
+====================
+
+- **Écran Calendrier terminé**, à partir de la maquette fournie (le
+  bandeau et la barre du bas avaient déjà été faits plus tôt).
+  - Calendrier (mois + grille + légende) désormais dans une seule carte,
+    plutôt qu'à plat sur le fond.
+  - Pastilles de filtre en défilement horizontal plutôt qu'à la ligne.
+  - Nom du mois correctement capitalisé ("Septembre 2026").
+  - Sous-titre dynamique "X séances ce mois-ci", qui se met à jour en
+    changeant de mois, plutôt qu'un total figé sur toute la durée.
+  - État par défaut "Aujourd'hui" : montre directement les séances du
+    jour au lieu d'un écran vide tant qu'aucune date n'est touchée.
+  - Cartes de séance du jour refaites (icône colorée, nom en titre, date
+    + infos en sous-texte, distance à droite) — même traitement que
+    Salle de sport/Course/Natation/Vélo fait précédemment.
+  - Testé : dépli, Modifier, et glissé-pour-supprimer (avec un vrai
+    geste, jusqu'à la suppression confirmée) toujours fonctionnels,
+    séances mixtes (Natation/Vélo/Gainage le même jour) affichées
+    correctement, rendu vérifié sur les 3 modes couleur, aucune
+    régression sur les 10 écrans principaux.
+
+2.74.0 - 2026-09-04
+====================
+
+- **Écran Poids refait**, à partir de la maquette fournie.
+  - En-tête converti au patron "titre en clair" (comme Salle de sport/
+    Réglages), au lieu du bandeau encre.
+  - Cartes stat corrigées : le chiffre ("77.1 kg") passait carrément à la
+    ligne (46px hérité d'une couche antérieure, bien trop grand pour la
+    largeur de la carte) — ramené à une taille qui tient sur une ligne,
+    libellés en casse normale, date ajoutée sous "Dernier poids".
+  - Section "Nouvelle pesée" ajoutée, champs Date/Poids unifiés dans une
+    carte liste (même patron que Connexion/Créer).
+  - "Historique" regroupé en une seule carte avec filets entre les
+    lignes, plutôt qu'une pile de petites cartes espacées.
+  - Bug trouvé et corrigé en testant : le bouton "Supprimer" du glissé-
+    pour-supprimer restait visible en permanence sur chaque ligne, au
+    lieu de n'en montrer qu'un mince aperçu. Cause : la ligne avait perdu
+    son fond opaque (mis à "aucun" en pensant que la carte englobante
+    suffirait), laissant voir le panneau de suppression qui est toujours
+    présent en dessous, pas juste au glissement. Corrigé en lui redonnant
+    un fond opaque assorti à la carte.
+  - Testé : glissé-pour-supprimer vérifié avec un vrai geste de
+    glissement (pas juste un clic), suppression réellement effective,
+    sauvegarde d'une nouvelle pesée toujours fonctionnelle, les listes
+    d'autres écrans (Salle de sport...) pas affectées, rendu vérifié sur
+    les 3 modes couleur, aucune régression sur les 10 écrans principaux.
+
+2.73.2 - 2026-09-04
+====================
+
+- **Champs Date/Nom en haut de "Créer"** (Salle de sport, Course,
+  Natation, Vélo) refaits à partir de la maquette : une carte blanche
+  unifiée en lignes façon liste (libellé à gauche, champ à droite,
+  filet entre les deux), plutôt que deux champs séparés à soulignement
+  avec libellé au-dessus — même patron que Connexion/Réglages.
+  - Nouvelle classe générique `.field-list-card` / `.field-list-row`,
+    réutilisable partout où ce patron apparaît plutôt que dupliqué à
+    chaque écran.
+  - Deux fausses alertes clarifiées en testant, aucune n'étant un vrai
+    bug : le mode "Plan" semblait afficher 2 lignes au lieu d'1 (défaut
+    du scénario de test, pas de l'app — revérifié avec le vrai bouton de
+    bascule) ; le nom de la séance semblait s'effacer après l'ajout d'un
+    bloc (l'app attend 350ms avant de sauvegarder la saisie, un
+    comportement déjà existant — revérifié avec un délai suffisant).
+  - Testé : rendu vérifié sur les 4 sports avec leur couleur d'accent
+    respective, mode Nuit vérifié, aucune régression sur les 10 écrans
+    principaux.
+
+2.73.1 - 2026-09-04
+====================
+
+- **Fenêtre de confirmation refaite façon alerte iOS**, à partir de la
+  maquette fournie — utilisée partout dans l'app (déconnexion,
+  suppressions...). Carte centrée plus compacte (290px), boutons
+  "Annuler"/"Confirmer" désormais côte à côte en pleine largeur séparés
+  par un filet, plutôt que deux petits boutons alignés à droite.
+  - Nouveau : un sous-texte optionnel peut accompagner le titre (utilisé
+    pour la déconnexion : "Tes données restent sauvegardées dans ton
+    profil.") — sans rien changer pour les appels existants qui n'en
+    définissent pas.
+  - Bug trouvé en testant : le bouton rouge "Supprimer sans enregistrer"
+    (fin de séance, variante à 3 boutons empilés) ressortait en encre
+    plutôt qu'en rouge — une couche de style antérieure ("palette
+    fermée") avait neutralisé la couleur "danger" partout. Corrigé avec
+    la même teinte que le nouveau bouton de déconnexion, pour rester
+    cohérent.
+  - Testé : annuler ferme bien la fenêtre, la variante à 3 boutons
+    empilés (fin de séance) a gardé son propre style sans hériter de la
+    nouvelle grille à 2 colonnes, rendu vérifié sur les 3 modes couleur,
+    aucune régression sur les 10 écrans principaux.
+
+2.73.0 - 2026-09-04
+====================
+
+- **Page de connexion refaite**, à partir de la maquette fournie.
+  - Logo "GymLog" en casse normale (pas tout capitales) et remis à sa
+    bonne taille — une couche antérieure ("palette fermée") l'avait
+    agrandi et mis en capitales par rapport à l'intention d'origine.
+  - Sous-titre "Connecte-toi à ton profil" en texte normal, plutôt qu'en
+    petites capitales techniques.
+  - E-mail et mot de passe réunis dans une seule carte blanche, en lignes
+    façon liste (libellé à gauche, champ à droite, séparées par un
+    filet) — comme Réglages/Suivi — plutôt que deux champs séparés avec
+    libellé au-dessus et soulignement.
+  - Testé : focus automatique sur le champ e-mail, saisie et soumission
+    du formulaire toujours fonctionnelles, message d'erreur toujours
+    affiché en cas d'échec, rendu vérifié sur les 3 modes couleur, aucune
+    régression sur les 10 écrans principaux.
+
+2.72.2 - 2026-09-04
+====================
+
+- **Accueil affiné, à partir d'une comparaison ligne à ligne avec le
+  fichier de maquette fourni** (pas juste une capture d'écran) : 3 écarts
+  précis trouvés et corrigés.
+  - Tuile "Séance en direct" trop basse (104px, cible 132px).
+  - Espacement entre les grands blocs trop serré (8px, cible 22px) —
+    distingué de l'espacement titre-vers-contenu, qui doit rester plus
+    resserré (10px).
+  - Marge en haut de l'écran trop faible (24px, cible 58px).
+  - Chaque correction devait composer avec la contrainte "tout tient sans
+    défiler" posée récemment : le premier réglage de l'espacement, puis
+    celui de la marge du haut, ont chacun fait réapparaître un léger
+    défilement sur petit écran — repéré et corrigé à chaque fois avec une
+    formule qui atteint précisément la cible sur un écran normal tout en
+    restant garantie sans défilement sur un écran court.
+  - Testé : rendu à 844px de haut désormais identique à la maquette
+    (tuile héros positionnée à exactement 58px du haut), toujours aucun
+    défilement nécessaire à 560px, aucune régression sur les 3 modes
+    couleur ni sur les 14 écrans principaux.
+  - Reçu un lot complet de 40 nouvelles maquettes (HTML + PNG) pour le
+    reste de l'app — cette étape ne couvre que l'Accueil, comme demandé ;
+    la suite reste à faire.
+
+2.72.1 - 2026-09-04
+====================
+
+- **Séance en direct : le nom de l'exercice s'affiche maintenant pendant
+  le repos**, pas seulement pendant la série active — jusque-là, le
+  bandeau affichait juste "Repos", sans indiquer sur quel exercice on
+  s'apprêtait à enchaîner. Repéré notamment sur les paires d'exercices
+  (Abducteurs/Adducteurs) après une bascule rapide, où ça devenait
+  ambigu.
+- **Indice de performance : nouveau mode de calcul**, suite à un retour
+  disant qu'il ne reflétait pas bien les vraies progressions. L'ancien
+  calcul se basait sur le volume pur (poids × répétitions) : passer de
+  60kg×10 à 70kg×5 y apparaissait comme un recul, alors que lever plus
+  lourd pour moins de répétitions est en général un vrai progrès de
+  force. Remplacé par le 1RM estimé de la meilleure série (formule
+  d'Epley), la façon standard de mesurer la progression de force dans les
+  applis de musculation — le même exemple montre maintenant une hausse.
+  Le bonus pour plusieurs séries reste inchangé.
+  - Testé : le cas exact signalé (60kg×10 → 70kg×5) confirme la hausse
+    attendue, les records personnels ("Poids max", "Meilleure série",
+    restés inchangés) et la pondération des séries unilatérales
+    fonctionnent toujours correctement ensemble, aucune régression sur
+    les 11 écrans principaux ni sur les 3 modes couleur.
+
+2.72.0 - 2026-09-04
+====================
+
+- **Réglages : nouvelle carte "Mon profil"** (avatar avec l'initiale de
+  l'e-mail) et les 4 réglages regroupés en une seule liste à icônes
+  carrées colorées, plutôt que 4 cartes séparées — conforme à la
+  maquette. Doublon d'e-mail retiré (il apparaissait à la fois sous le
+  titre et dans la carte profil).
+- **Listes de séances (Salle de sport, Course, Natation, Vélo) : le nom de
+  la séance devient le titre en gras**, la date passe en sous-texte —
+  c'était inversé jusque-là. Icône ronde ajoutée à gauche de chaque
+  ligne. Pour les 3 sports cardio, la distance/vitesse vient s'afficher à
+  droite comme valeur plutôt qu'empilée sur une 3ᵉ ligne, avec l'allure/
+  vitesse qui rejoint la date en sous-texte.
+  - Le dépli en place (exercices, Modifier/Dupliquer/Convertir/Partager/
+    Supprimer) ne change pas — ces maquettes montraient une navigation
+    vers un écran de détail séparé, non reprise ici pour ne pas changer
+    le fonctionnement actuel.
+  - Reste à faire, volontairement pas improvisé dans cette étape : le
+    regroupement par mois ("Septembre 2026") pour Salle de sport/Natation/
+    Vélo, que les maquettes montrent mais que l'app n'a pas encore (Course
+    a déjà un regroupement, par semaine).
+  - Testé : dépli/repli toujours fonctionnel sur les 4 sports, listes de
+    Plans non affectées, rendu vérifié sur les 3 modes couleur, aucune
+    régression sur les 14 écrans principaux.
+
+2.71.2 - 2026-09-04
+====================
+
+- **Retiré le bandeau encre avec bouton retour sur Calendrier et
+  Réglages** — logique une fois la barre du bas en place : plus besoin
+  d'un "retour" quand on peut déjà naviguer vers n'importe quel autre
+  écran directement. Remplacé par un grand titre en clair, sans bandeau,
+  comme sur Salle de sport et comme dans les maquettes envoyées.
+  - Les sous-écrans de Réglages (Exercices, Apparence, Son, Sauvegarde)
+    gardent bien leur propre bouton retour vers Réglages — ce n'est que
+    l'écran principal des deux qui n'en a plus besoin.
+  - Testé : plus de bandeau ni de bouton retour sur les deux écrans,
+    navigation croisée toujours fonctionnelle dans tous les sens, les
+    sous-écrans de Réglages toujours accessibles avec leur propre retour,
+    rendu vérifié sur les 3 modes couleur, aucune régression sur les 14
+    écrans principaux.
+
+2.71.1 - 2026-09-04
+====================
+
+- **Corrigé : la nouvelle barre Accueil/Calendrier/Réglages se faisait
+  encore recouvrir par le contenu au défilement dans Calendrier.**
+  - Cause : le correctif de z-index posé juste avant avait été appliqué à
+    `.tabbar` (la barre Créer/Séances des modules sport), mais cette
+    nouvelle barre utilise une classe différente (`.home-bottom-nav`) qui
+    ne l'avait jamais reçu — un oubli, pas un vrai bug persistant.
+  - Même correctif appliqué à cette classe : elle passe maintenant
+    clairement devant tout contenu défilant, sur les 3 écrans (Accueil,
+    Calendrier, Réglages).
+  - Testé en reproduisant exactement le scénario signalé (15 séances le
+    même jour dans Calendrier, défilement jusqu'en bas) : plus aucun
+    chevauchement, aucune régression sur les 3 modes couleur ni sur les
+    14 écrans principaux.
+
+2.71.0 - 2026-09-04
+====================
+
+- **La barre de navigation (Accueil / Calendrier / Réglages) est
+  maintenant sur les 3 écrans**, pas seulement l'Accueil — c'était bien
+  l'intention depuis le début : pouvoir passer de n'importe lequel des
+  trois aux deux autres directement, sans détour.
+  - Factorisée en une fonction partagée (une seule source pour les 3
+    écrans, plutôt que 3 copies) — l'élément correspondant à l'écran
+    actif est mis en évidence à chaque fois.
+  - Le contenu de Calendrier et Réglages laisse maintenant la place
+    nécessaire en bas pour ne pas passer dessous ; le bouton "Se
+    déconnecter" et le numéro de version de Réglages remontent d'autant.
+  - Seule la barre du bas a été ajoutée à Calendrier/Réglages pour
+    l'instant — l'habillage du haut de ces deux écrans (gros titre,
+    filtres, carte profil) reste une étape à part, pas encore faite.
+  - Testé : navigation croisée entre les 3 écrans dans les deux sens,
+    élément actif toujours correct, bouton de déconnexion et version
+    toujours accessibles, rendu vérifié sur les 3 modes couleur, aucune
+    régression sur les 14 écrans principaux.
+
+2.70.3 - 2026-09-04
+====================
+
+- **Corrigé : la liste des séances (Salle de sport > Séances) pouvait
+  passer au-dessus de la barre du bas ("Créer"/"Séances")** au lieu de
+  rester en dessous.
+  - Cause : chaque carte de la liste a un `z-index` explicite (pour
+    l'effet de glissé-pour-supprimer), alors que la barre du bas n'en
+    avait aucun — sans valeur définie, elle pouvait se faire dépasser par
+    n'importe quelle carte, contrairement au panneau de suppression
+    lui-même qui, n'ayant pas ce besoin, restait toujours en dessous par
+    défaut.
+  - Corrigé en donnant à la barre du bas (et à la barre d'actions de
+    Créer, qui avait le même risque) une priorité clairement supérieure à
+    tout le contenu défilant.
+  - Testé : la barre reste maintenant au-dessus quelle que soit la carte,
+    flux complet de création + enregistrement toujours fonctionnel,
+    aucune régression sur les 14 écrans principaux.
+
+2.70.2 - 2026-09-04
+====================
+
+- **Tuiles Sports moins serrées** — plus d'air en bas, entre le sous-texte
+  ("X séances") et le bord de la tuile, suite à un retour comparant au
+  rendu précédent (correct mais un peu compact).
+  - Testé de nouveau sur toute la plage de hauteurs (560px à 1000px) :
+    toujours aucun défilement, aucune coupure de texte, aucun
+    chevauchement, aucune régression sur les 3 modes couleur ni sur les
+    14 écrans principaux.
+
+2.70.1 - 2026-09-04
+====================
+
+- **L'Accueil tient maintenant réellement dans la fenêtre, sans défiler**
+  — suite à un retour direct : le défilement de secours ajouté juste avant
+  n'était pas ce qui était demandé. Les hauteurs fixes (tuile héros,
+  tuiles Sports, lignes Suivi, espacements) sont remplacées par des
+  tailles proportionnelles à la hauteur de fenêtre disponible : spacieuses
+  quand la place ne manque pas, mais qui se compressent réellement sur une
+  fenêtre courte plutôt que de forcer un défilement.
+  - Bug trouvé en testant à plusieurs hauteurs : le premier réglage
+    faisait passer les tuiles Sports sous la taille minimale dont leur
+    contenu (icône + titre + sous-texte) a réellement besoin, coupant le
+    sous-texte. Corrigé en relevant ce minimum.
+  - Testé systématiquement de 560px à 1000px de hauteur : aucun
+    défilement nécessaire, aucun chevauchement, aucun texte coupé sur
+    aucun élément — vérifié précisément (pas juste à l'œil), sur les 3
+    modes couleur, navigation toujours fonctionnelle, aucune régression
+    sur les 14 écrans principaux.
+
+2.70.0 - 2026-09-04
+====================
+
+- **Barre de navigation du bas ajoutée sur l'Accueil** (Accueil / Calendrier
+  / Réglages), comme dans la maquette — j'avais volontairement laissé ça
+  de côté au départ (changement de structure de navigation, pas juste de
+  style), en attendant confirmation que c'était bien voulu.
+  - Calendrier et Réglages sont maintenant atteignables directement depuis
+    cette barre. La liste "Suivi" ne garde donc que Performance et Poids
+    (Calendrier y faisait doublon), et le lien texte "Paramètres" en bas
+    de l'Accueil est retiré (même raison).
+  - Aucune perte de fonctionnalité : les deux écrans restent accessibles,
+    juste par un autre chemin, plus direct.
+  - Testé : navigation depuis les 3 boutons de la barre, rendu vérifié sur
+    les 3 modes couleur, aucune régression sur les 14 écrans principaux.
+
+2.69.6 - 2026-09-04
+====================
+
+- **Corrigé : sur ordinateur (fenêtre moins haute qu'un téléphone), le
+  bloc "Suivi" pouvait se superposer au bloc "Sports"** sur l'Accueil.
+  - Cause : les 3 blocs de l'Accueil (héros, sports, suivi) se voyaient
+    imposer une part strictement égale de l'espace disponible, sans
+    aucune possibilité de défiler — correct tant que la fenêtre faisait au
+    moins la hauteur d'un téléphone, mais une fenêtre plus courte forçait
+    chaque bloc en dessous de sa taille naturelle, écrasant son contenu.
+  - Corrigé : chaque bloc garde maintenant sa taille naturelle (ni étiré,
+    ni comprimé), et l'écran défile si jamais tout ne tient pas — la
+    taille de chaque élément dépend réellement de la place disponible,
+    quelle que soit la fenêtre.
+  - Testé : plus aucun chevauchement sur une fenêtre bureau courte
+    (1280×650, défilement s'active bien), rendu mobile normal inchangé,
+    aucune régression sur les 3 modes couleur ni sur les 14 écrans
+    principaux.
+
+2.69.5 - 2026-09-04
+====================
+
+- **Deux corrections importantes sur l'Accueil**, suite à une comparaison
+  directe avec le fichier de maquette réel plutôt qu'une capture d'écran.
+  - **Bug trouvé** : la grille des sports et la liste "Suivi" ne
+    remplissaient pas toute la largeur disponible (350px attendus, 298px
+    réels) — leur conteneur parent est une boîte flex pensée à l'origine
+    pour l'ancien défilement horizontal, qui recevait déjà l'instruction
+    de s'étirer ; la grille et la liste ne l'avaient jamais reçue et se
+    contentaient donc de leur largeur naturelle, plus étroite.
+  - **Titre "GYMLOG" retiré** : la maquette n'en affiche aucun, l'Accueil
+    démarre directement sur son contenu. Le bouton de déconnexion qui
+    l'accompagnait est retiré aussi — sans perte réelle, Réglages a déjà
+    son propre bouton "Se déconnecter" pleinement fonctionnel.
+  - Testé : grille et liste occupent maintenant bien toute la largeur
+    (350px), navigation depuis chaque tuile toujours fonctionnelle, état
+    "configuration requise" toujours correct, rendu vérifié sur les 3
+    modes couleur, aucune régression sur les 14 écrans principaux.
+
+2.69.4 - 2026-09-04
+====================
+
+- **Séance en direct (Muscu) : sous-titre "Muscu · [catégorie]"** ajouté
+  sous le nom de l'exercice, comme dans la maquette. En comparant à la
+  maquette, l'écran était déjà remarquablement proche grâce aux
+  fondations posées plus tôt (en-tête à bouton rond, chrono en clair,
+  carte Répétitions arrondie) — une seule vraie différence à corriger,
+  changement volontairement limité pour ne rien risquer sur cet écran
+  parmi les plus utilisés de l'app.
+  - Testé : sous-titre affiché correctement, flux complet (débuter une
+    série) toujours fonctionnel, non-régression vérifiée sur Gainage
+    (contexte différent, non affecté) et sur les 14 écrans principaux.
+
+2.69.3 - 2026-09-04
+====================
+
+- **Carte d'exercice affinée** (Créer, tous les sports) — en comparant à la
+  maquette, la carte était déjà proche grâce aux fondations posées plus
+  tôt (rayons, police). Deux ajustements ciblés : le numéro de série a
+  maintenant une pastille ronde colorée plutôt qu'un simple chiffre, et
+  "Dernière fois" passe d'une étiquette tout en capitales à une casse
+  normale, plus lisible.
+  - Testé : rendu vérifié, flux complet de création + enregistrement
+    toujours fonctionnel, aucune régression sur les 14 écrans principaux.
+
+2.69.2 - 2026-09-04
+====================
+
+- **Le nouveau patron d'en-tête (2.69.1) étendu à Course, Natation et
+  Vélo** — même structure que Salle de sport, juste la couleur d'accent
+  qui change (orange, sarcelle, doré).
+  - Testé : bascule Séance/Plan et bouton retour sur les 3 sports, aucune
+    régression sur les 10 écrans principaux.
+
+2.69.1 - 2026-09-04
+====================
+
+- **Suite de la nouvelle identité visuelle : nouveau patron d'en-tête**,
+  appliqué à Salle de sport (Créer + Historique) — remplace le bandeau
+  encre plein par un lien de retour texte coloré ("< Accueil"), un grand
+  titre, et un sous-titre, comme dans les maquettes. La bascule Séance/
+  Plan devient une pilule à fond arrondi plutôt que deux boutons carrés
+  côte à côte.
+  - Ce même patron d'en-tête sera repris tel quel pour Course/Natation/
+    Vélo à la prochaine étape (structure identique, juste la couleur
+    d'accent qui change).
+  - Testé : bascule Séance/Plan, retour vers l'Accueil, flux complet de
+    création + enregistrement d'une séance, rendu vérifié sur les 3 modes
+    couleur, aucune régression sur les 11 écrans testés.
+
+2.69.0 - 2026-09-04
+====================
+
+- **Début d'une nouvelle identité visuelle**, à partir de maquettes iOS
+  fournies (40 écrans) — chantier mené en plusieurs étapes, celle-ci
+  couvre les fondations et l'Accueil. Fonctionnement de l'app inchangé
+  partout : navigation, écrans disponibles, comportements (repli/dépli,
+  glissé-pour-supprimer...) restent exactement les mêmes, seul l'habillage
+  visuel change.
+  - **Fondations** : nouvelle échelle d'arrondis, bien plus généreuse
+    (14px par défaut contre 3px), appliquée aux 3 modes couleur (Jour,
+    Nuit, Anne) — chacun garde sa propre palette. Police système par
+    défaut partout, Jost réservé désormais aux gros titres d'écran et aux
+    grands chiffres (logo, chronomètre, poids, records, compteurs) plutôt
+    qu'utilisée pour tout.
+  - **Accueil** : icônes de nouveau visibles dans des badges circulaires
+    colorés (une couche de style plus ancienne, antérieure à ce projet,
+    les remplaçait par de simples barres de couleur). Grille 2×2 pour les
+    sports plutôt qu'un défilement horizontal. Section "Suivi"
+    transformée en liste à lignes (icône, libellé, valeur, flèche), avec
+    le poids le plus récent affiché plutôt qu'un simple compteur de
+    pesées. Tuile "Séance en direct" avec un vrai bouton rond.
+  - Les couleurs d'identité par sport n'ont pas changé — elles
+    correspondaient déjà aux maquettes fournies.
+  - Bug trouvé et corrigé en testant : le titre "Séance en direct"
+    passait sur deux lignes à cause d'un espace réservé devenu inutile
+    (pensé pour l'ancien bouton en position absolue).
+  - Testé : les 14 écrans principaux sans erreur, navigation toujours
+    fonctionnelle depuis chaque tuile, état "configuration requise"
+    (grisage) toujours correct, rendu vérifié sur les 3 modes couleur.
+  - Prochaines étapes : Salle de sport (Créer + Historique), Séance en
+    direct, puis Réglages/Performance/Calendrier/Poids.
+
 2.68.4 - 2026-09-04
 ====================
 

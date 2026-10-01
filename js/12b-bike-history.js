@@ -11,16 +11,19 @@ function bikeSessionCardHTML(s) {
   </div>`
     )
     .join("");
+  const t = computeBikeSessionTotals(s.blocks);
+  const kmPart = t.km > 0 ? `${Math.round(t.km * 10) / 10} km` : "0 km";
+  const speedPart = t.speed ? `${Math.round(t.speed * 10) / 10} km/h` : "—";
   const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-bike-toggle="${s.id}">
+      <div class="history-row-icon">${ICONS.bike}</div>
       <div class="history-head-left">
-        <div class="history-date">${formatDateFR(s.date)}</div>
-        ${s.label ? `<div class="history-label">${s.label}</div>` : ""}
-        <div class="history-run-stats">${formatBikeSessionTotalsLine(s.blocks)}</div>
+        <div class="history-date">${s.label || formatDateFR(s.date)}</div>
+        <div class="history-label">${formatDateFR(s.date)} · ${speedPart}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="history-meta">${s.blocks.length} bloc${s.blocks.length !== 1 ? "s" : ""}</div>
+        <div class="history-meta">${kmPart}</div>
         <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
       </div>
     </div>

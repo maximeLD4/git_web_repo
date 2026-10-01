@@ -340,8 +340,9 @@ function showConfirm(message, onConfirm, opts = {}) {
   const root = document.getElementById("custom-modal-root");
   root.innerHTML = `
     <div class="modal-backdrop">
-      <div class="modal-box">
+      <div class="modal-box" role="alertdialog" aria-label="${message}">
         <div class="modal-message">${message}</div>
+        ${opts.detail ? `<div class="modal-detail">${opts.detail}</div>` : ""}
         <div class="modal-actions">
           <button type="button" class="modal-btn modal-cancel">Annuler</button>
           <button type="button" class="modal-btn modal-confirm ${opts.danger ? "danger" : ""}">${opts.confirmLabel || "Confirmer"}</button>
@@ -591,6 +592,39 @@ function formatDateShortFR(iso) {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
+// Barre de navigation persistante (Accueil / Calendrier / Réglages) —
+// partagée entre ces 3 écrans précisément, pour qu'on puisse passer de
+// n'importe lequel à n'importe quel autre sans revenir en arrière. activeKey
+// vaut "home" | "calendar" | "settings" ; l'icône correspondante est mise en
+// évidence. Les clics sont attachés séparément par attachBottomNavListeners,
+// une fois ce HTML inséré dans le DOM.
+function bottomNavHTML(activeKey) {
+  const items = [
+    { key: "home", icon: ICONS.house, label: "Accueil" },
+    { key: "calendar", icon: ICONS.calendarBig, label: "Calendrier" },
+    { key: "settings", icon: ICONS.gear, label: "Réglages" },
+  ];
+  return `
+    <nav aria-label="Navigation principale" class="home-bottom-nav">
+      ${items
+        .map(
+          (it) => `<button type="button" class="home-bottom-nav-item ${it.key === activeKey ? "home-bottom-nav-item-active" : ""}" data-open-app="${it.key}">
+        ${it.icon}
+        <span>${it.label}</span>
+      </button>`
+        )
+        .join("")}
+    </nav>`;
+}
+function attachBottomNavListeners(root) {
+  (root || document).querySelectorAll(".home-bottom-nav-item").forEach((el) => {
+    el.addEventListener("click", () => {
+      currentApp = el.dataset.openApp;
+      render();
+    });
+  });
+}
+
 function emptyExercise() {
   return {
     id: uid(),

@@ -278,19 +278,20 @@ function renderLoginScreen() {
       <div class="auth-brand">
         <div class="auth-mark">${ICONS.dumbbell}</div>
         <div>
-          <div class="auth-wordmark">GYMLOG</div>
+          <div class="auth-wordmark">GymLog</div>
           <div class="auth-tagline">Connecte-toi à ton profil</div>
         </div>
       </div>
-      <div class="auth-rule"></div>
       <form id="login-form" class="auth-form">
-        <div class="auth-field">
-          <label for="login-email">Email</label>
-          <input type="email" id="login-email" placeholder="toi@exemple.com" autocomplete="username">
-        </div>
-        <div class="auth-field">
-          <label for="login-password">Mot de passe</label>
-          <input type="password" id="login-password" placeholder="••••••••••" autocomplete="current-password">
+        <div class="auth-field-card">
+          <label for="login-email" class="auth-field-row">
+            <span>E-mail</span>
+            <input type="email" id="login-email" placeholder="toi@exemple.com" autocomplete="username">
+          </label>
+          <label for="login-password" class="auth-field-row">
+            <span>Mot de passe</span>
+            <input type="password" id="login-password" placeholder="Requis" autocomplete="current-password">
+          </label>
         </div>
         <button type="submit" class="auth-submit">Se connecter</button>
         <div id="login-error" class="auth-error"></div>

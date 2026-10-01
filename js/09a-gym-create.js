@@ -393,12 +393,12 @@ function renderGymApp() {
   if (tab === "log" && draft.kind && draft.kind !== gymTopMode) gymTopMode = draft.kind;
   const isPlanMode = gymTopMode === "plan";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.dumbbell}</div>
-      <div class="header-sub" id="gym-header-sub">${gymHeaderSubText()}</div>
+    <div class="header header-plain-title">
+      <button type="button" class="back-btn-text" data-go-home>${ICONS.back} Accueil</button>
+      <div class="screen-title">Salle de sport</div>
+      <div class="header-sub screen-subtitle" id="gym-header-sub">${gymHeaderSubText()}</div>
     </div>
-    <div class="ex-type-toggle" id="gym-top-mode-toggle" style="margin: 14px 16px 0 18px;">
+    <div class="ex-type-toggle ex-type-toggle-pill" id="gym-top-mode-toggle" style="margin: 14px 16px 0 18px;">
       <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-gym-top-mode="session">Séance effectuée</button>
       <button type="button" class="ex-type-btn ${isPlanMode ? "active" : ""}" data-gym-top-mode="plan">Plan à préparer</button>
     </div>
@@ -741,11 +741,11 @@ function logTabHTML() {
   // qui faisait doublon avec lui tout en étant moins visible.
   const isPlan = draft.kind === "plan";
   const fieldsHTML = isPlan
-    ? `<div class="field"><label>Nom du plan</label><input type="text" id="log-label" placeholder="Push day, jambes…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>`
+    ? `<div class="field-list-card"><label class="field-list-row" for="log-label"><span>Nom du plan</span><input type="text" id="log-label" placeholder="Push day, jambes…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></label></div>`
     : `
-    <div class="field-row">
-      <div class="field field-date"><label>Date</label><input type="date" id="log-date" value="${draft.date}"></div>
-      <div class="field"><label>Séance</label><input type="text" id="log-label" placeholder="Push day…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></div>
+    <div class="field-list-card">
+      <label class="field-list-row" for="log-date"><span>Date</span><input type="date" id="log-date" value="${draft.date}"></label>
+      <label class="field-list-row" for="log-label"><span>Séance</span><input type="text" id="log-label" placeholder="Push day…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></label>
     </div>`;
   return `
     <div class="backup-row">

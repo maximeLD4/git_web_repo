@@ -101,7 +101,7 @@ function liveStatusHeroHTML() {
   if (!liveSession) return "";
   const loop = liveSession.loop;
   if (liveSession.restStartedAt) {
-    const label = loop ? `${ICONS.stopwatch} Repos — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} Repos`;
+    const label = loop ? `${ICONS.stopwatch} Repos — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} Repos — ${liveDraftName || "Repos"}`;
     return `
     <div class="live-rest-hero" id="live-rest-hero">
       <div class="live-rest-hero-label">${label}</div>
@@ -220,9 +220,19 @@ function liveCategoryStepHTML() {
     // du curseur (voir data-live-type-switch), pendant que tout le reste
     // de l'écran, lui, glissait en douceur.
     const catShouldAnimateEnter = liveTypeJustSwitched;
+    const catIcon = { rameur: ICONS.rower, velo: ICONS.bike, course: ICONS.stopwatch, gainage: ICONS.bolt };
+    const catColorRgb = { rameur: "var(--rgb-swim)", velo: "var(--rgb-bike)", course: "var(--rgb-run)", gainage: "var(--rgb-gym)" };
     const categoriesHTML = `
+      <div class="home-section-label" style="margin-top:0;">Quelle activité ?</div>
       <div class="live-grid live-cardio-categories ${catShouldAnimateEnter ? "live-exercise-list-enter" : ""}" style="grid-template-columns:1fr 1fr;">
-        ${allCardioCats.map((c) => `<button type="button" class="live-btn ${liveDraftCategory === c.key ? "active" : ""}" data-live-cardio-category="${c.key}">${c.label}</button>`).join("")}
+        ${allCardioCats
+          .map(
+            (c) => `<button type="button" class="live-btn ${liveDraftCategory === c.key ? "active" : ""}" data-live-cardio-category="${c.key}">
+              <div class="home-tile-icon-circle" style="background: rgba(${catColorRgb[c.key]}, 0.16); color: rgb(${catColorRgb[c.key]});">${catIcon[c.key]}</div>
+              <span class="live-cardio-cat-label">${c.label}</span>
+            </button>`
+          )
+          .join("")}
       </div>`;
     let gainageListHTML = "";
     if (liveDraftCategory === GAINAGE_CATEGORY.key) {
@@ -454,6 +464,7 @@ function liveMuscuSetFormHTML(activeExercise) {
     <div class="live-set-form">
       <div class="live-set-form-scroll">
         <div class="live-exercise-name">${liveDraftName}</div>
+        <div class="live-exercise-subtitle">Muscu · ${categoryLabel(liveDraftCategory)}</div>
         ${lastSet ? `<div class="live-prev-set">Précédent : ${formatSetChip("muscu", lastSet)}</div>` : ""}
         <div class="live-stepper-group">
           <div class="live-stepper-label">Répétitions</div>
@@ -562,6 +573,7 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll live-set-form-scroll-fixed">
           <div class="live-exercise-name">${liveDraftName}</div>
+          <div class="live-exercise-subtitle">${GAINAGE_CATEGORY.label} · en boucle</div>
           ${liveLoopStepperHTML()}
         </div>
         <div class="live-set-form-actions">
@@ -594,32 +606,34 @@ function liveCardioSetFormHTML(activeExercise) {
 // ici (voir liveCardioSetFormHTML).
 function liveLoopStepperHTML() {
   return `
-    <div class="live-loop-config">
-      <div class="live-stepper-group">
-        <div class="live-stepper-label">Tours</div>
-        <div class="live-stepper">
-          <button type="button" class="live-stepper-btn" data-live-loop-rounds-minus aria-label="Moins">−</button>
-          <div class="live-stepper-value">${liveLoopDraftRounds}</div>
-          <button type="button" class="live-stepper-btn" data-live-loop-rounds-plus aria-label="Plus">+</button>
+    <div class="home-section-label" style="margin-top:0;">Boucle</div>
+    <div class="field-list-card">
+      <div class="field-list-row">
+        <span style="flex:1;">Tours</span>
+        <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftRounds}</span>
+        <div class="rep-stepper" style="flex:none;">
+          <button type="button" class="rep-step-btn" data-live-loop-rounds-minus aria-label="Moins">−</button>
+          <button type="button" class="rep-step-btn" data-live-loop-rounds-plus aria-label="Plus">+</button>
         </div>
       </div>
-      <div class="live-stepper-group">
-        <div class="live-stepper-label">Travail (secondes)</div>
-        <div class="live-stepper">
-          <button type="button" class="live-stepper-btn" data-live-loop-work-minus aria-label="Moins">−</button>
-          <div class="live-stepper-value">${liveLoopDraftWork}s</div>
-          <button type="button" class="live-stepper-btn" data-live-loop-work-plus aria-label="Plus">+</button>
+      <div class="field-list-row">
+        <span style="flex:1;">Travail</span>
+        <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftWork} s</span>
+        <div class="rep-stepper" style="flex:none;">
+          <button type="button" class="rep-step-btn" data-live-loop-work-minus aria-label="Moins">−</button>
+          <button type="button" class="rep-step-btn" data-live-loop-work-plus aria-label="Plus">+</button>
         </div>
       </div>
-      <div class="live-stepper-group">
-        <div class="live-stepper-label">Repos (secondes)</div>
-        <div class="live-stepper">
-          <button type="button" class="live-stepper-btn" data-live-loop-rest-minus aria-label="Moins">−</button>
-          <div class="live-stepper-value">${liveLoopDraftRest}s</div>
-          <button type="button" class="live-stepper-btn" data-live-loop-rest-plus aria-label="Plus">+</button>
+      <div class="field-list-row">
+        <span style="flex:1;">Repos</span>
+        <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftRest} s</span>
+        <div class="rep-stepper" style="flex:none;">
+          <button type="button" class="rep-step-btn" data-live-loop-rest-minus aria-label="Moins">−</button>
+          <button type="button" class="rep-step-btn" data-live-loop-rest-plus aria-label="Plus">+</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    <div class="field-hint">Un bip marque chaque changement entre travail et repos.</div>`;
 }
 
 function computeNextLiveBaseWeight(name, currentBaseWeight) {

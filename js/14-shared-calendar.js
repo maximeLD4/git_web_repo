@@ -2,18 +2,17 @@
 function renderSharedCalendarApp() {
   app.className = "theme-calendar";
   sharedCalendarMonth = todayISO().slice(0, 7);
-  sharedSelectedDate = null;
+  sharedSelectedDate = todayISO();
   sharedCalendarFilter = "all";
-  const total = sessions.length + runSessions.length + swimSessions.length + bikeSessions.length;
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.calendarBig}</div>
-      <div class="header-sub">${total} séance${total !== 1 ? "s" : ""} au total · vue d'ensemble</div>
+    <div class="header header-plain-title">
+      <div class="screen-title">Calendrier</div>
+      <div class="header-sub screen-subtitle" id="cal-header-sub"></div>
     </div>
-    <div class="content" id="content" style="padding-bottom: 24px;"></div>
+    <div class="content" id="content" style="padding-bottom: calc(93px + env(safe-area-inset-bottom));"></div>
+    ${bottomNavHTML("calendar")}
   `;
-  document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  attachBottomNavListeners();
   renderSharedCalendarContent();
 }
 
@@ -91,7 +90,7 @@ function sharedSessionPreviewHTML(s, type) {
   const label = meta.label;
   const toggleKey = `${type}:${s.id}`;
   const open = !!openSharedCalendarIds[toggleKey];
-  let detail, metaCount, statsLine;
+  let detail, metaCount, valueHTML, subtitleExtra;
 
   if (type === "gym" || type === "gainage") {
     detail = s.exercises
@@ -107,11 +106,12 @@ function sharedSessionPreviewHTML(s, type) {
     </div>`
       )
       .join("");
-    metaCount = `${getSessionDurationSeconds(s) != null ? formatLiveDuration(getSessionDurationSeconds(s)) + " · " : ""}${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}`;
-    statsLine = "";
+    metaCount = `${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}`;
+    valueHTML = "";
+    subtitleExtra = "";
   } else {
     const formatSummary = type === "run" ? formatBlockSummary : type === "swim" ? formatSwimBlockSummary : formatBikeBlockSummary;
-    const formatTotals = type === "run" ? formatSessionTotalsLine : type === "swim" ? formatSwimSessionTotalsLine : formatBikeSessionTotalsLine;
+    const totals = type === "run" ? computeSessionTotals(s.blocks) : type === "swim" ? computeSwimSessionTotals(s.blocks) : computeBikeSessionTotals(s.blocks);
     detail = s.blocks
       .map(
         (b) => `
@@ -122,19 +122,22 @@ function sharedSessionPreviewHTML(s, type) {
       )
       .join("");
     metaCount = `${s.blocks.length} bloc${s.blocks.length !== 1 ? "s" : ""}`;
-    statsLine = `<div class="history-run-stats" style="color:${color};">${formatTotals(s.blocks)}</div>`;
+    if (type === "run") { valueHTML = totals.km > 0 ? `${Math.round(totals.km * 10) / 10} km` : "0 km"; subtitleExtra = totals.pace ? ` · ${formatPaceDisplay(String(totals.pace))}` : ""; }
+    else if (type === "swim") { valueHTML = totals.m > 0 ? `${Math.round(totals.m)} m` : "0 m"; subtitleExtra = totals.pace ? ` · ${formatSwimPaceDisplay(String(totals.pace)) || ""}` : ""; }
+    else { valueHTML = totals.km > 0 ? `${Math.round(totals.km * 10) / 10} km` : "0 km"; subtitleExtra = totals.speed ? ` · ${Math.round(totals.speed * 10) / 10} km/h` : ""; }
   }
+  const activityIcon = { gym: ICONS.dumbbell, gainage: ICONS.dumbbell, run: ICONS.stopwatch, swim: ICONS.swim, bike: ICONS.bike }[type];
 
   const cardHTML = `
   <div class="history-card" style="border-color: rgba(${rgb},0.35);">
     <div class="history-head" data-shared-toggle="${toggleKey}">
+      <div class="history-row-icon" style="background:rgba(${rgb},0.16); color:${color};">${activityIcon}</div>
       <div class="history-head-left">
-        <div class="history-date">${formatDateFR(s.date)}<span class="source-badge" style="color:${color}; background: rgba(${rgb},0.15);">${label}</span></div>
-        ${s.label ? `<div class="history-label" style="color:${color};">${s.label}</div>` : ""}
-        ${statsLine}
+        <div class="history-date">${s.label || formatDateFR(s.date)}</div>
+        <div class="history-label">${label} · ${metaCount}${subtitleExtra}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="history-meta">${metaCount}</div>
+        ${valueHTML ? `<div class="history-meta">${valueHTML}</div>` : ""}
         <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
       </div>
     </div>
@@ -161,7 +164,8 @@ function sharedCalendarViewHTML() {
   const firstOfMonth = new Date(y, m - 1, 1);
   const startDow = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(y, m, 0).getDate();
-  const monthLabel = firstOfMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const monthLabelRaw = firstOfMonth.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const monthLabel = monthLabelRaw.charAt(0).toUpperCase() + monthLabelRaw.slice(1);
   // Remplace les calendriers individuels retirés de chaque module de sport —
   // "gym" inclut aussi "gainage" (même module "Salle de sport"), les autres
   // filtres correspondent chacun à un seul module.
@@ -174,7 +178,7 @@ function sharedCalendarViewHTML() {
     { key: "bike", label: "Vélo" },
   ];
   const filterHTML = `
-    <div class="ex-type-toggle wrap-toggle" style="margin-bottom:16px;">
+    <div class="ex-type-toggle scroll-toggle" style="margin-bottom:16px;">
       ${filterOptions.map((f) => `<button type="button" class="ex-type-btn ${sharedCalendarFilter === f.key ? "active" : ""}" data-shared-cal-filter="${f.key}">${f.label}</button>`).join("")}
     </div>`;
   const dateSets = {};
@@ -210,26 +214,30 @@ function sharedCalendarViewHTML() {
       list: getActivitySessions(a.key).filter((s) => s.date === sharedSelectedDate),
     }));
     const anyData = perType.some((t) => t.list.length > 0);
+    const isToday = sharedSelectedDate === today;
+    const fullDateRaw = new Date(sharedSelectedDate + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+    const titleText = isToday ? "Aujourd'hui" : fullDateRaw.charAt(0).toUpperCase() + fullDateRaw.slice(1);
+    selectedHTML = `<div class="home-section-label" style="margin-top:20px;">${titleText}</div>`;
     if (!anyData) {
-      selectedHTML = `<div class="empty-state" style="padding: 30px 20px;">Aucune activité effectuée ce jour-là.</div>`;
+      selectedHTML += `<div class="cal-empty-card">Aucune séance</div><div class="cal-empty-hint">Touche un jour pour voir ses séances.</div>`;
     } else {
-      selectedHTML =
-        `<div class="cal-selected-label">${formatDateFR(sharedSelectedDate)}</div>` +
-        perType.map((t) => t.list.map((s) => sharedSessionPreviewHTML(s, t.key)).join("")).join("");
+      selectedHTML += perType.map((t) => t.list.map((s) => sharedSessionPreviewHTML(s, t.key)).join("")).join("");
     }
   }
 
   return `
     ${filterHTML}
-    <div class="cal-header">
-      <button type="button" class="cal-nav-btn" data-shared-cal-prev>${ICONS.back}</button>
-      <div class="cal-month-label">${monthLabel}</div>
-      <button type="button" class="cal-nav-btn" data-shared-cal-next>${ICONS.chevronRight}</button>
-    </div>
-    <div class="cal-weekdays"><div>Lu</div><div>Ma</div><div>Me</div><div>Je</div><div>Ve</div><div>Sa</div><div>Di</div></div>
-    <div class="cal-grid">${cells.join("")}</div>
-    <div class="cal-legend">
-      ${activeMeta.map((a) => `<span><span class="cal-dot-mini" style="background:${a.color};"></span> ${a.label}</span>`).join("")}
+    <div class="cal-card">
+      <div class="cal-header">
+        <button type="button" class="cal-nav-btn" data-shared-cal-prev>${ICONS.back}</button>
+        <div class="cal-month-label">${monthLabel}</div>
+        <button type="button" class="cal-nav-btn" data-shared-cal-next>${ICONS.chevronRight}</button>
+      </div>
+      <div class="cal-weekdays"><div>Lu</div><div>Ma</div><div>Me</div><div>Je</div><div>Ve</div><div>Sa</div><div>Di</div></div>
+      <div class="cal-grid">${cells.join("")}</div>
+      <div class="cal-legend">
+        ${activeMeta.map((a) => `<span><span class="cal-dot-mini" style="background:${a.color};"></span> ${a.label}</span>`).join("")}
+      </div>
     </div>
     ${selectedHTML}
   `;
@@ -238,6 +246,9 @@ function sharedCalendarViewHTML() {
 function renderSharedCalendarContent() {
   document.getElementById("content").innerHTML = sharedCalendarViewHTML();
   attachSharedCalendarListeners();
+  const monthCount = ACTIVITY_META.reduce((sum, a) => sum + getActivitySessions(a.key).filter((s) => s.date.slice(0, 7) === sharedCalendarMonth).length, 0);
+  const subEl = document.getElementById("cal-header-sub");
+  if (subEl) subEl.textContent = `${monthCount} séance${monthCount !== 1 ? "s" : ""} ce mois-ci`;
 }
 
 function deleteSharedActivity(swipeId, cardEl) {

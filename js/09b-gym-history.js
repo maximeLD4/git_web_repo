@@ -44,12 +44,12 @@ function sessionCardHTML(s) {
   const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-toggle="${s.id}">
+      <div class="history-row-icon">${ICONS.dumbbell}</div>
       <div class="history-head-left">
-        <div class="history-date">${formatDateFR(s.date)}</div>
-        ${s.label ? `<div class="history-label">${s.label}</div>` : ""}
+        <div class="history-date">${s.label || formatDateFR(s.date)}</div>
+        <div class="history-label">${formatDateFR(s.date)} · ${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}${durationLabel ? " · " + durationLabel.replace(" · ", "") : ""}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="history-meta">${durationLabel}${s.exercises.length} exo${s.exercises.length !== 1 ? "s" : ""}</div>
         <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
       </div>
     </div>

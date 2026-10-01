@@ -7,57 +7,58 @@ function categoryLabel(key) {
 function renderSettingsApp() {
   app.className = "theme-settings";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-go-home>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.gear}</div>
-      <div class="header-sub">${currentUser && currentUser.email ? currentUser.email : "Personnalise chaque section"}</div>
+    <div class="header header-plain-title">
+      <div class="screen-title">Réglages</div>
     </div>
-    <div class="content" id="content"></div>
-    <div style="position:fixed; left:0; right:0; bottom:calc(16px + env(safe-area-inset-bottom)); display:flex; justify-content:center;">
+    <div class="content" id="content" style="padding-bottom: calc(93px + env(safe-area-inset-bottom));"></div>
+    <div style="position:fixed; left:0; right:0; bottom:calc(93px + env(safe-area-inset-bottom)); display:flex; justify-content:center;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
     </div>
-    <div id="app-version-label" style="position:fixed; right:14px; bottom:calc(10px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">${appVersion ? "v" + appVersion : ""}</div>
+    <div id="app-version-label" style="position:fixed; right:14px; bottom:calc(103px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">${appVersion ? "v" + appVersion : ""}</div>
+    ${bottomNavHTML("settings")}
   `;
-  document.querySelector("[data-go-home]").addEventListener("click", goHome);
+  attachBottomNavListeners();
   document.getElementById("logout-btn").addEventListener("click", () => {
-    showConfirm("Te déconnecter ?", logoutUser, { confirmLabel: "Se déconnecter", danger: true });
+    showConfirm("Te déconnecter ?", logoutUser, { confirmLabel: "Se déconnecter", danger: true, detail: "Tes données restent sauvegardées dans ton profil." });
   });
   renderSettingsContent();
 }
 
 function renderSettingsContent() {
+  const initial = currentUser && currentUser.email ? currentUser.email.charAt(0).toUpperCase() : "?";
   document.getElementById("content").innerHTML = `
-    <div class="home-card" data-open-settings="gym">
-      <div class="home-card-icon" style="background: rgba(var(--rgb-gym), 0.14); color: rgb(var(--rgb-gym));">${ICONS.dumbbell}</div>
-      <div class="home-card-text">
-        <div class="home-card-title">Salle de sport</div>
-        <div class="home-card-sub">${gymExerciseConfigs.length + gainageExerciseConfigs.length} exercice${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""} configuré${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""}</div>
+    <div class="settings-profile-card">
+      <div class="settings-profile-avatar">${initial}</div>
+      <div>
+        <div class="settings-profile-title">Mon profil</div>
+        <div class="settings-profile-sub">${currentUser && currentUser.email ? currentUser.email : ""}</div>
       </div>
-      <div class="home-card-arrow">${ICONS.chevronRight}</div>
     </div>
-    <div class="home-card" data-open-settings="appearance">
-      <div class="home-card-icon" style="background: rgba(var(--ink-rgb), 0.08); color: var(--ink);">${ICONS.sun}</div>
-      <div class="home-card-text">
-        <div class="home-card-title">Apparence</div>
-        <div class="home-card-sub">${colorMode === "day" ? "Jour" : colorMode === "night" ? "Nuit" : "Anne"}</div>
+    <div class="home-list" style="margin-top:14px;">
+      <div class="home-list-row" data-open-settings="gym">
+        <div class="home-list-icon home-list-icon-square" style="background: rgb(var(--rgb-gym));">${ICONS.dumbbell}</div>
+        <div class="home-list-label">Exercices</div>
+        <div class="home-list-value">${gymExerciseConfigs.length + gainageExerciseConfigs.length} configuré${gymExerciseConfigs.length + gainageExerciseConfigs.length !== 1 ? "s" : ""}</div>
+        <div class="home-list-chevron">${ICONS.chevronRight}</div>
       </div>
-      <div class="home-card-arrow">${ICONS.chevronRight}</div>
-    </div>
-    <div class="home-card" data-open-settings="sound">
-      <div class="home-card-icon" style="background: rgba(var(--ink-rgb), 0.08); color: var(--ink);">${ICONS.volume}</div>
-      <div class="home-card-text">
-        <div class="home-card-title">Son</div>
-        <div class="home-card-sub">Volume des bips à ${soundVolume}%</div>
+      <div class="home-list-row" data-open-settings="appearance">
+        <div class="home-list-icon home-list-icon-square" style="background: var(--yellow);">${ICONS.sun}</div>
+        <div class="home-list-label">Apparence</div>
+        <div class="home-list-value">${colorMode === "day" ? "Jour" : colorMode === "night" ? "Nuit" : "Anne"}</div>
+        <div class="home-list-chevron">${ICONS.chevronRight}</div>
       </div>
-      <div class="home-card-arrow">${ICONS.chevronRight}</div>
-    </div>
-    <div class="home-card" data-open-settings="backup">
-      <div class="home-card-icon" style="background: rgba(var(--ink-rgb), 0.08); color: var(--ink);">${ICONS.up}</div>
-      <div class="home-card-text">
-        <div class="home-card-title">Sauvegarde</div>
-        <div class="home-card-sub">Exporter / importer toutes tes données</div>
+      <div class="home-list-row" data-open-settings="sound">
+        <div class="home-list-icon home-list-icon-square" style="background: rgb(var(--rgb-swim));">${ICONS.volume}</div>
+        <div class="home-list-label">Son</div>
+        <div class="home-list-value">${soundVolume}%</div>
+        <div class="home-list-chevron">${ICONS.chevronRight}</div>
       </div>
-      <div class="home-card-arrow">${ICONS.chevronRight}</div>
+      <div class="home-list-row" data-open-settings="backup">
+        <div class="home-list-icon home-list-icon-square" style="background: var(--ink); color: var(--on-ink);">${ICONS.up}</div>
+        <div class="home-list-label">Sauvegarde</div>
+        <div class="home-list-value"></div>
+        <div class="home-list-chevron">${ICONS.chevronRight}</div>
+      </div>
     </div>
   `;
   document.querySelectorAll("[data-open-settings]").forEach((card) => {
@@ -73,17 +74,30 @@ function renderSettingsContent() {
 function renderSettingsAppearanceApp() {
   app.className = "theme-settings";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.sun}</div>
-      <div class="header-sub">Apparence</div>
+    <div class="header header-plain-title">
+      <button type="button" class="back-btn-text" data-back-settings>${ICONS.back} Réglages</button>
+      <div class="screen-title">Apparence</div>
     </div>
     <div class="content" id="content">
-      <div class="ex-type-toggle" style="margin-bottom: 12px;">
-        <button type="button" class="ex-type-btn ${colorMode === "day" ? "active" : ""}" data-color-mode="day">${ICONS.sun} Jour</button>
-        <button type="button" class="ex-type-btn ${colorMode === "night" ? "active" : ""}" data-color-mode="night">${ICONS.moon} Nuit</button>
-        <button type="button" class="ex-type-btn ${colorMode === "anne" ? "active" : ""}" data-color-mode="anne">${ICONS.heart} Anne</button>
+      <div class="home-section-label" style="margin-top:0;">Mode</div>
+      <div class="home-list">
+        <div class="home-list-row" data-color-mode="day">
+          <div class="home-list-icon home-list-icon-square" style="background: var(--yellow);">${ICONS.sun}</div>
+          <div class="home-list-label">Jour</div>
+          ${colorMode === "day" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
+        </div>
+        <div class="home-list-row" data-color-mode="night">
+          <div class="home-list-icon home-list-icon-square" style="background: #241E1A;">${ICONS.moon}</div>
+          <div class="home-list-label">Nuit</div>
+          ${colorMode === "night" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
+        </div>
+        <div class="home-list-row" data-color-mode="anne">
+          <div class="home-list-icon home-list-icon-square" style="background: #9E0B2E;">${ICONS.heart}</div>
+          <div class="home-list-label">Anne</div>
+          ${colorMode === "anne" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
+        </div>
       </div>
+      <div class="field-hint">Nuit adoucit l'écran le soir. Anne passe l'app dans une palette rose.</div>
     </div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
@@ -108,20 +122,23 @@ function renderSettingsAppearanceApp() {
 function renderSettingsSoundApp() {
   app.className = "theme-settings";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.volume}</div>
-      <div class="header-sub">Son</div>
+    <div class="header header-plain-title">
+      <button type="button" class="back-btn-text" data-back-settings>${ICONS.back} Réglages</button>
+      <div class="screen-title">Son</div>
     </div>
     <div class="content" id="content">
-      <div class="field" style="margin-bottom: 20px;">
-        <label>Volume des bips (Séance en direct) — ${soundVolume}%</label>
-        <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
-          <input type="range" id="sound-volume-slider" min="0" max="150" step="10" value="${soundVolume}" style="flex:1;">
-          <button type="button" class="icon-btn" id="test-sound-btn" aria-label="Tester le son">${ICONS.volume}</button>
+      <div class="home-section-label" style="margin-top:0;">Bips de la séance en direct</div>
+      <div class="sound-card">
+        <div class="sound-slider-row">
+          ${ICONS.volume}
+          <input type="range" id="sound-volume-slider" min="0" max="150" step="10" value="${soundVolume}">
+          <span class="sound-percent" id="sound-percent">${soundVolume} %</span>
         </div>
-        <div class="backup-note" style="margin-top:8px;">Au-delà de 100%, plus fort que le volume d'origine — utile si de la musique dans les oreilles couvre le bip par défaut.</div>
+        <button type="button" class="sound-test-btn" id="test-sound-btn">
+          <span class="sound-test-icon">${ICONS.volume}</span> Tester le son
+        </button>
       </div>
+      <div class="field-hint">Au-delà de 100 %, le bip est plus fort que le volume d'origine : utile si la musique dans tes oreilles le couvre.</div>
     </div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
@@ -135,10 +152,10 @@ function renderSettingsSoundApp() {
   const soundSlider = document.getElementById("sound-volume-slider");
   const testSoundBtn = document.getElementById("test-sound-btn");
   if (soundSlider) {
-    const label = soundSlider.closest(".field")?.querySelector("label");
+    const percentEl = document.getElementById("sound-percent");
     soundSlider.addEventListener("input", () => {
       soundVolume = parseInt(soundSlider.value, 10);
-      if (label) label.textContent = `Volume des bips (Séance en direct) — ${soundVolume}%`;
+      if (percentEl) percentEl.textContent = `${soundVolume} %`;
     });
     soundSlider.addEventListener("change", () => {
       saveJSON(KEYS.soundVolume, soundVolume);
@@ -156,19 +173,36 @@ function renderSettingsSoundApp() {
 function renderSettingsBackupApp() {
   app.className = "theme-settings";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.up}</div>
-      <div class="header-sub">Sauvegarde</div>
+    <div class="header header-plain-title">
+      <button type="button" class="back-btn-text" data-back-settings>${ICONS.back} Réglages</button>
+      <div class="screen-title">Sauvegarde</div>
     </div>
     <div class="content" id="content">
-      <div class="backup-row">
-        <button class="backup-btn" id="export-btn">${ICONS.up} Exporter</button>
-        <button class="backup-btn" id="import-btn">${ICONS.down} Importer</button>
-        <input type="file" id="import-file" accept="application/json" style="display:none">
+      <div class="home-list">
+        <div class="home-list-row" id="export-btn">
+          <div class="home-list-icon home-list-icon-square" style="background: rgb(var(--rgb-gym));">${ICONS.up}</div>
+          <div class="home-list-label">Exporter mes données</div>
+          <div class="home-list-chevron">${ICONS.chevronRight}</div>
+        </div>
+        <div class="home-list-row" id="import-btn">
+          <div class="home-list-icon home-list-icon-square" style="background: var(--ink); color: var(--on-ink);">${ICONS.down}</div>
+          <div class="home-list-label">Importer une sauvegarde</div>
+          <div class="home-list-chevron">${ICONS.chevronRight}</div>
+        </div>
       </div>
-      <div class="sync-status">Dernier export : ${formatRelativeTime(loadJSON(KEYS.lastExport, null))} · Dernier import : ${formatRelativeTime(loadJSON(KEYS.lastImport, null))}</div>
-      <div class="backup-note">Cette sauvegarde inclut toutes tes activités (muscu, course, natation, vélo), tes plans préparés et tes exercices configurés — un seul fichier pour tout ton historique. Pour le retrouver sur un autre appareil : exporte ici, envoie-toi le fichier (AirDrop, mail, cloud…), puis importe-le là-bas.</div>
+      <input type="file" id="import-file" accept="application/json" style="display:none">
+      <div class="field-hint">La sauvegarde contient toutes tes activités, tes plans et tes exercices configurés, dans un seul fichier. Pour retrouver ton historique sur un autre appareil, exporte-le ici puis importe-le là-bas.</div>
+      <div class="home-section-label" style="margin-top:22px;">Historique</div>
+      <div class="home-list">
+        <div class="home-list-row">
+          <div class="home-list-label">Dernier export</div>
+          <div class="home-list-value">${formatRelativeTime(loadJSON(KEYS.lastExport, null))}</div>
+        </div>
+        <div class="home-list-row">
+          <div class="home-list-label">Dernier import</div>
+          <div class="home-list-value">${formatRelativeTime(loadJSON(KEYS.lastImport, null))}</div>
+        </div>
+      </div>
     </div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
@@ -237,9 +271,10 @@ function gymSettingsListHTML() {
       const cardHTML = `
       <div class="history-card">
         <div class="history-head" data-edit-config="${c.id}" style="cursor:pointer;">
+          <div class="history-row-icon">${ICONS.dumbbell}</div>
           <div class="history-head-left">
             <div class="exercise-config-name">${c.name}</div>
-            <div class="history-label">${bases ? bases + " kg" : "Aucun palier"}${incLabel}${autoIncLabel}</div>
+            <div class="history-label">${categoryLabel(c.category)} · ${bases ? bases + " kg" : "Aucun palier"}${incLabel}${autoIncLabel}</div>
           </div>
           <button type="button" class="icon-btn" data-duplicate-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
         </div>
@@ -272,55 +307,60 @@ function gymSettingsFormHTML() {
     .join("");
   return `
     <div class="exercise-card" style="padding: 16px 14px 16px 19px;">
-      <div class="field" style="margin-bottom:14px;">
-        <label>Catégorie</label>
-        <div class="ex-type-toggle wrap-toggle" id="config-category-toggle">
-          ${GYM_EXERCISE_CATEGORIES.map(
-            (t) => `<button type="button" class="ex-type-btn ${gymSettingsFormDraft.category === t.key ? "active" : ""}" data-form-category="${t.key}">${t.label}</button>`
-          ).join("")}
+      <div class="home-section-label" style="margin-top:0;">Exercice</div>
+      <div class="field-list-card">
+        <label class="field-list-row" for="config-name-input">
+          <span>Nom</span>
+          <input type="text" id="config-name-input" placeholder="Ex. Leg press, Développé couché…" value="${(gymSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
+        </label>
+      </div>
+      <div class="ex-type-toggle wrap-toggle" id="config-category-toggle" style="margin-bottom:18px;">
+        ${GYM_EXERCISE_CATEGORIES.map(
+          (t) => `<button type="button" class="ex-type-btn ${gymSettingsFormDraft.category === t.key ? "active" : ""}" data-form-category="${t.key}">${t.label}</button>`
+        ).join("")}
+      </div>
+
+      ${suggestionsHTML ? `<div class="home-section-label" style="margin-top:0;">Suggestions</div><div class="weight-chip-row" id="config-suggestions-row" style="margin-bottom:18px;">${suggestionsHTML}</div>` : ""}
+
+      <div class="home-section-label" style="margin-top:0;">Poids possibles</div>
+      <div class="field-list-card">
+        <div class="weight-chip-row" id="config-base-weights-row" style="padding:14px 14px 10px;">${chips}</div>
+        <div class="field-list-row">
+          <input type="text" inputmode="decimal" id="config-new-base-weight" placeholder="Ajouter un poids (kg)" style="border:none; background:none; outline:none; flex:1; font-family:var(--font); font-size:15px; color:var(--text);">
+          <button type="button" class="save-btn" id="config-add-base-weight-btn" style="margin:0; width:auto; padding:9px 16px; font-size:14px; flex:none;">Ajouter</button>
+        </div>
+        <div class="field-list-row" id="config-scan-weights-btn" style="cursor:pointer;">
+          <div class="home-list-icon home-list-icon-square" style="background:var(--ink); color:var(--on-ink); flex-shrink:0;">${ICONS.camera}</div>
+          <span style="flex:1;">Scanner depuis une photo</span>
+          <div class="home-list-chevron">${ICONS.chevronRight}</div>
         </div>
       </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label>Suggestions (tape sur un nom pour le préremplir)</label>
-        <div class="weight-chip-row" id="config-suggestions-row">${suggestionsHTML}</div>
-      </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label>Nom de l'exercice / machine</label>
-        <input type="text" id="config-name-input" placeholder="Ex. Leg press, Développé couché…" value="${(gymSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
-      </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label>Poids possibles (paliers de la machine)</label>
-        <div class="weight-chip-row" id="config-base-weights-row">${chips}</div>
-        <button type="button" class="backup-btn" id="config-scan-weights-btn" style="margin-top:8px;">${ICONS.camera} Scanner les poids depuis une photo</button>
-        <div class="inline-add-row" style="margin-top:8px;">
-          <input type="text" inputmode="decimal" id="config-new-base-weight" placeholder="Ex. 20">
-          <button type="button" class="add-exercise-btn" id="config-add-base-weight-btn" style="margin:0;">${ICONS.plus} Ajouter</button>
-        </div>
-      </div>
-      <div class="field" style="margin-bottom:14px;">
-        <div class="toggle-switch-row-compact">
-          <div class="field-label-row">
-            <label style="margin-bottom:0;">Incrément automatique</label>
-            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.autoIncrement ? "active" : ""}" data-field-help="autoIncrement">?</button>
-          </div>
+      <div class="field-hint">Les paliers de poids de la machine.</div>
+
+      <div class="home-section-label" style="margin-top:22px;">Incrément</div>
+      <div class="field-list-card">
+        <div class="field-list-row">
+          <span style="flex:1;">Incrément automatique</span>
           <button type="button" class="toggle-switch ${gymSettingsFormDraft.autoIncrement ? "on" : ""}" id="config-auto-increment-toggle" role="switch" aria-checked="${gymSettingsFormDraft.autoIncrement ? "true" : "false"}">
             <span class="toggle-switch-knob"></span>
           </button>
         </div>
-        ${gymSettingsHelpOpen.autoIncrement ? `<div class="field-help-text">Passe automatiquement au palier de poids supérieur d'une série à l'autre en Séance en direct. Laisse sur off si tu préfères refaire plusieurs séries au même poids.</div>` : ""}
-      </div>
-      <div class="field" style="margin-bottom:6px;">
-        <div class="field-label-row" style="margin-bottom:5px;">
-          <label style="margin-bottom:0;">Incrément possible (kg)</label>
-          <button type="button" class="field-help-btn ${gymSettingsHelpOpen.maxIncrement ? "active" : ""}" data-field-help="maxIncrement">?</button>
+        <div class="field-list-row">
+          <span style="flex:1;">Incrément possible</span>
+          <span style="color:var(--text-dim); margin-right:10px;">${gymSettingsFormDraft.maxIncrement || 0} kg</span>
+          <div class="rep-stepper" style="flex:none;">
+            <button type="button" class="rep-step-btn" id="config-max-increment-minus" aria-label="Moins">−</button>
+            <button type="button" class="rep-step-btn" id="config-max-increment-plus" aria-label="Plus">+</button>
+          </div>
         </div>
-        <input type="text" inputmode="decimal" min="0" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}">
-        ${gymSettingsHelpOpen.maxIncrement ? `<div class="field-help-text">Poids fixe qu'on peut ajouter manuellement sur cette machine (ex. 5). Sur chaque palier, le choix sera alors +0 ou +5kg — jamais une valeur intermédiaire. Mets 0 si la machine n'a pas cette option.</div>` : ""}
       </div>
-      <div class="field" style="margin-bottom:14px;">
-        <div class="toggle-switch-row-compact">
-          <div class="field-label-row">
-            <label style="margin-bottom:0;">Travail unilatéral</label>
+      <div class="field-hint">Poids fixe qu'on peut ajouter à la main sur la machine. Sur chaque palier, le choix sera +0 ou +${gymSettingsFormDraft.maxIncrement || 0}kg.</div>
+
+      <div class="home-section-label" style="margin-top:22px;">Options avancées</div>
+      <div class="field-list-card">
+        <div class="field-list-row">
+          <div class="field-label-row" style="flex:1; margin-bottom:0;">
+            <span>Travail unilatéral</span>
             <button type="button" class="field-help-btn ${gymSettingsHelpOpen.unilateral ? "active" : ""}" data-field-help="unilateral">?</button>
           </div>
           <button type="button" class="toggle-switch ${gymSettingsFormDraft.unilateral ? "on" : ""}" id="config-unilateral-toggle" role="switch" aria-checked="${gymSettingsFormDraft.unilateral ? "true" : "false"}">
@@ -328,24 +368,25 @@ function gymSettingsFormHTML() {
           </button>
         </div>
         ${gymSettingsHelpOpen.unilateral ? `<div class="field-help-text">Propose, en Séance en direct, de choisir Gauche/Droite/Les deux avant chaque série — pour les exercices qu'on peut faire un côté à la fois (ex. mollets, ischios).</div>` : ""}
-      </div>
-      <div class="field" style="margin-bottom:6px;">
-        <div class="field-label-row" style="margin-bottom:5px;">
-          <label style="margin-bottom:0;">Alterner avec (optionnel)</label>
-          <button type="button" class="field-help-btn ${gymSettingsHelpOpen.paired ? "active" : ""}" data-field-help="paired">?</button>
-        </div>
-        <select class="field-select" id="config-paired-exercise-select">
-          <option value="">Aucun</option>
-          ${gymExerciseConfigs
-            .filter((c) => c.id !== gymSettingsEditingConfigId)
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((c) => `<option value="${c.id}" ${gymSettingsFormDraft.pairedExerciseId === c.id ? "selected" : ""}>${c.name}</option>`)
-            .join("")}
-        </select>
+        <label class="field-list-row" for="config-paired-exercise-select">
+          <div class="field-label-row" style="flex:1; margin-bottom:0;">
+            <span>Alterner avec</span>
+            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.paired ? "active" : ""}" data-field-help="paired">?</button>
+          </div>
+          <select class="field-select" id="config-paired-exercise-select" style="text-align:right;">
+            <option value="">Aucun</option>
+            ${gymExerciseConfigs
+              .filter((c) => c.id !== gymSettingsEditingConfigId)
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((c) => `<option value="${c.id}" ${gymSettingsFormDraft.pairedExerciseId === c.id ? "selected" : ""}>${c.name}</option>`)
+              .join("")}
+          </select>
+        </label>
         ${gymSettingsHelpOpen.paired ? `<div class="field-help-text">Pour une paire sur la même machine (ex. Abducteurs/Adducteurs) : un bouton de bascule rapide apparaît alors en Séance en direct pour passer de l'un à l'autre sans repasser par la liste. Le lien fonctionne dans les deux sens.</div>` : ""}
       </div>
+
       <div id="config-form-error"></div>
-      <button class="save-btn" id="save-config-btn">${ICONS.check} Enregistrer</button>
+      <button class="save-btn" id="save-config-btn" style="margin-top:20px;">${ICONS.check} Enregistrer</button>
       <button class="backup-btn" id="cancel-config-btn" style="margin-top:10px;">Annuler</button>
     </div>
   `;
@@ -381,10 +422,10 @@ function returnFromSettingsToGymCreateIfNeeded() {
 function renderGymSettingsApp() {
   app.className = "theme-gym";
   app.innerHTML = `
-    <div class="header">
-      <button type="button" class="back-btn" data-back-settings>${ICONS.back}</button>
-      <div class="header-icon-only">${ICONS.dumbbell}</div>
-      <div class="header-sub">Exercices préconfigurés</div>
+    <div class="header header-plain-title">
+      <button type="button" class="back-btn-text" data-back-settings>${ICONS.back} Réglages</button>
+      <div class="screen-title">Exercices</div>
+      <div class="header-sub screen-subtitle">Préconfigurés pour la séance en direct</div>
     </div>
     <div class="content" id="content"></div>
     <div class="log-actions-bar" id="settings-actions-bar" style="display:none; bottom:0; padding-bottom: calc(12px + env(safe-area-inset-bottom));"></div>
@@ -437,8 +478,8 @@ function renderGymSettingsContent() {
       actionsBar.style.display = "";
       actionsBar.innerHTML =
         gymSettingsMode === "gainage"
-          ? `<button class="add-exercise-btn" id="add-gainage-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice de gainage</button>`
-          : `<button class="add-exercise-btn" id="add-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice</button>`;
+          ? `<button class="add-exercise-btn add-exercise-btn-plain" id="add-gainage-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice de gainage</button>`
+          : `<button class="add-exercise-btn add-exercise-btn-plain" id="add-config-btn" style="margin:0;">${ICONS.plus} Ajouter un exercice</button>`;
     }
     // Sur une liste courte ET une fenêtre basse (petit écran, fenêtre PC
     // redimensionnée...), le contenu peut tenir en entier sans le moindre
@@ -476,8 +517,10 @@ function gainageSettingsListHTML() {
           `
       <div class="history-card">
         <div class="history-head" data-edit-gainage-config="${c.id}" style="cursor:pointer;">
+          <div class="history-row-icon">${ICONS.stopwatch}</div>
           <div class="history-head-left">
             <div class="exercise-config-name">${c.name}</div>
+            <div class="history-label">${c.rounds || 10} tours · ${c.workSec || 30} s de travail · ${c.restSec ?? 30} s de repos</div>
           </div>
           <button type="button" class="icon-btn" data-duplicate-gainage-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
         </div>
@@ -647,12 +690,10 @@ function attachGymSettingsListeners() {
   if (!gymSettingsFormOpen) return;
 
   const nameInput = document.getElementById("config-name-input");
-  const incInput = document.getElementById("config-max-increment");
   const newWeightInput = document.getElementById("config-new-base-weight");
 
   function syncFormFromInputs() {
     gymSettingsFormDraft.name = nameInput.value;
-    gymSettingsFormDraft.maxIncrement = parseFloat(incInput.value) || 0;
   }
 
   document.querySelectorAll("[data-form-category]").forEach((btn) => {
@@ -680,6 +721,16 @@ function attachGymSettingsListeners() {
   document.getElementById("config-auto-increment-toggle").addEventListener("click", () => {
     syncFormFromInputs();
     gymSettingsFormDraft.autoIncrement = !gymSettingsFormDraft.autoIncrement;
+    renderGymSettingsContent();
+  });
+  document.getElementById("config-max-increment-minus").addEventListener("click", () => {
+    syncFormFromInputs();
+    gymSettingsFormDraft.maxIncrement = Math.max(0, round2((gymSettingsFormDraft.maxIncrement || 0) - 2.5));
+    renderGymSettingsContent();
+  });
+  document.getElementById("config-max-increment-plus").addEventListener("click", () => {
+    syncFormFromInputs();
+    gymSettingsFormDraft.maxIncrement = round2((gymSettingsFormDraft.maxIncrement || 0) + 2.5);
     renderGymSettingsContent();
   });
   document.getElementById("config-unilateral-toggle").addEventListener("click", () => {

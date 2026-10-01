@@ -11,16 +11,19 @@ function runSessionCardHTML(s) {
   </div>`
     )
     .join("");
+  const t = computeSessionTotals(s.blocks);
+  const kmPart = t.km > 0 ? `${Math.round(t.km * 10) / 10} km` : "0 km";
+  const pacePart = t.pace ? formatPaceDisplay(String(t.pace)) : "—";
   const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-run-toggle="${s.id}">
+      <div class="history-row-icon">${ICONS.stopwatch}</div>
       <div class="history-head-left">
-        <div class="history-date">${formatDateFR(s.date)}</div>
-        ${s.label ? `<div class="history-label">${s.label}</div>` : ""}
-        <div class="history-run-stats">${formatSessionTotalsLine(s.blocks)}</div>
+        <div class="history-date">${s.label || formatDateFR(s.date)}</div>
+        <div class="history-label">${formatDateFR(s.date)} · ${pacePart}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="history-meta">${s.blocks.length} bloc${s.blocks.length !== 1 ? "s" : ""}</div>
+        <div class="history-meta">${kmPart}</div>
         <span class="chev ${open ? "open" : ""}">${ICONS.chevron}</span>
       </div>
     </div>

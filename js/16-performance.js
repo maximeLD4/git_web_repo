@@ -108,11 +108,25 @@ function getExerciseHistory(exerciseName) {
         const sideFactor = s.side === "left" || s.side === "right" ? 0.5 : 1;
         return sum + setVolume * sideFactor;
       }, 0);
-      // Indice de performance : volume total (poids × reps sommé sur toutes
-      // les séries), avec un petit bonus de +5% par série au-delà de la
-      // première — reconnaît que répartir l'effort sur plusieurs séries
-      // représente généralement plus de travail réel, sans dominer le score.
-      const index = Math.round(volume * (1 + 0.05 * (validSets.length - 1)));
+      // Indice de performance : le 1RM estimé (formule d'Epley : poids ×
+      // (1 + reps/30)) de la meilleure série de la séance, avec le même
+      // petit bonus de +5% par série au-delà de la première.
+      // Remplace l'ancien calcul par volume pur (poids × reps sommé) :
+      // celui-ci faisait paraître une charge plus lourde pour moins de
+      // répétitions comme un RECUL alors que c'est souvent un vrai progrès
+      // (ex. passer de 60kg×10 à 70kg×5 est une progression de force, pas
+      // une régression) — un défaut classique des indices basés sur le
+      // seul volume, corrigé ici en retenue directement la charge que la
+      // série laisse deviner pour une répétition unique.
+      const bestE1RM = Math.max(
+        ...validSets.map((s) => {
+          const w = parseFloat(s.weight);
+          const r = parseFloat(s.reps);
+          const sideFactor = s.side === "left" || s.side === "right" ? 0.5 : 1;
+          return w * (1 + r / 30) * sideFactor;
+        })
+      );
+      const index = Math.round(bestE1RM * (1 + 0.05 * (validSets.length - 1)));
       occurrences.push({
         date: session.date,
         sessionId: session.id,
