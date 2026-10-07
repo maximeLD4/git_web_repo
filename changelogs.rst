@@ -28,6 +28,28 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.76.4 - 2026-10-07
+====================
+
+- **iPhone : la barre du bas ne remplissait pas le bas de l'écran** (un
+  vide d'environ 48pt restait visible sous elle). Constaté sur une capture
+  réelle : la barre mesurait bien la hauteur attendue, mais tout le
+  conteneur de l'app s'arrêtait trop tôt.
+  - Cause probable : la racine de la page cumulait `position: fixed;
+    inset: 0` (qui suffit à remplir l'écran) ET `height: 100%`. Sur iOS, ce
+    `100%` se calcule par rapport à une hauteur plus courte que la vraie
+    zone fixe de l'écran. Retiré. Non reproductible hors iPhone : Chrome
+    calcule pareil dans les deux cas, donc les tests précédents ne
+    pouvaient pas le voir.
+  - Vérifié (Chrome, écran 414×896 avec zones de sécurité simulées) : aucune
+    régression, la barre se termine à 896 comme l'écran, les 14 écrans se
+    chargent.
+- **Diagnostic dans Réglages** : en bas à droite, à côté du numéro de
+  version, s'affichent maintenant la taille de la fenêtre et celle de
+  l'écran (ex. « fenêtre 414×896 · écran 414×896 »). Si un décalage
+  persiste sur un appareil, ces deux nombres montrent immédiatement s'il
+  vient de la taille de fenêtre fournie par iOS.
+
 2.76.3 - 2026-10-07
 ====================
 

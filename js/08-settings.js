@@ -14,7 +14,7 @@ function renderSettingsApp() {
     <div style="position:fixed; left:0; right:0; bottom:calc(var(--bottom-nav-h) + 10px); display:flex; justify-content:center;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
     </div>
-    <div id="app-version-label" style="position:fixed; right:14px; bottom:calc(var(--bottom-nav-h) + 20px); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">${appVersion ? "v" + appVersion : ""}</div>
+    <div style="position:fixed; right:14px; bottom:calc(var(--bottom-nav-h) + 20px); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif; text-align:right;"><span id="app-version-label">${appVersion ? "v" + appVersion : ""}</span> · fenêtre ${window.innerWidth}×${window.innerHeight} · écran ${screen.width}×${screen.height}</div>
     ${bottomNavHTML("settings")}
   `;
   attachBottomNavListeners();

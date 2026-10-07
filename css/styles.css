@@ -110,8 +110,11 @@ html, body {
   overflow: hidden;
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  /* Pas de width/height: 100% ici. Avec position: fixed + inset: 0, la boîte
+     remplit déjà exactement la zone fixe de l'écran. Un height: 100%
+     par-dessus se calcule, sur iOS, par rapport à une hauteur plus courte
+     (celle du bloc conteneur initial), ce qui laissait un vide sous le
+     contenu et faisait flotter la barre du bas au-dessus du bord de l'écran. */
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
 }
