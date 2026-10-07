@@ -28,6 +28,40 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.76.5 - 2026-10-07
+====================
+
+- **iPhone : plus de vide inutilisé en bas de l'écran, dans toute l'app.**
+  Mesure faite sur l'appareil : fenêtre annoncée à la page 414×848 pour un
+  écran de 414×896. L'écart (48) est exactement la zone de sécurité du haut
+  (barre d'état) : iOS annonce à la page une fenêtre amputée de cette
+  hauteur. Tout ce qui était calé sur « le bas de la fenêtre » (barre
+  Accueil/Calendrier/Réglages, barre des sports, barres d'actions, fenêtres
+  modales, Séance en direct, connexion) s'arrêtait donc 48pt trop haut,
+  laissant une bande jamais utilisée sous l'app. Les deux correctifs
+  précédents (v2.76.2 à 2.76.4) ne pouvaient pas l'atteindre : la valeur
+  fausse venait d'iOS, pas du CSS.
+  - L'app détecte ce défaut précis (portrait, écart = zone de sécurité du
+    haut à 6px près) et étire sa racine jusqu'au vrai bas de l'écran. Rien
+    ne change sur un appareil sans ce défaut (témoins : iPhone normal et
+    bureau, correctif non déclenché).
+  - Les éléments auparavant ancrés à la FENÊTRE (`position: fixed`) sont
+    maintenant ancrés au conteneur de l'app, qui suit la racine corrigée.
+    Comparaison pixel par pixel avant/après sur 9 écrans d'un appareil
+    normal : identiques, hors quelques pixels de bord (écart max 7/255).
+  - Les hauteurs proportionnelles de l'Accueil (unité `vh`) utilisent la
+    hauteur corrigée : l'Accueil se met en page comme sur un appareil sans
+    défaut.
+  - Mesuré en simulant le défaut (fenêtre 414×848, écran 414×896) : barre
+    du bas, barre des sports, Séance en direct, modales et connexion se
+    terminent toutes à 896, le bas réel de l'écran.
+  - Non vérifiable depuis ici : l'affichage sur un vrai iPhone (pas de
+    moteur WebKit/iOS disponible). Interrupteur de secours : toucher la
+    ligne de version en bas de Réglages désactive/réactive le correctif.
+- **Ligne de version de Réglages** : indique maintenant « correctif écran
+  +48 » (ou « aucun correctif nécessaire » / « désactivé »), avec la
+  fenêtre et l'écran.
+
 2.76.4 - 2026-10-07
 ====================
 

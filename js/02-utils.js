@@ -232,7 +232,7 @@ function reserveSpaceForFixedBar(contentEl, actionsBarEl) {
     return;
   }
   requestAnimationFrame(() => {
-    const gap = window.innerHeight - actionsBarEl.getBoundingClientRect().top;
+    const gap = document.getElementById("app").getBoundingClientRect().bottom - actionsBarEl.getBoundingClientRect().top;
     if (gap > 0) contentEl.style.marginBottom = gap + "px";
   });
 }
@@ -266,6 +266,59 @@ function ensureLogActionsBarResizeListener() {
   const target = window.visualViewport || window;
   target.addEventListener("resize", () => positionLogActionsBar());
 }
+
+
+/* ---------- Correctif iOS : fenêtre plus courte que l'écran ---------- */
+// Sur certains iPhone, la fenêtre annoncée à la page (window.innerHeight)
+// est plus courte que l'écran EXACTEMENT de la hauteur de la barre d'état
+// (ex. 848 pour un écran de 896 sur iPhone 11 : écart de 48 = zone de
+// sécurité du haut). Tout ce qui est calé sur "le bas de la fenêtre" s'arrêtait
+// alors 48pt trop haut, laissant un vide jamais utilisé sous la barre du bas
+// dans TOUTE l'app. On ne corrige que sur cette signature précise (portrait,
+// écart = zone de sécurité du haut à 6px près) pour ne jamais fausser un
+// appareil, un navigateur ou une fenêtre de bureau qui n'ont pas ce défaut.
+// Désactivable d'un toucher sur la ligne de version dans Réglages.
+const VIEWPORT_FIX_KEY = "gymlog.viewportFix";
+let viewportFixExtra = 0;
+function readSafeAreaTop() {
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:absolute; visibility:hidden; pointer-events:none; padding-top:env(safe-area-inset-top);";
+  document.body.appendChild(probe);
+  const v = parseFloat(getComputedStyle(probe).paddingTop) || 0;
+  probe.remove();
+  return v;
+}
+function applyViewportFix() {
+  const root = document.documentElement;
+  let extra = 0;
+  let disabled = false;
+  try { disabled = localStorage.getItem(VIEWPORT_FIX_KEY) === "off"; } catch (e) {}
+  if (!disabled && window.innerHeight > window.innerWidth) {
+    const insetTop = readSafeAreaTop();
+    const gap = Math.round(window.screen.height - window.innerHeight);
+    if (insetTop > 0 && gap > 0 && Math.abs(gap - insetTop) <= 6) extra = gap;
+  }
+  viewportFixExtra = extra;
+  root.classList.toggle("viewport-fix", extra > 0);
+  if (extra > 0) {
+    const h = window.innerHeight + extra;
+    root.style.setProperty("--viewport-h", h + "px");
+    root.style.setProperty("--vh", h / 100 + "px");
+  } else {
+    root.style.removeProperty("--viewport-h");
+    root.style.removeProperty("--vh");
+  }
+}
+function toggleViewportFix() {
+  let off = false;
+  try { off = localStorage.getItem(VIEWPORT_FIX_KEY) === "off"; localStorage.setItem(VIEWPORT_FIX_KEY, off ? "on" : "off"); } catch (e) {}
+  applyViewportFix();
+}
+window.addEventListener("resize", applyViewportFix);
+window.addEventListener("orientationchange", () => setTimeout(applyViewportFix, 250));
+window.addEventListener("pageshow", applyViewportFix);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) applyViewportFix(); });
+applyViewportFix();
 
 function loadJSON(key, fallback) {
   try {

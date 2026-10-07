@@ -4,6 +4,13 @@ function categoryLabel(key) {
   return found ? found.label : key;
 }
 
+function viewportFixLabel() {
+  if (viewportFixExtra > 0) return "correctif écran +" + viewportFixExtra;
+  let off = false;
+  try { off = localStorage.getItem(VIEWPORT_FIX_KEY) === "off"; } catch (e) {}
+  return off ? "correctif désactivé" : "aucun correctif nécessaire";
+}
+
 function renderSettingsApp() {
   app.className = "theme-settings";
   app.innerHTML = `
@@ -14,10 +21,14 @@ function renderSettingsApp() {
     <div style="position:fixed; left:0; right:0; bottom:calc(var(--bottom-nav-h) + 10px); display:flex; justify-content:center;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
     </div>
-    <div style="position:fixed; right:14px; bottom:calc(var(--bottom-nav-h) + 20px); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif; text-align:right;"><span id="app-version-label">${appVersion ? "v" + appVersion : ""}</span> · fenêtre ${window.innerWidth}×${window.innerHeight} · écran ${screen.width}×${screen.height}</div>
+    <div id="viewport-diag" style="position:absolute; right:14px; bottom:calc(var(--bottom-nav-h) + 20px); font-size:11px; line-height:1.4; color:var(--text-dim); opacity:0.6; font-family:-apple-system,system-ui,sans-serif; text-align:right; cursor:pointer;"><span id="app-version-label">${appVersion ? "v" + appVersion : ""}</span> · ${viewportFixLabel()}<br>fenêtre ${window.innerWidth}×${window.innerHeight} · écran ${screen.width}×${screen.height}</div>
     ${bottomNavHTML("settings")}
   `;
   attachBottomNavListeners();
+  document.getElementById("viewport-diag").addEventListener("click", () => {
+    toggleViewportFix();
+    renderSettingsApp();
+  });
   document.getElementById("logout-btn").addEventListener("click", () => {
     showConfirm("Te déconnecter ?", logoutUser, { confirmLabel: "Se déconnecter", danger: true, detail: "Tes données restent sauvegardées dans ton profil." });
   });
