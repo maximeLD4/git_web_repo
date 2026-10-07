@@ -15,6 +15,7 @@
 
 /* ========== VARIABLES & THÈMES (couleur d'accent par module) ========== */
 :root {
+  --bottom-nav-h: calc(56px + env(safe-area-inset-bottom));
   --bg: #F3ECE4;
   --surface: #FFFDF8;
   --surface-2: rgba(var(--ink-rgb), 0.055);
@@ -1668,8 +1669,8 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    "Suivi" (qui ne garde donc que Performance et Poids).
    ========================================================================== */
 .home-bottom-nav {
-  position: absolute; left: 0; right: 0; bottom: 0; height: calc(83px + env(safe-area-inset-bottom));
-  box-sizing: border-box; padding: 7px 8px calc(env(safe-area-inset-bottom)) 8px;
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-h);
+  box-sizing: border-box; padding: 7px 8px env(safe-area-inset-bottom) 8px;
   background: rgba(var(--surface-rgb), 0.94); backdrop-filter: blur(8px);
   border-top: 0.5px solid var(--rule);
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start;
@@ -1683,7 +1684,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .home-bottom-nav-item svg { width: 25px; height: 25px; }
 .home-bottom-nav-item-active { color: var(--text); }
 /* Le contenu ne doit pas passer sous cette barre fixe. */
-#app.theme-home .content { padding-bottom: calc(93px + env(safe-area-inset-bottom)) !important; }
+#app.theme-home .content { padding-bottom: calc(var(--bottom-nav-h) + 10px) !important; }
 
 /* ==========================================================================
    IDENTITÉ iOS — ACCUEIL, TAILLES PROPORTIONNELLES À LA HAUTEUR DISPONIBLE

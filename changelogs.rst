@@ -28,6 +28,24 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.76.2 - 2026-10-07
+====================
+
+- **Corrigé sur iPhone : la barre du bas (Accueil / Calendrier / Réglages)
+  était beaucoup trop haute et épaisse**, avec un grand vide sous les
+  icônes. Cause : la zone de sécurité de l'iPhone (l'espace de l'indicateur
+  d'accueil, ~34px) était comptée deux fois — une fois dans la hauteur de la
+  barre, une fois dans son padding — alors que la valeur de 83px reprise de
+  la maquette l'incluait déjà. Sur un écran sans cette zone (bureau,
+  iPhone SE), le défaut ne se voyait pas.
+  - La hauteur de la barre est désormais définie une seule fois (variable
+    `--bottom-nav-h` : 56px + zone de sécurité réelle de l'appareil), et
+    tout ce qui réserve la place de la barre (Accueil, Calendrier,
+    Réglages, bouton de déconnexion) s'en sert — plus aucun nombre figé.
+  - Vérifié en simulant : iPhone 14 (barre 90px au lieu de 117px), iPhone
+    15 Pro Max, iPhone SE sans zone de sécurité (56px) — collée au bas de
+    l'écran, sans chevauchement ni défilement parasite dans les 3 cas.
+
 2.76.1 - 2026-09-04
 ====================
 

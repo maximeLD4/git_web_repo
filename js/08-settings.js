@@ -10,11 +10,11 @@ function renderSettingsApp() {
     <div class="header header-plain-title">
       <div class="screen-title">Réglages</div>
     </div>
-    <div class="content" id="content" style="padding-bottom: calc(93px + env(safe-area-inset-bottom));"></div>
-    <div style="position:fixed; left:0; right:0; bottom:calc(93px + env(safe-area-inset-bottom)); display:flex; justify-content:center;">
+    <div class="content" id="content" style="padding-bottom: calc(var(--bottom-nav-h) + 10px);"></div>
+    <div style="position:fixed; left:0; right:0; bottom:calc(var(--bottom-nav-h) + 10px); display:flex; justify-content:center;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
     </div>
-    <div id="app-version-label" style="position:fixed; right:14px; bottom:calc(103px + env(safe-area-inset-bottom)); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">${appVersion ? "v" + appVersion : ""}</div>
+    <div id="app-version-label" style="position:fixed; right:14px; bottom:calc(var(--bottom-nav-h) + 20px); font-size:11px; color:var(--text-dim); opacity:0.5; font-family:-apple-system,system-ui,sans-serif;">${appVersion ? "v" + appVersion : ""}</div>
     ${bottomNavHTML("settings")}
   `;
   attachBottomNavListeners();

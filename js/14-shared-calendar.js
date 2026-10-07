@@ -9,7 +9,7 @@ function renderSharedCalendarApp() {
       <div class="screen-title">Calendrier</div>
       <div class="header-sub screen-subtitle" id="cal-header-sub"></div>
     </div>
-    <div class="content" id="content" style="padding-bottom: calc(93px + env(safe-area-inset-bottom));"></div>
+    <div class="content" id="content" style="padding-bottom: calc(var(--bottom-nav-h) + 10px);"></div>
     ${bottomNavHTML("calendar")}
   `;
   attachBottomNavListeners();
