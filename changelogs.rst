@@ -28,6 +28,29 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.76.3 - 2026-10-07
+====================
+
+- **Mises à jour de l'app : elles s'appliquent maintenant dès le premier
+  lancement.** Jusqu'ici, après une mise à jour, l'app affichait d'abord
+  l'ANCIENNE version (servie depuis le cache) et ne passait à la nouvelle
+  qu'au lancement suivant — ce qui donnait l'impression que certains
+  correctifs ne changeaient rien. Les fichiers de l'app sont désormais
+  demandés au réseau en priorité (avec repli immédiat sur le cache hors-
+  ligne, ou après 3 s sans réponse) ; l'installation du cache ignore aussi
+  toute copie périmée gardée par l'hébergeur.
+  - Vérifié en conditions réelles de navigateur : avec l'ancien mécanisme,
+    une mise à jour du CSS n'est PAS visible après un rechargement ; avec le
+    nouveau, elle l'est dès le premier. L'app démarre toujours hors-ligne.
+  - Une seule fois, pour passer à ce nouveau mécanisme : fermer
+    complètement l'app puis la rouvrir (deux fois au besoin) — le numéro
+    affiché en bas de Réglages doit alors indiquer v2.76.3.
+- **Barre du bas (Accueil / Calendrier / Réglages) ramenée au gabarit exact
+  d'une barre d'onglets iOS** : 50px + la zone de sécurité de l'appareil
+  (≈84px sur iPhone, 50px sans zone), au lieu de 56px + zone (90px).
+  Vérifié sur iPhone 14, iPhone 15 Pro Max et iPhone SE simulés : collée au
+  bas, sans chevauchement.
+
 2.76.2 - 2026-10-07
 ====================
 

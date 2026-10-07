@@ -83,7 +83,10 @@ self.addEventListener("install", (event) => {
       // "dev" plutôt que de faire échouer l'installation.
       const cacheName = CACHE_PREFIX + (await readCurrentVersion());
       const cache = await caches.open(cacheName);
-      await cache.addAll(APP_SHELL_CORE);
+      // "reload" : on ignore toute copie que le navigateur ou l'hébergeur
+      // garderait en mémoire tampon, pour ne jamais fixer dans le cache une
+      // version déjà périmée au moment même de l'installation.
+      await cache.addAll(APP_SHELL_CORE.map((u) => new Request(u, { cache: "reload" })));
       await Promise.all(
         FIREBASE_SCRIPTS.map((url) =>
           fetch(url, { mode: "no-cors" })
@@ -139,24 +142,44 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     (async () => {
-      // "Stale-while-revalidate" : on répond tout de suite avec la version
-      // en cache si elle existe (rapide, fonctionne hors-ligne, recherche
-      // dans tous les caches sans avoir besoin de connaître son nom), tout
-      // en rafraîchissant discrètement le cache actif en arrière-plan si le
-      // réseau répond — pour ne jamais rester bloqué sur une version
-      // périmée plus longtemps que nécessaire une fois de retour en ligne.
       const cached = await caches.match(req);
-      const networkFetch = fetch(req)
-        .then(async (res) => {
-          if (res && res.ok) {
-            const cacheName = (await getActiveCacheName()) || CACHE_PREFIX + "dev";
-            const cache = await caches.open(cacheName);
-            cache.put(req, res.clone());
-          }
-          return res;
-        })
-        .catch(() => null);
-      return cached || (await networkFetch) || Response.error();
+      const sameOrigin = url.startsWith(self.location.origin);
+
+      // Autres domaines (SDK Firebase...) : le cache d'abord, comme avant —
+      // ces fichiers ne changent pas avec l'app.
+      if (!sameOrigin) {
+        return cached || (await fetch(req).catch(() => null)) || Response.error();
+      }
+
+      // Fichiers de l'app : le RÉSEAU d'abord, le cache en secours.
+      // Avant, c'était l'inverse (cache d'abord, rafraîchi en arrière-plan) :
+      // après une mise à jour, le premier lancement affichait encore
+      // l'ancienne version, et il fallait relancer l'app une seconde fois
+      // pour voir la nouvelle — d'où des correctifs qui semblaient ne rien
+      // changer. "no-cache" force aussi la revalidation auprès du serveur
+      // (l'hébergeur peut sinon resservir une copie datant de plusieurs
+      // minutes). Hors-ligne, ou si le réseau met plus de 3 s à répondre, on
+      // retombe aussitôt sur le cache : le fonctionnement hors-ligne ne
+      // change pas.
+      const network = (async () => {
+        let res;
+        try {
+          res = await fetch(new Request(req, { cache: "no-cache" }));
+        } catch (e) {
+          res = await fetch(req);
+        }
+        if (res && res.ok) {
+          const cacheName = (await getActiveCacheName()) || CACHE_PREFIX + "dev";
+          const cache = await caches.open(cacheName);
+          cache.put(req, res.clone());
+        }
+        return res;
+      })().catch(() => null);
+
+      if (!cached) return (await network) || Response.error();
+      const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 3000));
+      const res = await Promise.race([network, timeout]);
+      return res && res.ok ? res : cached;
     })()
   );
 });
