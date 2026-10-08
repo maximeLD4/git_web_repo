@@ -1,185 +1,172 @@
 // ---------- Service Worker GymLog : fonctionnement hors-ligne ----------
-// Met en cache l'app shell (HTML/CSS/JS/icônes) pour que l'app se lance et
-// fonctionne même sans réseau — ce qui manquait jusqu'ici pour l'usage via
-// "Sur l'écran d'accueil" (Safari) ou un raccourci équivalent. Les données
-// (séances, poids, réglages...) continuent, elles, de vivre dans le
-// stockage local du navigateur (voir KEYS dans 01-config.js) et sont donc
-// déjà disponibles hors-ligne indépendamment de ce fichier — Firebase
-// (compte, synchro) échoue déjà proprement sans réseau et retombe sur ces
-// données locales (voir 04-auth.js), ce Service Worker ne fait que
-// permettre à l'app elle-même (le code) de démarrer sans réseau.
+// Met en cache l'app (HTML/CSS/JS/icônes) pour qu'elle se lance et fonctionne
+// même sans réseau. Les données (séances, poids, réglages...) vivent, elles,
+// dans le stockage local (voir KEYS dans 01-config.js) : ce fichier ne s'occupe
+// que du CODE de l'app.
 //
-// Le nom du cache est basé sur le contenu réel du fichier /VERSION (lu à
-// l'installation) plutôt que sur un numéro recopié à la main ici — sans ça,
-// il aurait fallu penser à mettre à jour ce fichier à CHAQUE publication en
-// plus de VERSION/changelogs.rst, et un oubli aurait laissé un appareil
-// bloqué sur d'anciens fichiers même en étant en ligne.
-const CACHE_PREFIX = "gymlog-shell-v";
+// Principe : des adresses IMMUABLES.
+//   index.html demande ses fichiers avec "?v=<VERSION>" (posé par
+//   tools/release.py). Le contenu d'une adresse donnée ne change donc jamais :
+//   on peut le garder dans le cache indéfiniment sans risque de servir une
+//   vieille copie, et une page ne peut pas mélanger des fichiers de deux
+//   versions — elle reçoit TOUS ses fichiers de la version que son index.html
+//   désigne. Seules les "portes d'entrée" (index.html, manifest, VERSION)
+//   peuvent changer : celles-là passent par le réseau d'abord.
+//
+// BUILD_VERSION est posée par tools/release.py : les octets de ce fichier
+// changent à chaque publication, ce qui déclenche l'installation d'un nouveau
+// Service Worker (donc d'un nouveau cache complet) et la suppression des anciens.
+const BUILD_VERSION = "2.77.2";
+const CACHE_PREFIX = "gymlog-shell-";
+const CACHE_NAME = CACHE_PREFIX + BUILD_VERSION;
 
-// Cœur de l'app : si un seul de ces fichiers manque à l'installation, on
-// veut que ça échoue franchement plutôt que de laisser un cache à moitié
-// rempli qui donnerait une fausse impression de fonctionner hors-ligne.
-const APP_SHELL_CORE = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./VERSION",
-  "./css/styles.css",
-  "./js/00-firebase-init.js",
-  "./js/01-config.js",
-  "./js/02-utils.js",
-  "./js/03-state.js",
-  "./js/04-auth.js",
-  "./js/05-scriptable-bridge.js",
-  "./js/06-export-import.js",
-  "./js/07-home.js",
-  "./js/08-settings.js",
-  "./js/09a-gym-create.js",
-  "./js/09b-gym-history.js",
-  "./js/10a-run-create.js",
-  "./js/10b-run-history.js",
-  "./js/11a-swim-create.js",
-  "./js/11b-swim-history.js",
-  "./js/12a-bike-create.js",
-  "./js/12b-bike-history.js",
-  "./js/13-weight.js",
-  "./js/14-shared-calendar.js",
-  "./js/15-scanner.js",
-  "./js/16-performance.js",
-  "./js/17-main.js",
-  "./js/18-live.js",
-  "./js/19-live-sound.js",
-  "./icons/apple-touch-icon.png",
-  "./icons/apple-touch-icon-120.png",
-  "./icons/apple-touch-icon-152.png",
-  "./icons/apple-touch-icon-167.png",
-  "./icons/favicon-32.png",
-];
+// Réseau trop lent ou "connecté au wifi sans internet" : on ne bloque pas l'app,
+// on retombe sur le cache après ce délai (portes d'entrée seulement).
+const ENTRY_TIMEOUT_MS = 3000;
 
-// SDK Firebase : sur un autre domaine (gstatic.com), une requête peut
-// échouer sans réseau au moment de l'installation du Service Worker lui-même
-// — on les met en cache "en bonus", sans faire échouer l'installation du
-// cœur de l'app si ça ne passe pas (l'app démarre et fonctionne hors-ligne
-// avec les données locales même sans Firebase, voir 04-auth.js).
-const FIREBASE_SCRIPTS = [
-  "https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js",
-  "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js",
-  "https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js",
-];
-
-async function readCurrentVersion() {
-  return fetch("./VERSION", { cache: "no-store" })
-    .then((res) => res.text())
-    .then((t) => t.trim())
-    .catch(() => "dev");
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(() => resolve(null), ms));
 }
 
+// Une porte d'entrée est une adresse dont le contenu peut changer sans que son
+// adresse change : la page elle-même, le manifeste, VERSION, et — par prudence —
+// tout JS/CSS NON versionné (si le versionnage a été oublié, on retombe sur un
+// comportement sûr plutôt que de figer une vieille copie).
+function isEntry(req, url) {
+  if (req.mode === "navigate") return true;
+  if (url.searchParams.has("v")) return false;
+  return /\/(?:index\.html|manifest\.json|VERSION)$/.test(url.pathname) || /\.(?:js|css)$/.test(url.pathname) || url.pathname.endsWith("/");
+}
+
+function freshRequest(req) {
+  // "no-cache" : revalider auprès du serveur (sinon l'hébergeur peut resservir
+  // une copie vieille de plusieurs minutes).
+  try {
+    return new Request(req, { cache: "no-cache" });
+  } catch (e) {
+    return req;
+  }
+}
+
+// ---------- Installation : on précharge TOUT ce que l'index.html désigne ----------
+// La liste des fichiers n'est plus tenue à la main (un oubli cassait le hors-ligne
+// sans prévenir) : on lit l'index.html de CETTE version et on en déduit les
+// adresses exactes, versionnées comprises.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      // Le fichier VERSION lui-même doit être lu depuis le réseau (pas de
-      // cache existant à ce stade) — s'il est injoignable (toute première
-      // installation sans réseau, cas très improbable), on retombe sur
-      // "dev" plutôt que de faire échouer l'installation.
-      const cacheName = CACHE_PREFIX + (await readCurrentVersion());
-      const cache = await caches.open(cacheName);
-      // "reload" : on ignore toute copie que le navigateur ou l'hébergeur
-      // garderait en mémoire tampon, pour ne jamais fixer dans le cache une
-      // version déjà périmée au moment même de l'installation.
-      await cache.addAll(APP_SHELL_CORE.map((u) => new Request(u, { cache: "reload" })));
-      await Promise.all(
-        FIREBASE_SCRIPTS.map((url) =>
-          fetch(url, { mode: "no-cors" })
-            .then((res) => cache.put(url, res))
-            .catch(() => {
-              // Pas grave : Firebase échoue déjà proprement sans réseau
-              // ailleurs dans l'app (données locales en secours).
-            })
-        )
-      );
-      // Prend effet immédiatement, sans attendre la fermeture de tous les
-      // onglets déjà ouverts — sinon la toute première installation ne
-      // servirait le cache qu'au second lancement de l'app.
+      const cache = await caches.open(CACHE_NAME);
+      const htmlRes = await fetch(new Request("./index.html", { cache: "reload" }));
+      if (!htmlRes.ok) throw new Error("index.html introuvable à l'installation");
+      const html = await htmlRes.clone().text();
+
+      const local = new Set(["./manifest.json", "./VERSION"]);
+      const external = new Set();
+      for (const m of html.matchAll(/\b(?:src|href)="([^"]+)"/g)) {
+        const u = m[1];
+        if (u.startsWith("./")) local.add(u);
+        else if (/^https:\/\/www\.gstatic\.com\/firebasejs\//.test(u)) external.add(u);
+      }
+
+      // Cœur de l'app : un seul fichier manquant doit faire ÉCHOUER l'installation
+      // plutôt que laisser un cache à moitié rempli qui fait croire au hors-ligne.
+      await Promise.all([...local].map((u) => fetch(new Request(u, { cache: "reload" })).then((r) => {
+        if (!r.ok) throw new Error(u + " : HTTP " + r.status);
+        return cache.put(u, r);
+      })));
+      await cache.put("./index.html", htmlRes.clone());
+      await cache.put("./", htmlRes);
+
+      // SDK Firebase (autre domaine) : "en bonus", sans faire échouer l'installation
+      // — l'app démarre et fonctionne hors-ligne avec les données locales sans lui.
+      await Promise.all([...external].map((u) => fetch(u, { mode: "no-cors" }).then((r) => cache.put(u, r)).catch(() => {})));
+
+      // Prend effet immédiatement, sans attendre la fermeture des onglets ouverts.
       self.skipWaiting();
     })()
   );
 });
 
+// ---------- Activation : on ne garde que le cache de CETTE version ----------
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      // Même lecture qu'à l'installation (à quelques secondes d'intervalle,
-      // donc la même valeur en pratique) — on évite ainsi de dépendre d'une
-      // variable partagée entre les deux évènements, qui ne serait pas
-      // fiable à 100 % si le navigateur redémarrait le Service Worker
-      // entre-temps.
-      const currentCacheName = CACHE_PREFIX + (await readCurrentVersion());
       const keys = await caches.keys();
-      await Promise.all(keys.filter((k) => k.startsWith(CACHE_PREFIX) && k !== currentCacheName).map((k) => caches.delete(k)));
+      await Promise.all(keys.filter((k) => k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME).map((k) => caches.delete(k)));
       await self.clients.claim();
     })()
   );
 });
 
-// Retrouve le cache actif (celui dont le nom porte la version courante)
-// sans repasser par le réseau — une simple lecture locale de l'API Cache
-// Storage, rapide et fiable même hors-ligne (contrairement à un nouveau
-// fetch("./VERSION") à chaque requête, qui serait à la fois lent et
-// redondant avec ce qui a déjà été résolu à l'installation/l'activation).
-async function getActiveCacheName() {
-  const keys = await caches.keys();
-  return keys.find((k) => k.startsWith(CACHE_PREFIX)) || null;
-}
-
+// ---------- Service des requêtes ----------
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  // On ne s'occupe que des requêtes GET classiques — jamais des échanges
-  // avec Firebase (auth, base temps réel), qui doivent toujours passer par
-  // le réseau tels quels (l'app gère déjà elle-même leur échec hors-ligne).
+  // Seulement les GET : jamais les échanges Firebase (auth, base temps réel),
+  // qui doivent passer par le réseau tels quels (l'app gère déjà leur échec
+  // hors-ligne en retombant sur les données locales).
   if (req.method !== "GET") return;
-  const url = req.url;
-  if (url.includes("firebaseio.com") || url.includes("googleapis.com") || url.includes("identitytoolkit")) return;
-
-  event.respondWith(
-    (async () => {
-      const cached = await caches.match(req);
-      const sameOrigin = url.startsWith(self.location.origin);
-
-      // Autres domaines (SDK Firebase...) : le cache d'abord, comme avant —
-      // ces fichiers ne changent pas avec l'app.
-      if (!sameOrigin) {
-        return cached || (await fetch(req).catch(() => null)) || Response.error();
-      }
-
-      // Fichiers de l'app : le RÉSEAU d'abord, le cache en secours.
-      // Avant, c'était l'inverse (cache d'abord, rafraîchi en arrière-plan) :
-      // après une mise à jour, le premier lancement affichait encore
-      // l'ancienne version, et il fallait relancer l'app une seconde fois
-      // pour voir la nouvelle — d'où des correctifs qui semblaient ne rien
-      // changer. "no-cache" force aussi la revalidation auprès du serveur
-      // (l'hébergeur peut sinon resservir une copie datant de plusieurs
-      // minutes). Hors-ligne, ou si le réseau met plus de 3 s à répondre, on
-      // retombe aussitôt sur le cache : le fonctionnement hors-ligne ne
-      // change pas.
-      const network = (async () => {
-        let res;
-        try {
-          res = await fetch(new Request(req, { cache: "no-cache" }));
-        } catch (e) {
-          res = await fetch(req);
-        }
-        if (res && res.ok) {
-          const cacheName = (await getActiveCacheName()) || CACHE_PREFIX + "dev";
-          const cache = await caches.open(cacheName);
-          cache.put(req, res.clone());
-        }
-        return res;
-      })().catch(() => null);
-
-      if (!cached) return (await network) || Response.error();
-      const timeout = new Promise((resolve) => setTimeout(() => resolve(null), 3000));
-      const res = await Promise.race([network, timeout]);
-      return res && res.ok ? res : cached;
-    })()
-  );
+  const url = new URL(req.url);
+  // (domaines de la base temps réel — firebaseio.com ET firebasedatabase.app, utilisé par
+  // les bases créées en Europe — et de l'authentification)
+  if (/firebaseio\.com|firebasedatabase\.app|firebaseapp\.com|googleapis\.com|identitytoolkit/.test(url.hostname + url.pathname)) return;
+  // waitUntil doit être appelé de façon SYNCHRONE (pendant l'évènement) : on
+  // collecte donc les tâches d'arrière-plan (mise à jour du cache) dans une
+  // liste, et on promet au navigateur de rester en vie jusqu'à leur fin.
+  const background = [];
+  const answer = handle(req, url, background);
+  event.respondWith(answer);
+  event.waitUntil(answer.catch(() => {}).then(() => Promise.allSettled(background)));
 });
+
+async function handle(req, url, background) {
+  const cached = await caches.match(req);
+
+  // Autres domaines (SDK Firebase...) : cache d'abord — ces fichiers ne changent
+  // pas avec l'app.
+  if (url.origin !== self.location.origin) {
+    return cached || (await fetch(req).catch(() => null)) || Response.error();
+  }
+
+  // Fichier versionné (adresse immuable) : le cache fait foi, pour toujours.
+  // Absent (premier chargement de cette version avant la fin de l'installation) :
+  // réseau, puis mémorisation.
+  if (url.searchParams.has("v") && !isEntry(req, url)) {
+    if (cached) return cached;
+    const res = await fetch(req).catch(() => null);
+    if (res && res.ok) background.push(caches.open(CACHE_NAME).then((c) => c.put(req, res.clone())).catch(() => {}));
+    return res || Response.error();
+  }
+
+  // Autres fichiers de l'app non versionnés mais qui n'ont pas de raison de
+  // changer vite (icônes) : cache d'abord, rafraîchi en arrière-plan.
+  if (!isEntry(req, url)) {
+    const refresh = fetch(freshRequest(req))
+      .then(async (res) => {
+        if (res && res.ok) await (await caches.open(CACHE_NAME)).put(req, res.clone()).catch(() => {});
+        return res;
+      })
+      .catch(() => null);
+    background.push(refresh);
+    return cached || (await refresh) || Response.error();
+  }
+
+  // Portes d'entrée : réseau d'abord (c'est ELLES qui désignent la version à
+  // utiliser), cache en secours si le réseau échoue ou dépasse le délai.
+  const network = fetch(freshRequest(req))
+    .then(async (res) => {
+      if (res && res.ok) {
+        const copy = res.clone(); // avant tout await : le corps n'est pas encore consommé
+        try {
+          await (await caches.open(CACHE_NAME)).put(req, copy);
+        } catch (e) {
+          // Cache indisponible (stockage plein...) : la réponse réseau reste valable.
+        }
+      }
+      return res;
+    })
+    .catch(() => null);
+  background.push(network);
+  if (!cached) return (await network) || Response.error();
+  const res = await Promise.race([network, delay(ENTRY_TIMEOUT_MS)]);
+  return res && res.ok ? res : cached;
+}

@@ -7,26 +7,225 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
-2.27.1 - 2026-09-04
+2.77.2 - 2026-10-08
 ====================
 
-- **Refonte couleurs + typographie, appliquée à tout `css/styles.css`**
-  (aucun changement de fonctionnalité ni d'animation) :
-  - Police Jost + IBM Plex Mono → **Sora** partout (titres, chiffres,
-    libellés en capitales compris).
-  - Encre noire (#16150F) → **brun chaud** (#3D3230), moutarde saturée
-    (#F0BC2C) → **ambre doux** (#E2A66B), fond crème légèrement réchauffé.
-    Les ~30 nuances de gris/texte dérivées de l'encre (bordures, texte
-    atténué, fonds de survol...) suivent automatiquement.
-  - Graisses plafonnées à 700 (fini les 800/900 "affiche de compétition"),
-    et resserrement des espacements de lettres négatifs assoupli d'environ
-    moitié partout où il était présent.
-  - Corrigé au passage : le titre de la tuile "Séance en direct" (accueil)
-    repassait à la ligne avec la police plus large — taille réduite pour
-    tenir sur une ligne comme avant.
-  - Les teintes propres à chaque sport/module (vert salle de sport, bleu
-    course, cyan natation, violet vélo/poids, rose performance) n'ont pas
-    été touchées.
+Audit de sécurité de l'application (tests dynamiques en local, aucun vrai
+serveur contacté), avec correction de ce qui a été trouvé. Chaque correctif a
+été vérifié contre la version précédente servant de témoin.
+
+- **Corrigé — injection de code (XSS) par les données venues de l'extérieur.**
+  Trois chemins font entrer des données que l'app n'a pas écrites : le cloud
+  (`pullFromFirebase`), l'import d'une séance partagée et l'import d'une
+  sauvegarde (le pont Scriptable passe par ce dernier). Un champ piégé
+  s'exécutait à l'affichage :
+  - cloud : AUCUN nettoyage, code exécuté dans 8 scénarios sur 10 ;
+  - imports : le nettoyage de la v2.76.8 (retrait de `<` `>`) était
+    CONTOURNÉ par les guillemets — 2 scénarios sur 10 exécutaient du code —
+    car une centaine d'attributs HTML reçoivent un identifiant tel quel
+    (`data-edit-session="${s.id}"`, `value="${draft.date}"`…).
+  Test champ par champ : 9 champs exploitables par guillemet (presque tous des
+  identifiants) et 24 par balise dans du texte (noms, libellés, mais aussi
+  champs numériques — poids, durée, distance, répétitions — quand une chaîne
+  remplace un nombre).
+  Correctif unique, à l'entrée, sur les trois chemins (`sanitizeExternalValue`) :
+  toute clé `id`/`…Id` ne garde que `[A-Za-z0-9_-]` (l'alphabet exact des
+  identifiants que l'app génère), toute `date` doit être une vraie date, `<` et
+  `>` deviennent `＜` `＞` (lisibles, mais plus des balises), profondeur
+  bornée, `__proto__`/`constructor`/`prototype` ignorés. Résultat : 0 injection
+  et 0 exécution sur les 30 scénarios (3 chemins × 5 charges × texte seul /
+  texte+nombres).
+  Données légitimes : préservées octet pour octet sur 5 chemins (cloud,
+  restauration, redémarrage, aller-retour d'export réel, import d'une séance),
+  avec accents, apostrophes, guillemets, `&`, emoji, champs inconnus et
+  références nulles ; et 19 écrans sur 20 rendus au pixel près (le 20e ne
+  diffère que par le numéro de version).
+- **Ajouté — filet de sécurité central** : tout attribut `on*=`, balise
+  exécutable (`script`, `iframe`…) ou URL `javascript:` apparu dans l'interface
+  est retiré aussitôt après l'affichage (l'app n'utilise aucun gestionnaire
+  en ligne : tous ses évènements passent par `addEventListener`). Limite
+  mesurée : il arrête les gestionnaires asynchrones (image qui échoue,
+  focus, survol : 8 exécutions → 0) mais PAS un `<svg onload>`, exécuté
+  pendant l'affichage même ; la normalisation à l'entrée reste donc la
+  protection principale. Une politique CSP serait le complément structurel
+  (voir README, section Sécurité).
+- **Corrigé — une donnée abîmée pouvait empêcher l'app de DÉMARRER.**
+  Constaté avec la version précédente : importer une sauvegarde dont une liste
+  contient un élément `null` rendait l'app incapable de se lancer
+  (`Cannot read properties of null (reading 'name')`), durablement, tant que le
+  stockage local n'était pas vidé. D'autres formes (`exercises` en texte,
+  `sets` en nombre, `blocks` à `null`, séance sans date, objet à la place
+  d'un tableau — Firebase en renvoie parfois) faisaient planter des écrans.
+  La forme des données est désormais garantie à l'entrée ET au démarrage
+  (`shape*`), sans rien changer aux données correctes ni supprimer de champ
+  inconnu. Un import illisible ou absurdement imbriqué (4 000 niveaux : plus
+  d'exception) affiche « Ce fichier est illisible : rien n'a été modifié ».
+  Vérifié : 13 formes malveillantes ou corrompues, dont pollution de prototype
+  (aucune), 3 000 séances (25 ms).
+- **Corrigé — le pont Scriptable effaçait les plans et le gainage.** Son export
+  gardait une ancienne liste de champs (sans exercices de gainage ni plans) :
+  un import derrière un export les supprimait, et la synchro cloud aurait
+  propagé l'effacement. L'export de l'app et celui du pont partagent
+  maintenant une seule définition (`buildBackupData`). Préexistant.
+- **Corrigé — stockage plein = perte silencieuse.** Si le stockage de
+  l'appareil était plein, `saveJSON` avalait l'erreur : les dernières données
+  disparaissaient à la fermeture sans le moindre signe. Un message visible
+  s'affiche maintenant, une fois.
+- **Corrigé — Tesseract (OCR du scanner).** Chargé depuis un CDN avec
+  `tesseract.js@5` (dernière 5.x, donc non figée), sans contrôle : ce script
+  s'exécute avec un accès complet à la page (données, jeton de connexion). Il
+  est maintenant HÉBERGÉ dans `vendor/` (5.1.1, octets identiques au paquet
+  npm officiel), et `tools/release.py` contrôle son empreinte. Le worker et le
+  moteur WASM (isolés, sans accès à la page) restent chargés depuis le CDN,
+  à la version alignée.
+- **Ajouté** : anti-clickjacking (l'app se cache si elle est affichée dans un
+  cadre) ; le service worker ne touche plus aux échanges de la base
+  `…firebasedatabase.app` (domaine des bases créées en Europe, non exclu
+  jusqu'ici).
+- **Ajouté** : `tools/security/` (batterie rejouable : `sh tools/security/run.sh`),
+  `docs/firebase-database.rules.example.json`, et une section Sécurité dans le
+  README.
+- **Vérifié, aucun défaut** : aucun `eval`, `new Function`, `document.write`,
+  `insertAdjacentHTML` ; aucune entrée venant de l'URL, du hash, de
+  `postMessage` ou des cookies ; aucun lien externe ; connexion par
+  `textContent`, message générique, mot de passe vidé après échec ; aucun
+  `console.log` de données ; changement de compte : le cache local est vidé
+  (pas de fuite ni de renvoi vers le cloud d'un autre profil) ; aucun avis de
+  sécurité npm sur `firebase 10.13.0`, ses paquets `@firebase/*` et
+  `tesseract.js 5.1.1`.
+- **À faire de ton côté, NON vérifiable depuis le code** : règles de la base
+  Firebase (la protection qui empêche un tiers d'écrire dans tes données),
+  désactivation de la création de compte, restriction de la clé API — voir
+  README. Firebase 10.13.0 est ancien (dernière stable : 13.0.0) : mise à
+  jour à tester avec ton vrai Firebase.
+
+2.77.1 - 2026-10-08
+====================
+
+- **Exercices (Réglages) : un poids tapé mais pas validé par « Ajouter »
+  est maintenant ajouté à l'enregistrement.** Avant, si l'on écrivait un
+  poids dans « Ajouter un poids (kg) » puis qu'on enregistrait directement,
+  l'enregistrement réussissait mais le poids était perdu en silence : il
+  n'apparaissait jamais parmi les poids sélectionnables en séance. Pour un
+  NOUVEL exercice, l'oubli déclenchait même l'erreur « Ajoute au moins un
+  poids possible » alors que le poids était bien écrit. Reproduit avec la
+  version précédente (« 80 » tapé sur [60, 70] → toujours [60, 70]).
+  - Le bouton « Ajouter » et l'enregistrement utilisent maintenant la même
+    lecture du champ : ils ne peuvent plus se comporter différemment. Le
+    poids est ajouté AVANT les vérifications, donc il compte aussi pour
+    « au moins un poids possible ».
+  - Poids déjà présent : pas ajouté deux fois. Virgule (« 12,5 ») : bien
+    lue comme 12,5 (déjà convertie à la saisie par l'écouteur global).
+  - Texte invalide dans le champ (« abc ») : l'enregistrement s'arrête avec
+    un message qui cite ta saisie telle quelle, plutôt que de la jeter en
+    silence.
+  - Si l'enregistrement s'arrête pour une autre raison (nom manquant,
+    nom déjà pris), le poids ajouté apparaît quand même dans les pastilles
+    et le message d'erreur est ramené à l'écran.
+  - Vérifié : 13 cas limites + 7 parcours du formulaire inchangés (ajout
+    par le bouton, annulation, duplication, nom en double, unilatéral /
+    alterner avec, formulaire Gainage), et le poids ajouté est bien proposé
+    en Séance en direct.
+
+2.77.0 - 2026-10-08
+====================
+
+- **Nouveau : option « Bloquer la sélection de texte »** (Réglages >
+  Apparence > Texte), activée par défaut. Un appui long ne sélectionne plus
+  le texte (plus de loupe ni de poignées) et n'ouvre plus le menu Copier.
+  Les champs de saisie restent modifiables (sur iOS, un blocage qui les
+  atteindrait les rendrait non éditables : ils sont explicitement exclus).
+  Réglage propre à l'appareil, comme le mode de couleur ; appliqué dès le
+  démarrage, avant le premier affichage.
+- **Fichiers versionnés** : chaque JS/CSS est maintenant demandé avec
+  `?v=<VERSION>` (index.html). Le contenu d'une adresse ne change donc
+  jamais : le cache peut la garder pour toujours, et une page ne peut plus
+  mélanger des fichiers de deux versions — elle reçoit tous ses fichiers de
+  la version que son index.html désigne. Plus de décision « par lancement »
+  ni de délai fichier par fichier : seules les portes d'entrée (index.html,
+  manifeste, VERSION) passent par le réseau d'abord (3 s max, puis cache).
+  - Le service worker lit l'index.html de sa version pour savoir quoi
+    précharger : plus de liste de fichiers tenue à la main (un oubli cassait
+    le hors-ligne sans prévenir). `sw.js` porte la version
+    (`BUILD_VERSION`), donc ses octets changent à chaque publication : un
+    nouveau cache complet est installé et les anciens sont supprimés.
+  - Nouveau script `tools/release.py` : applique le versionnage et VÉRIFIE
+    (versions de index.html / sw.js / changelog, fichiers présents, aucun
+    JS oublié, syntaxe). À lancer avant chaque publication ; il échoue
+    bruyamment au lieu de laisser une incohérence passer.
+- **Retiré** : la ligne de diagnostic en bas de Réglages. Le numéro de
+  version reste. Garde-fou conservé, invisible : 5 touchers rapprochés sur
+  le numéro de version changent le mode du correctif d'affichage iPhone.
+- **Corrigé au passage** : en mode Nuit, l'icône de la lune de la ligne
+  « Nuit » (Réglages > Apparence) était invisible (glyphe sombre sur carré
+  sombre) ; les trois icônes ont maintenant un glyphe de couleur fixe, comme
+  leur fond. L'entrée 2.27.1 du changelog, collée en tête de fichier par
+  erreur lors d'une session passée, est remise à sa place (entre 2.27.2 et
+  2.27.0) — repérée par la vérification de `tools/release.py`.
+- **Inchangé, volontairement** : le zoom reste interdit
+  (`user-scalable=no`).
+- **Vérifié** : 9 scénarios réseau du service worker (mise à jour, fichier
+  lent, page lente, hors-ligne, premier lancement, fichier ajouté sans mise
+  à jour de liste, versionnage oublié, hygiène du cache) et surtout la
+  VRAIE mise à jour depuis la version 2.76.8 avec son ancien service worker
+  (cohérente dès le premier rechargement, fonctionnelle hors-ligne, ancien
+  cache remplacé) ; 78 étapes de clics réels sur 6 configurations (dont le
+  défaut iPhone simulé) ; option de sélection : défaut, bascule,
+  persistance, champs de saisie, clavier. NON vérifiable depuis ici : un
+  vrai appui long sur iPhone, et le chargement local par Scriptable
+  (`file://`) avec les adresses versionnées.
+
+2.76.8 - 2026-10-07
+====================
+
+Revue complète des changements de la série 2.76.x (tests : 66 captures
+comparées sur 6 tailles d'écran, 100 clics réels sur 5 configurations, 6
+scénarios réseau du service worker, avec versions « témoin » quand c'était
+utile pour prouver qu'un test peut échouer).
+
+- **Corrigé — service worker (introduit en v2.76.3) : mélange de deux
+  versions sur mauvaise connexion.** Chaque fichier était servi « réseau
+  d'abord, cache après 3 s » indépendamment des autres : sur un réseau lent,
+  un index.html neuf pouvait se retrouver avec un .js ancien (ou l'inverse)
+  → fonctions introuvables au démarrage. Reproduit avec l'ancien mécanisme
+  (états `["B","B","A"]` et `["A","B","B"]`), disparu avec le nouveau.
+  Désormais la décision est prise UNE fois par lancement, sur la page : si
+  elle vient du réseau, les fichiers attendent le réseau (15 s max) ; si
+  elle vient du cache (réseau trop lent), tout vient du cache — ancien mais
+  cohérent, mis à jour en arrière-plan. La mise à jour du cache est aussi
+  menée à terme (`waitUntil`) et une erreur d'écriture du cache n'empêche
+  plus de servir la réponse réseau.
+- **Corrigé — sécurité : injection de balises via un fichier importé.**
+  Une séance partagée ou une sauvegarde contenant `<img onerror=…>` dans un
+  nom s'exécutait à l'import (vérifié avec une version témoin : script
+  exécuté). Les `<` et `>` sont retirés de tous les textes importés, les
+  fenêtres de confirmation échappent leur texte (mon `aria-label` de la
+  v2.73.1 se tronquait aussi sur un guillemet), via un nouvel `escapeHTML`.
+  Audit : aucun nom/libellé n'est inséré tel quel dans un attribut HTML.
+- **Corrigé — Poids : libellé « sur 7 jours » faux.** Ajouté pour coller à
+  la maquette (v2.74.0), alors que la variation compare à la pesée
+  PRÉCÉDENTE. Affiche maintenant l'écart réel (« sur 10 jours », « sur 1
+  jour », « même jour »).
+- **Durci — correctif d'affichage iPhone** : clavier ouvert, l'état n'est
+  plus réévalué (le mode « auto » basculait en pleine saisie) ; en mode
+  « flux », la page ne peut plus défiler d'elle-même ; la décision « auto »
+  n'est plus mise en cache. Mode « étendu » supprimé : la capture réelle
+  avait prouvé qu'il rogne tout.
+- **Vérifié, aucun défaut** : conversion `fixed → absolute` (6 éléments) —
+  captures identiques sur iPhone, SE, petit écran, bureau, iPad, paysage (à
+  des écarts d'anticrénelage près) ; aucun recouvrement de bouton par une
+  barre ; aucune erreur JS ; aucun débordement horizontal ; liste de
+  fichiers du service worker conforme au disque ; aucune collision de noms
+  globaux ; indice de performance protégé contre les séances vides.
+- **Rappel d'une erreur de livraison** : en v2.76.5, la conversion du
+  conteneur « Se déconnecter » de Réglages avait été annoncée mais ne
+  s'était PAS appliquée (chaîne introuvable, échec silencieux). Corrigé en
+  v2.76.6 ; les modifications de cette série utilisent désormais des
+  assertions qui échouent bruyamment.
+- **Limites connues** : le bac à sable bloque Google Fonts et Firebase, donc
+  la police Jost n'est jamais chargée dans mes captures ; et le vide du bas
+  sur iPhone (fenêtre 848 pour écran 896) reste à confirmer sur l'appareil
+  — voir la ligne de diagnostic en bas de Réglages.
 
 2.76.7 - 2026-10-07
 ====================
@@ -2369,6 +2568,27 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
   invisible à une recherche sur la couleur en clair puisqu'écrite au format
   URL-encodé. Repéré en le voyant à l'écran, corrigé aux 2 endroits
   concernés (état normal et état pressé).
+
+2.27.1 - 2026-09-04
+====================
+
+- **Refonte couleurs + typographie, appliquée à tout `css/styles.css`**
+  (aucun changement de fonctionnalité ni d'animation) :
+  - Police Jost + IBM Plex Mono → **Sora** partout (titres, chiffres,
+    libellés en capitales compris).
+  - Encre noire (#16150F) → **brun chaud** (#3D3230), moutarde saturée
+    (#F0BC2C) → **ambre doux** (#E2A66B), fond crème légèrement réchauffé.
+    Les ~30 nuances de gris/texte dérivées de l'encre (bordures, texte
+    atténué, fonds de survol...) suivent automatiquement.
+  - Graisses plafonnées à 700 (fini les 800/900 "affiche de compétition"),
+    et resserrement des espacements de lettres négatifs assoupli d'environ
+    moitié partout où il était présent.
+  - Corrigé au passage : le titre de la tuile "Séance en direct" (accueil)
+    repassait à la ligne avec la police plus large — taille réduite pour
+    tenir sur une ligne comme avant.
+  - Les teintes propres à chaque sport/module (vert salle de sport, bleu
+    course, cyan natation, violet vélo/poids, rose performance) n'ont pas
+    été touchées.
 
 2.27.0 - 2026-09-04
 ====================

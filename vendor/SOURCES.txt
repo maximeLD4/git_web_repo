@@ -1,0 +1,17 @@
+Fichiers tiers hébergés avec l'app (au lieu d'être chargés depuis un CDN).
+
+tesseract-5.1.1.min.js
+  Source  : paquet npm "tesseract.js" 5.1.1, fichier package/dist/tesseract.min.js
+            https://registry.npmjs.org/tesseract.js/-/tesseract.js-5.1.1.tgz
+  Licence : Apache-2.0 (voir LICENSE-tesseract.js.md)
+  Empreinte (SHA-384, base64) :
+  sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F
+
+Pourquoi : ce script s'exécute avec un accès complet à la page (données, jeton de
+connexion). Chargé depuis un CDN avec "@5" (dernière 5.x), il aurait pu changer à
+l'insu de l'app. Le worker et le moteur WASM, eux, tournent isolés (sans accès au
+DOM ni au stockage) et restent chargés depuis le CDN, versions alignées sur celle-ci.
+
+Pour mettre à jour : télécharger le paquet de la nouvelle version, remplacer le
+fichier, mettre à jour le nom, l'empreinte ci-dessus ET la constante dans
+js/15-scanner.js et tools/release.py.

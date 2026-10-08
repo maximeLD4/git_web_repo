@@ -122,16 +122,16 @@ html, body {
 /* Correctif iOS (voir applyViewportFix dans 02-utils.js) : quand la fenêtre
    annoncée à la page est plus courte que l'écran de la hauteur de la barre
    d'état, on étire la racine jusqu'au vrai bas de l'écran. */
-/* Trois façons de gérer ce défaut (voir applyViewportFix, 02-utils.js). Le mode
+/* Deux façons de gérer ce défaut (voir applyViewportFix, 02-utils.js). Le mode
    par défaut ("bande") ne tente PAS de peindre dans la zone que la page ne
    peut pas atteindre : il ajuste ce qui est dans la fenêtre visible et
    prolonge la couleur de la barre dans la bande en dessous (iOS la remplit
-   avec la couleur de fond de la page). Les deux autres sont des essais. */
+   avec la couleur de fond de la page). "flux" est la tentative de récupérer
+   réellement la bande (voir plus bas). */
 html.vfix-bande.vfix-bar { background: rgb(var(--surface-rgb)); }
 html.vfix-bande .home-bottom-nav, html.vfix-bande .tabbar {
   background: rgb(var(--surface-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-html.vfix-etendu, html.vfix-etendu body { bottom: auto; height: var(--viewport-h); overflow: visible; }
 /* "flux" : la racine n'est plus ancrée à la fenêtre de mise en page (qui est
    amputée, d'où le rognage du mode "etendu") mais devient un document normal
    dont la HAUTEUR est celle de l'écran. #app (overflow: hidden) contient tout. */
@@ -1948,3 +1948,17 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 }
 .live-cardio-cat-label { font-family: var(--font); font-size: 15px; font-weight: 700; color: var(--text); }
 .live-btn[data-live-cardio-category]:active .live-cardio-cat-label { color: var(--on-ink); }
+
+
+/* ---------- Option : bloquer la sélection de texte (Réglages > Apparence) ---------- */
+/* Sur iOS, un appui long sélectionne le texte (loupe, poignées) et ouvre le
+   menu Copier/Partager : gênant dans une app qu'on manipule du pouce entre
+   deux séries. "-webkit-touch-callout" coupe aussi ce menu sur les liens et
+   images. Les champs de saisie sont explicitement réautorisés : sur iOS, un
+   "user-select: none" qui les atteindrait les rendrait non éditables. */
+html.no-text-select, html.no-text-select * {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+html.no-text-select input, html.no-text-select textarea, html.no-text-select [contenteditable="true"] {
+  -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+}

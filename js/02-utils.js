@@ -279,15 +279,13 @@ function ensureLogActionsBarResizeListener() {
 // appareil, un navigateur ou une fenêtre de bureau qui n'ont pas ce défaut.
 //   "bande"  (défaut) : tout reste dans la fenêtre visible, la couleur de la
 //                       barre est prolongée dans la bande du bas.
-//   "etendu" (essai)  : étire la racine jusqu'au bas de l'écran, sans rognage.
 //   "flux"   (essai)  : la page devient un document normal de la hauteur de l'écran.
 //   "off"             : aucun correctif.
 // Un toucher sur la ligne de version (Réglages) passe au mode suivant.
 const VIEWPORT_FIX_KEY = "gymlog.viewportFix";
-const VIEWPORT_MODES = ["auto", "flux", "bande", "etendu", "off"];
+const VIEWPORT_MODES = ["auto", "flux", "bande", "off"];
 let viewportFixExtra = 0;
 let viewportResolvedMode = "off";
-let viewportAutoChoice = null;
 function getViewportMode() {
   try {
     const m = localStorage.getItem(VIEWPORT_FIX_KEY);
@@ -303,11 +301,8 @@ function getViewportMode() {
 function resolveViewportMode() {
   const stored = getViewportMode();
   if (stored !== "auto") return stored;
-  if (viewportAutoChoice === null) {
-    const vv = window.visualViewport;
-    viewportAutoChoice = vv && Math.round(vv.height) + 6 >= window.screen.height ? "flux" : "bande";
-  }
-  return viewportAutoChoice;
+  const vv = window.visualViewport;
+  return vv && Math.round(vv.height) + 6 >= window.screen.height ? "flux" : "bande";
 }
 function readSafeAreaTop() {
   const probe = document.createElement("div");
@@ -317,7 +312,15 @@ function readSafeAreaTop() {
   probe.remove();
   return v;
 }
+function isTypingNow() {
+  const a = document.activeElement;
+  return !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT" || a.isContentEditable);
+}
 function applyViewportFix() {
+  // Clavier ouvert : visualViewport.height rétrécit, ce qui ferait passer
+  // "auto" en "bande" en pleine saisie (la mise en page sauterait). On garde
+  // l'état courant jusqu'à la fin de la saisie (voir "focusout" plus bas).
+  if (isTypingNow()) return;
   const root = document.documentElement;
   let extra = 0;
   if (getViewportMode() !== "off" && window.innerHeight > window.innerWidth) {
@@ -325,16 +328,15 @@ function applyViewportFix() {
     const gap = Math.round(window.screen.height - window.innerHeight);
     if (insetTop > 0 && gap > 0 && Math.abs(gap - insetTop) <= 6) extra = gap;
   }
-  if (extra === 0) viewportAutoChoice = null;
   const mode = extra > 0 ? resolveViewportMode() : "off";
   viewportResolvedMode = mode;
   viewportFixExtra = extra;
-  ["flux", "bande", "etendu"].forEach((m) => root.classList.toggle("vfix-" + m, extra > 0 && mode === m));
+  ["flux", "bande"].forEach((m) => root.classList.toggle("vfix-" + m, extra > 0 && mode === m));
   // Mode "bande" : le bas de la fenêtre visible n'est PAS le bas de l'écran,
   // donc la zone de l'indicateur d'accueil n'a pas à être réservée dans l'app.
   if (extra > 0 && mode === "bande") root.style.setProperty("--safe-bottom", "0px");
   else root.style.removeProperty("--safe-bottom");
-  if (extra > 0 && (mode === "etendu" || mode === "flux")) {
+  if (extra > 0 && mode === "flux") {
     const h = window.innerHeight + extra;
     root.style.setProperty("--viewport-h", h + "px");
     root.style.setProperty("--vh", h / 100 + "px");
@@ -352,26 +354,157 @@ function updateBarFlag() {
 function cycleViewportMode() {
   const next = VIEWPORT_MODES[(VIEWPORT_MODES.indexOf(getViewportMode()) + 1) % VIEWPORT_MODES.length];
   try { localStorage.setItem(VIEWPORT_FIX_KEY, next); } catch (e) {}
-  viewportAutoChoice = null;
   applyViewportFix();
 }
-function viewportUnitsLabel() {
-  const measure = (unit) => {
-    const p = document.createElement("div");
-    p.style.cssText = "position:absolute; visibility:hidden; pointer-events:none; width:1px; height:100" + unit + ";";
-    document.body.appendChild(p);
-    const h = Math.round(p.getBoundingClientRect().height);
-    p.remove();
-    return h;
-  };
-  return ["vh", "lvh", "svh", "dvh"].map((u) => u + " " + measure(u)).join(" · ");
-}
 window.addEventListener("resize", applyViewportFix);
-window.addEventListener("orientationchange", () => { viewportAutoChoice = null; setTimeout(applyViewportFix, 250); });
+window.addEventListener("orientationchange", () => setTimeout(applyViewportFix, 250));
 window.addEventListener("pageshow", applyViewportFix);
+document.addEventListener("focusout", () => setTimeout(applyViewportFix, 300));
+// Mode "flux" : le document fait 48pt de plus que la fenêtre de mise en page ;
+// on empêche tout défilement de la page elle-même (le contenu défile dans
+// ses propres zones). Sans effet dans les autres modes (scrollY reste à 0).
+window.addEventListener("scroll", () => { if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0); }, { passive: true });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) applyViewportFix(); });
 new MutationObserver(updateBarFlag).observe(document.getElementById("app"), { childList: true });
 applyViewportFix();
+
+
+/* ---------- Données venues de l'extérieur : normalisation à l'entrée ---------- */
+// Trois chemins font entrer dans l'app des données qu'elle n'a pas écrites
+// elle-même : le cloud (pullFromFirebase), l'import d'une séance partagée et
+// l'import d'une sauvegarde. Leurs valeurs finissent dans des gabarits HTML
+// (innerHTML) — y compris DANS DES ATTRIBUTS (une centaine de sites, voir
+// data-edit-session="${s.id}"...) — donc un texte piégé pouvait s'exécuter
+// (testé : champ par champ, pour chacun des trois chemins). On les normalise
+// donc ici, une fois, plutôt qu'à chaque site d'affichage :
+//   - toute clé "id" ou "...Id" (pairedExerciseId...) : seulement [A-Za-z0-9_-]
+//     (c'est exactement l'alphabet des identifiants que l'app génère) ;
+//   - toute clé "date" : une vraie date AAAA-MM-JJ, sinon aujourd'hui (une date
+//     illisible faisait planter l'affichage) ;
+//   - tout autre texte : "<" et ">" remplacés par leurs sosies pleine largeur
+//     (＜ ＞) — rien n'est perdu à l'affichage (« RPE ＞ 8 »), mais ce ne sont
+//     plus des balises ;
+//   - clés dangereuses (__proto__, constructor, prototype) ignorées.
+const EXTERNAL_ID_KEY = /(^id$|Id$)/;
+const EXTERNAL_MAX_DEPTH = 40;
+function sanitizeExternalValue(v, key, depth = 0) {
+  // Un fichier imbriqué à l'absurde (des milliers de niveaux) ferait dépasser la
+  // pile d'appels : au-delà d'une profondeur qu'aucune donnée réelle n'atteint,
+  // on coupe la branche.
+  if (depth > EXTERNAL_MAX_DEPTH) return null;
+  if (typeof v === "string") {
+    if (key && EXTERNAL_ID_KEY.test(key)) return v.replace(/[^\w-]/g, "").slice(0, 64);
+    if (key === "date") return /^\d{4}-\d{2}-\d{2}(T[\d:.+\-Z]*)?$/.test(v) ? v : todayISO();
+    return v.replace(/</g, "＜").replace(/>/g, "＞");
+  }
+  // Un nom ou un libellé est toujours un texte (trié/comparé avec localeCompare).
+  if ((key === "name" || key === "label") && typeof v === "number") return String(v);
+  if (Array.isArray(v)) return v.map((x) => sanitizeExternalValue(x, key, depth + 1));
+  if (v && typeof v === "object") {
+    const out = {};
+    for (const k of Object.keys(v)) {
+      if (k === "__proto__" || k === "constructor" || k === "prototype") continue;
+      out[k] = sanitizeExternalValue(v[k], k, depth + 1);
+      // Identifiant vidé par le nettoyage : un "id" doit rester unique et non vide ;
+      // une référence ("...Id") vidée n'a plus de cible.
+      if (EXTERNAL_ID_KEY.test(k) && typeof v[k] === "string" && out[k] === "") out[k] = k === "id" ? uid() : null;
+    }
+    return out;
+  }
+  return v;
+}
+// Une liste reçue du cloud : Firebase renvoie parfois un objet (clés non
+// consécutives) ou null à la place d'un tableau, et des trous (null) dans un
+// tableau — ce qui faisait planter les .map/.sort de l'affichage.
+function asExternalList(v) {
+  const list = Array.isArray(v) ? v : v && typeof v === "object" ? Object.values(v) : [];
+  return list.filter((x) => x !== null && x !== undefined);
+}
+/* ---------- Validation de forme : une donnée abîmée ne doit jamais empêcher l'app de démarrer ---------- */
+// Constaté : importer une liste contenant un élément null rendait l'app incapable de
+// démarrer ; des champs de mauvais type (exercises = texte, sets = nombre, blocks =
+// null...) faisaient planter l'affichage d'un écran. On garantit ici la FORME (listes
+// là où l'app attend des listes, objets là où elle attend des objets) sans rien
+// changer à des données déjà correctes — les champs inconnus sont conservés.
+const _isObj = (x) => x !== null && typeof x === "object" && !Array.isArray(x);
+const _arr = (x) => (Array.isArray(x) ? x : []);
+const _objList = (v) => asExternalList(v).filter(_isObj);
+// Une séance ou une pesée sans date n'a pas de place dans l'historique ni dans
+// le calendrier (qui lisent la date de chacune) : on l'écarte plutôt que de
+// laisser l'écran planter.
+const _dated = (v) => _objList(v).filter((x) => typeof x.date === "string");
+function shapeGymSessions(v) {
+  return _dated(v).map((s) => ({ ...s, exercises: _arr(s.exercises).filter(_isObj).map((ex) => ({ ...ex, sets: _arr(ex.sets).filter(_isObj) })) }));
+}
+function shapeBlockSessions(v) {
+  return _dated(v).map((s) => ({ ...s, blocks: _arr(s.blocks).filter(_isObj) }));
+}
+function shapeGymPlans(v) {
+  return _objList(v).map((p) => ({ ...p, exercises: _arr(p.exercises).filter(_isObj).map((ex) => ({ ...ex, sets: _arr(ex.sets).filter(_isObj) })) }));
+}
+function shapeConfigs(v) {
+  return _objList(v).map((c) => ({
+    ...c,
+    name: typeof c.name === "string" ? c.name : String(c.name == null ? "" : c.name),
+    baseWeights: _arr(c.baseWeights).map((x) => (typeof x === "number" ? x : parseFloat(x))).filter(Number.isFinite),
+  }));
+}
+function shapeNamedObjects(v) {
+  return _objList(v).map((c) => ({ ...c, name: typeof c.name === "string" ? c.name : String(c.name == null ? "" : c.name) }));
+}
+function shapeWeights(v) {
+  return _dated(v);
+}
+function shapeNameList(v) {
+  return asExternalList(v).filter((x) => typeof x === "string");
+}
+
+
+/* ---------- Filet de sécurité : aucun gestionnaire d'évènement injecté ---------- */
+// L'app n'utilise AUCUN attribut on*="..." dans ses gabarits (tous ses
+// évènements passent par addEventListener) : un tel attribut dans l'interface
+// ne peut donc venir que d'un texte injecté. Quoi qu'il arrive en amont, on le
+// retire — ainsi que les balises exécutables et les adresses javascript: —
+// aussitôt après chaque affichage. Un MutationObserver s'exécute avant que le
+// navigateur ne traite l'évènement (chargement raté d'une image, focus
+// automatique...) : le gestionnaire est déjà parti quand il serait appelé.
+const DOM_GUARD_BLOCKED_TAGS = new Set(["SCRIPT", "IFRAME", "FRAME", "FRAMESET", "OBJECT", "EMBED", "APPLET", "BASE", "META", "LINK"]);
+const DOM_GUARD_URL_ATTRS = new Set(["href", "src", "action", "formaction", "data", "xlink:href"]);
+function scrubInjectedDom(root) {
+  if (!root || root.nodeType !== 1) return;
+  const all = [root, ...root.querySelectorAll("*")];
+  for (const el of all) {
+    if (DOM_GUARD_BLOCKED_TAGS.has(el.tagName.toUpperCase())) {
+      el.remove();
+      continue;
+    }
+    for (const at of Array.from(el.attributes)) {
+      const name = at.name.toLowerCase();
+      if (name.startsWith("on") || name === "srcdoc") el.removeAttribute(at.name);
+      else if (DOM_GUARD_URL_ATTRS.has(name) && /^\s*(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(at.value)) el.removeAttribute(at.name);
+    }
+  }
+}
+const domGuard = new MutationObserver((mutations) => {
+  for (const m of mutations) for (const n of m.addedNodes) scrubInjectedDom(n);
+});
+["app", "custom-modal-root"].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) domGuard.observe(el, { childList: true, subtree: true });
+});
+
+/* ---------- Anti-"clickjacking" ---------- */
+// Une page tierce ne doit pas pouvoir afficher l'app dans un cadre invisible
+// pour piéger un toucher (suppression, déconnexion...). L'hébergement statique ne
+// permet pas d'envoyer l'en-tête X-Frame-Options : on fait la vérification ici.
+if (window.top !== window.self) {
+  document.documentElement.style.display = "none";
+  try {
+    window.top.location = window.self.location;
+  } catch (e) {
+    // Cadre d'un autre domaine : on laisse l'app cachée plutôt que cliquable.
+  }
+}
 
 function loadJSON(key, fallback) {
   try {
@@ -383,10 +516,21 @@ function loadJSON(key, fallback) {
   }
 }
 let localStorageWarned = false;
+let localStorageFullWarned = false;
+function warnIfStorageFull(e) {
+  // Stockage de l'appareil plein : la donnée reste en mémoire mais ne survivrait
+  // PAS à la fermeture de l'app — jusqu'ici, sans le moindre signe visible.
+  const full = e && (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED" || e.code === 22);
+  if (full && !localStorageFullWarned && typeof showAlert === "function") {
+    localStorageFullWarned = true;
+    showAlert("Le stockage de cet appareil est plein : tes dernières données ne sont pas enregistrées localement. Fais de la place (ou exporte une sauvegarde) avant de fermer l'app.");
+  }
+}
 function saveJSON(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
+    warnIfStorageFull(e);
     if (!localStorageWarned) {
       console.error("Sauvegarde locale indisponible dans ce contexte (sans incidence : les données restent en mémoire et sont synchronisées via Scriptable).", e);
       localStorageWarned = true;
@@ -411,6 +555,7 @@ function saveJSONLocalOnly(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
+    warnIfStorageFull(e);
     if (!localStorageWarned) {
       console.error("Sauvegarde locale indisponible dans ce contexte.", e);
       localStorageWarned = true;
@@ -442,13 +587,18 @@ function attachArmedConfirmButton(btn, defaultHTML, confirmHTML, onConfirm) {
   });
 }
 
+// Échappe un texte destiné à être inséré dans du HTML (contenu ou attribut).
+function escapeHTML(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function showConfirm(message, onConfirm, opts = {}) {
   const root = document.getElementById("custom-modal-root");
   root.innerHTML = `
     <div class="modal-backdrop">
-      <div class="modal-box" role="alertdialog" aria-label="${message}">
-        <div class="modal-message">${message}</div>
-        ${opts.detail ? `<div class="modal-detail">${opts.detail}</div>` : ""}
+      <div class="modal-box" role="alertdialog" aria-label="${escapeHTML(message)}">
+        <div class="modal-message">${escapeHTML(message)}</div>
+        ${opts.detail ? `<div class="modal-detail">${escapeHTML(opts.detail)}</div>` : ""}
         <div class="modal-actions">
           <button type="button" class="modal-btn modal-cancel">Annuler</button>
           <button type="button" class="modal-btn modal-confirm ${opts.danger ? "danger" : ""}">${opts.confirmLabel || "Confirmer"}</button>

@@ -15,26 +15,39 @@ function applyColorMode(mode) {
 }
 applyColorMode(colorMode);
 
+// Sélection de texte par appui long : bloquée par défaut (comportement "app"
+// plutôt que "page web"). Réglage propre à l'appareil, comme le mode de
+// couleur — voir Réglages > Apparence. Appliqué tout de suite, avant le
+// premier rendu, pour ne jamais laisser le texte se sélectionner une
+// fraction de seconde au démarrage. Les champs de saisie restent éditables
+// dans tous les cas (voir le CSS : html.no-text-select input, textarea...).
+let noTextSelect = loadJSON(KEYS.noTextSelect, true);
+function applyTextSelectionPref(on) {
+  noTextSelect = !!on;
+  document.documentElement.classList.toggle("no-text-select", noTextSelect);
+}
+applyTextSelectionPref(noTextSelect);
+
 // Volume des bips de la boucle Gainage (voir 19-live-sound.js) — en
 // pourcentage, 100 = volume d'origine (celui d'avant ce réglage). Permet
 // de monter au-delà si besoin (musique dans les oreilles qui couvre le
 // bip par défaut), pas seulement de baisser.
 let soundVolume = loadJSON(KEYS.soundVolume, 100);
 
-let sessions = loadJSON(KEYS.sessions, []);
-let library = loadJSON(KEYS.library, []);
-let gymExerciseConfigs = loadJSON(KEYS.gymExerciseConfigs, []);
+let sessions = shapeGymSessions(loadJSON(KEYS.sessions, []));
+let library = shapeNameList(loadJSON(KEYS.library, []));
+let gymExerciseConfigs = shapeConfigs(loadJSON(KEYS.gymExerciseConfigs, []));
 // Liste des exercices de gainage nommés/configurés (Salle de sport, type
 // Cardio/Gainage) — volontairement plus simple que gymExerciseConfigs : pas
 // de poids/palier/incrément puisque le gainage ne se travaille qu'au temps.
-let gainageExerciseConfigs = loadJSON(KEYS.gainageExerciseConfigs, []);
+let gainageExerciseConfigs = shapeNamedObjects(loadJSON(KEYS.gainageExerciseConfigs, []));
 // Plans préparés en amont (module Créer, mode "Plan") — une liste d'exercices
 // avec des séries CIBLES (poids/reps) plutôt que des séries réellement
 // faites ; pour le gainage, une config de boucle (tours/travail/repos) au
 // lieu de séries, puisque le gainage ne se planifie pas en poids/reps.
 // Chaque plan : { id, label, createdAt, exercises: [{ id, name, exType,
 // category, sets: [{id, weight, reps}], loop: {rounds, workSec, restSec} | null }] }
-let sessionPlans = loadJSON(KEYS.sessionPlans, []);
+let sessionPlans = shapeGymPlans(loadJSON(KEYS.sessionPlans, []));
 // Migration ponctuelle : un nom d'exercice enregistré sans majuscule initiale
 // (tapé avant ce correctif, ex. "ischio") est corrigé une bonne fois pour
 // toutes, pour que le nom affiché soit partout identique à ce qui est
@@ -68,7 +81,7 @@ let gymSettingsMode = "muscu"; // "muscu" | "gainage"
 let gainageSettingsFormOpen = false;
 let gainageSettingsEditingConfigId = null;
 let gainageSettingsFormDraft = { name: "", rounds: 10, workSec: 30, restSec: 30 };
-let weights = loadJSON(KEYS.weights, []);
+let weights = shapeWeights(loadJSON(KEYS.weights, []));
 let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercises: [], kind: "session" };
 if (!Array.isArray(draft.exercises)) draft.exercises = [];
 if (!draft.kind) draft.kind = "session"; // séances déjà sauvegardées avant l'ajout des plans
@@ -98,8 +111,8 @@ let sharedSelectedDate = null;
 // la fois ("gym" inclut aussi le Gainage, qui vit dans le même module).
 let sharedCalendarFilter = "all";
 
-let runSessions = loadJSON(KEYS.runSessions, []);
-let runLibrary = loadJSON(KEYS.runLibrary, []);
+let runSessions = shapeBlockSessions(loadJSON(KEYS.runSessions, []));
+let runLibrary = shapeNameList(loadJSON(KEYS.runLibrary, []));
 let runDraft = loadJSON(KEYS.runDraft, null) || { kind: "session", date: todayISO(), label: "", blocks: [emptyBlock()] };
 if (!Array.isArray(runDraft.blocks) || runDraft.blocks.length === 0) runDraft.blocks = [emptyBlock()];
 if (!runDraft.kind) runDraft.kind = "session";
@@ -109,12 +122,12 @@ let openRunHistoryIds = {};
 let runDraftSaveTimer = null;
 // Plans (gabarits prêts à lancer) pour Course à pied — même principe que
 // pour Salle de sport, voir gymTopMode/sessionPlans.
-let runSessionPlans = loadJSON(KEYS.runSessionPlans, []);
+let runSessionPlans = shapeBlockSessions(loadJSON(KEYS.runSessionPlans, []));
 let runTopMode = "session"; // "session" | "plan"
 let runEditingPlanId = runDraft.editingPlanId || null;
 
-let swimSessions = loadJSON(KEYS.swimSessions, []);
-let swimLibrary = loadJSON(KEYS.swimLibrary, []);
+let swimSessions = shapeBlockSessions(loadJSON(KEYS.swimSessions, []));
+let swimLibrary = shapeNameList(loadJSON(KEYS.swimLibrary, []));
 let swimDraft = loadJSON(KEYS.swimDraft, null) || { kind: "session", date: todayISO(), label: "", blocks: [emptySwimBlock()] };
 if (!Array.isArray(swimDraft.blocks) || swimDraft.blocks.length === 0) swimDraft.blocks = [emptySwimBlock()];
 if (!swimDraft.kind) swimDraft.kind = "session";
@@ -122,12 +135,12 @@ let swimEditingSessionId = swimDraft.editingSessionId || null;
 let swimTab = "log";
 let openSwimHistoryIds = {};
 let swimDraftSaveTimer = null;
-let swimSessionPlans = loadJSON(KEYS.swimSessionPlans, []);
+let swimSessionPlans = shapeBlockSessions(loadJSON(KEYS.swimSessionPlans, []));
 let swimTopMode = "session"; // "session" | "plan"
 let swimEditingPlanId = swimDraft.editingPlanId || null;
 
-let bikeSessions = loadJSON(KEYS.bikeSessions, []);
-let bikeLibrary = loadJSON(KEYS.bikeLibrary, []);
+let bikeSessions = shapeBlockSessions(loadJSON(KEYS.bikeSessions, []));
+let bikeLibrary = shapeNameList(loadJSON(KEYS.bikeLibrary, []));
 let bikeDraft = loadJSON(KEYS.bikeDraft, null) || { kind: "session", date: todayISO(), label: "", blocks: [emptyBikeBlock()] };
 if (!Array.isArray(bikeDraft.blocks) || bikeDraft.blocks.length === 0) bikeDraft.blocks = [emptyBikeBlock()];
 if (!bikeDraft.kind) bikeDraft.kind = "session";
@@ -135,7 +148,7 @@ let bikeEditingSessionId = bikeDraft.editingSessionId || null;
 let bikeTab = "log";
 let openBikeHistoryIds = {};
 let bikeDraftSaveTimer = null;
-let bikeSessionPlans = loadJSON(KEYS.bikeSessionPlans, []);
+let bikeSessionPlans = shapeBlockSessions(loadJSON(KEYS.bikeSessionPlans, []));
 let bikeTopMode = "session"; // "session" | "plan"
 let bikeEditingPlanId = bikeDraft.editingPlanId || null;
 

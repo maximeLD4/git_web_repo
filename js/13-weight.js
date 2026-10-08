@@ -18,6 +18,10 @@ function weightTabHTML() {
   const latest = sorted[0];
   const prev = sorted[1];
   const diff = latest && prev ? +(latest.weight - prev.weight).toFixed(1) : null;
+  // La variation compare à la pesée PRÉCÉDENTE, quel que soit l'écart : le
+  // libellé doit donc dire l'écart réel, pas un "7 jours" figé.
+  const diffDays = latest && prev ? Math.round((new Date(latest.date + "T00:00:00") - new Date(prev.date + "T00:00:00")) / 86400000) : null;
+  const diffLabel = diffDays === null ? "" : diffDays <= 0 ? "même jour" : "sur " + diffDays + " jour" + (diffDays > 1 ? "s" : "");
   const chartData = [...weights].sort((a, b) => (a.date > b.date ? 1 : -1));
 
   let statsHTML = "";
@@ -32,7 +36,7 @@ function weightTabHTML() {
       <div class="weight-stat-card weight-stat-card-dark">
         <div class="weight-stat-label">Variation</div>
         <div class="weight-stat-value">${diff === null ? "—" : `${diff > 0 ? "+" : ""}${diff} kg`}</div>
-        <div class="weight-stat-date">sur 7 jours</div>
+        <div class="weight-stat-date">${diffLabel}</div>
       </div>
     </div>`;
   }

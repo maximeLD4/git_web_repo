@@ -1,12 +1,20 @@
 
-async function exportBackup() {
-  const backup = {
+// Contenu d'une sauvegarde complète. UNE seule définition, utilisée par l'export
+// de l'app ET par le pont Scriptable : ce dernier avait gardé une ancienne liste
+// de champs (sans gainage ni plans), si bien qu'un import Scriptable derrière un
+// export effaçait les exercices de gainage et tous les plans.
+function buildBackupData() {
+  return {
     sessions, library, weights, gymExerciseConfigs, gainageExerciseConfigs, sessionPlans,
     runSessions, runLibrary, runSessionPlans,
     swimSessions, swimLibrary, swimSessionPlans,
     bikeSessions, bikeLibrary, bikeSessionPlans,
     exportedAt: new Date().toISOString(),
   };
+}
+
+async function exportBackup() {
+  const backup = buildBackupData();
   const json = JSON.stringify(backup, null, 2);
   const now = new Date();
   const hh = String(now.getHours()).padStart(2, "0");
@@ -69,8 +77,18 @@ async function exportSingleSession(type, session) {
   URL.revokeObjectURL(url);
 }
 
+// Données importées = fichier venu d'ailleurs (séance partagée par quelqu'un,
+// sauvegarde ancienne...) : même normalisation que pour le cloud, voir
+// sanitizeExternalValue (02-utils.js). Conservé sous ce nom pour les appelants.
+function sanitizeImportedValue(v) {
+  return sanitizeExternalValue(v);
+}
+
 function mergeImportedSession(type, session) {
-  const cloned = { ...session, id: uid() };
+  const clean = sanitizeImportedValue(session);
+  const shaped = (type === "gym" ? shapeGymSessions([clean]) : shapeBlockSessions([clean]))[0];
+  if (!shaped) throw new Error("Séance importée illisible");
+  const cloned = { ...shaped, id: uid() };
   setActivitySessions(type, [cloned, ...getActivitySessions(type)]);
 }
 
@@ -96,11 +114,16 @@ function validateSingleSessionForSection(data, expectedType) {
 function handleImportedFile(data, rerender) {
   if (data.kind === "gymlog-single-session" && data.type && data.session) {
     const meta = ACTIVITY_META.find((a) => a.key === data.type);
-    const label = meta ? meta.label : data.type;
+    const label = meta ? meta.label : sanitizeImportedValue(String(data.type));
     showConfirm(
       `Ajouter cette séance (${formatDateFR(data.session.date)} · ${label}) à ton historique ?`,
       () => {
-        mergeImportedSession(data.type, data.session);
+        try {
+          mergeImportedSession(data.type, data.session);
+        } catch (err) {
+          showAlert("Ce fichier est illisible : rien n'a été modifié.");
+          return;
+        }
         rerender();
         showAlert("Séance ajoutée à ton historique.");
       },
@@ -111,7 +134,12 @@ function handleImportedFile(data, rerender) {
   showConfirm(
     "Importer cette sauvegarde va remplacer toutes tes données actuelles. Continuer ?",
     () => {
-      restoreFromBackupData(data);
+      try {
+        restoreFromBackupData(data);
+      } catch (err) {
+        showAlert("Ce fichier est illisible ou trop complexe : rien n'a été modifié.");
+        return;
+      }
       rerender();
       showAlert("Import réussi.");
     },
@@ -119,22 +147,23 @@ function handleImportedFile(data, rerender) {
   );
 }
 
-function restoreFromBackupData(data) {
-  sessions = data.sessions || [];
-  library = data.library || [];
-  weights = data.weights || [];
-  gymExerciseConfigs = data.gymExerciseConfigs || [];
-  gainageExerciseConfigs = data.gainageExerciseConfigs || [];
-  sessionPlans = data.sessionPlans || [];
-  runSessions = data.runSessions || [];
-  runLibrary = data.runLibrary || [];
-  runSessionPlans = data.runSessionPlans || [];
-  swimSessions = data.swimSessions || [];
-  swimLibrary = data.swimLibrary || [];
-  swimSessionPlans = data.swimSessionPlans || [];
-  bikeSessions = data.bikeSessions || [];
-  bikeLibrary = data.bikeLibrary || [];
-  bikeSessionPlans = data.bikeSessionPlans || [];
+function restoreFromBackupData(rawData) {
+  const data = sanitizeExternalValue(rawData) || {};
+  sessions = shapeGymSessions(data.sessions);
+  library = shapeNameList(data.library);
+  weights = shapeWeights(data.weights);
+  gymExerciseConfigs = shapeConfigs(data.gymExerciseConfigs);
+  gainageExerciseConfigs = shapeNamedObjects(data.gainageExerciseConfigs);
+  sessionPlans = shapeGymPlans(data.sessionPlans);
+  runSessions = shapeBlockSessions(data.runSessions);
+  runLibrary = shapeNameList(data.runLibrary);
+  runSessionPlans = shapeBlockSessions(data.runSessionPlans);
+  swimSessions = shapeBlockSessions(data.swimSessions);
+  swimLibrary = shapeNameList(data.swimLibrary);
+  swimSessionPlans = shapeBlockSessions(data.swimSessionPlans);
+  bikeSessions = shapeBlockSessions(data.bikeSessions);
+  bikeLibrary = shapeNameList(data.bikeLibrary);
+  bikeSessionPlans = shapeBlockSessions(data.bikeSessionPlans);
   saveJSON(KEYS.sessions, sessions);
   saveJSON(KEYS.library, library);
   saveJSON(KEYS.weights, weights);

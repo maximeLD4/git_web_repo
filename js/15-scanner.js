@@ -168,7 +168,10 @@ function loadTesseractScript() {
   if (tesseractLoadPromise) return tesseractLoadPromise;
   tesseractLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    // Hébergé avec l'app et à version FIGÉE (voir vendor/SOURCES.txt) : ce script
+    // s'exécute avec un accès complet à la page, il ne doit pas pouvoir changer à
+    // l'insu de l'app comme le faisait "tesseract.js@5" (dernière 5.x du CDN).
+    script.src = "./vendor/tesseract-5.1.1.min.js?v=5.1.1";
     script.onload = () => resolve();
     script.onerror = () => reject(new Error("Impossible de charger la bibliothèque de lecture de texte."));
     document.head.appendChild(script);

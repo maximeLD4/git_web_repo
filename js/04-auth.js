@@ -204,18 +204,22 @@ function pullFromFirebase() {
         return;
       }
 
-      sessions = gymSnap.val() || [];
-      runSessions = runSnap.val() || [];
-      swimSessions = swimSnap.val() || [];
-      bikeSessions = bikeSnap.val() || [];
-      library = gymLibSnap.val() || [];
-      runLibrary = runLibSnap.val() || [];
-      swimLibrary = swimLibSnap.val() || [];
-      bikeLibrary = bikeLibSnap.val() || [];
-      gymExerciseConfigs = configsSnap.val() || [];
-      gainageExerciseConfigs = gainageConfigsSnap.val() || [];
-      sessionPlans = plansSnap.val() || [];
-      weights = weightsSnap.val() || [];
+      // Tout ce qui vient du cloud est normalisé avant d'être utilisé (voir
+      // sanitizeExternalValue, 02-utils.js) : un champ piégé ou une forme
+      // inattendue (objet à la place d'un tableau...) ne doit ni s'exécuter
+      // ni faire planter l'affichage.
+      sessions = shapeGymSessions(sanitizeExternalValue(gymSnap.val()));
+      runSessions = shapeBlockSessions(sanitizeExternalValue(runSnap.val()));
+      swimSessions = shapeBlockSessions(sanitizeExternalValue(swimSnap.val()));
+      bikeSessions = shapeBlockSessions(sanitizeExternalValue(bikeSnap.val()));
+      library = shapeNameList(sanitizeExternalValue(gymLibSnap.val()));
+      runLibrary = shapeNameList(sanitizeExternalValue(runLibSnap.val()));
+      swimLibrary = shapeNameList(sanitizeExternalValue(swimLibSnap.val()));
+      bikeLibrary = shapeNameList(sanitizeExternalValue(bikeLibSnap.val()));
+      gymExerciseConfigs = shapeConfigs(sanitizeExternalValue(configsSnap.val()));
+      gainageExerciseConfigs = shapeNamedObjects(sanitizeExternalValue(gainageConfigsSnap.val()));
+      sessionPlans = shapeGymPlans(sanitizeExternalValue(plansSnap.val()));
+      weights = shapeWeights(sanitizeExternalValue(weightsSnap.val()));
       // Essentiel pour l'usage hors-ligne : jusqu'ici, ce qui venait d'être
       // récupéré n'était mis à jour qu'en mémoire, jamais réellement écrit
       // dans le stockage local de l'appareil. Résultat observé en pratique :

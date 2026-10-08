@@ -7,9 +7,9 @@ function categoryLabel(key) {
 function viewportFixLabel() {
   const stored = getViewportMode();
   if (stored === "off") return "correctif désactivé";
-  if (viewportFixExtra <= 0) return "aucun correctif nécessaire";
-  const names = { flux: "flux", bande: "bande", etendu: "étendu" };
-  return (stored === "auto" ? "auto → " : "mode ") + names[viewportResolvedMode] + " (+" + viewportFixExtra + ")";
+  const names = { auto: "auto", flux: "flux", bande: "bande" };
+  if (viewportFixExtra > 0) return "mode " + names[stored] + (stored === "auto" ? " → " + viewportResolvedMode : "") + " (+" + viewportFixExtra + ")";
+  return "mode " + names[stored] + " (sans effet : cet appareil n'en a pas besoin)";
 }
 
 function renderSettingsApp() {
@@ -21,14 +21,26 @@ function renderSettingsApp() {
     <div class="content" id="content" style="padding-bottom: calc(var(--bottom-nav-h) + 10px);"></div>
     <div style="position:absolute; left:0; right:0; bottom:calc(var(--bottom-nav-h) + 10px); display:flex; flex-direction:column; align-items:center; gap:10px;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
-      <div id="viewport-diag" style="font-size:11px; line-height:1.4; color:var(--text-dim); opacity:0.6; font-family:-apple-system,system-ui,sans-serif; text-align:center; cursor:pointer; padding:2px 10px;"><span id="app-version-label">${appVersion ? "v" + appVersion : ""}</span> · ${viewportFixLabel()}<br>fenêtre ${window.innerWidth}×${window.innerHeight} · écran ${screen.width}×${screen.height} · visible ${window.visualViewport ? Math.round(window.visualViewport.height) : "?"}<br>${viewportUnitsLabel()}</div>
+      <div id="app-version-label" style="font-size:11px; color:var(--text-dim); opacity:0.55; font-family:-apple-system,system-ui,sans-serif; padding:6px 14px;">${appVersion ? "v" + appVersion : ""}</div>
     </div>
     ${bottomNavHTML("settings")}
   `;
   attachBottomNavListeners();
-  document.getElementById("viewport-diag").addEventListener("click", () => {
-    cycleViewportMode();
-    renderSettingsApp();
+  // Geste discret de secours : 5 touchers rapprochés sur le numéro de version
+  // changent le mode du correctif d'affichage iPhone (auto → flux → bande →
+  // off), au cas où un appareil afficherait mal la barre du bas. Invisible
+  // pour un usage normal.
+  let versionTaps = 0;
+  let versionTapTimer = null;
+  document.getElementById("app-version-label").addEventListener("click", () => {
+    versionTaps++;
+    clearTimeout(versionTapTimer);
+    versionTapTimer = setTimeout(() => { versionTaps = 0; }, 2000);
+    if (versionTaps >= 5) {
+      versionTaps = 0;
+      cycleViewportMode();
+      showAlert("Affichage : " + viewportFixLabel() + ".");
+    }
   });
   document.getElementById("logout-btn").addEventListener("click", () => {
     showConfirm("Te déconnecter ?", logoutUser, { confirmLabel: "Se déconnecter", danger: true, detail: "Tes données restent sauvegardées dans ton profil." });
@@ -54,7 +66,7 @@ function renderSettingsContent() {
         <div class="home-list-chevron">${ICONS.chevronRight}</div>
       </div>
       <div class="home-list-row" data-open-settings="appearance">
-        <div class="home-list-icon home-list-icon-square" style="background: var(--yellow);">${ICONS.sun}</div>
+        <div class="home-list-icon home-list-icon-square" style="background: var(--yellow); color:#FFF8F0;">${ICONS.sun}</div>
         <div class="home-list-label">Apparence</div>
         <div class="home-list-value">${colorMode === "day" ? "Jour" : colorMode === "night" ? "Nuit" : "Anne"}</div>
         <div class="home-list-chevron">${ICONS.chevronRight}</div>
@@ -94,24 +106,46 @@ function renderSettingsAppearanceApp() {
       <div class="home-section-label" style="margin-top:0;">Mode</div>
       <div class="home-list">
         <div class="home-list-row" data-color-mode="day">
-          <div class="home-list-icon home-list-icon-square" style="background: var(--yellow);">${ICONS.sun}</div>
+          <div class="home-list-icon home-list-icon-square" style="background: var(--yellow); color:#FFF8F0;">${ICONS.sun}</div>
           <div class="home-list-label">Jour</div>
           ${colorMode === "day" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
         </div>
         <div class="home-list-row" data-color-mode="night">
-          <div class="home-list-icon home-list-icon-square" style="background: #241E1A;">${ICONS.moon}</div>
+          <div class="home-list-icon home-list-icon-square" style="background: #241E1A; color:#FFF8F0;">${ICONS.moon}</div>
           <div class="home-list-label">Nuit</div>
           ${colorMode === "night" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
         </div>
         <div class="home-list-row" data-color-mode="anne">
-          <div class="home-list-icon home-list-icon-square" style="background: #9E0B2E;">${ICONS.heart}</div>
+          <div class="home-list-icon home-list-icon-square" style="background: #9E0B2E; color:#FFF8F0;">${ICONS.heart}</div>
           <div class="home-list-label">Anne</div>
           ${colorMode === "anne" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
         </div>
       </div>
       <div class="field-hint">Nuit adoucit l'écran le soir. Anne passe l'app dans une palette rose.</div>
+      <div class="home-section-label" style="margin-top:22px;">Texte</div>
+      <div class="home-list">
+        <div class="home-list-row" id="no-text-select-row" role="switch" tabindex="0" aria-checked="${noTextSelect ? "true" : "false"}" style="cursor:pointer;">
+          <div class="home-list-icon home-list-icon-square" style="background: var(--ink); color: var(--on-ink);">${ICONS.textCursor}</div>
+          <div class="home-list-label">Bloquer la sélection de texte</div>
+          <span class="toggle-switch ${noTextSelect ? "on" : ""}" aria-hidden="true"><span class="toggle-switch-knob"></span></span>
+        </div>
+      </div>
+      <div class="field-hint">Un appui long ne sélectionne plus le texte et n'ouvre plus le menu Copier. Les champs de saisie restent modifiables.</div>
     </div>
   `;
+  const noSelectRow = document.getElementById("no-text-select-row");
+  const toggleNoSelect = () => {
+    applyTextSelectionPref(!noTextSelect);
+    saveJSON(KEYS.noTextSelect, noTextSelect);
+    renderSettingsAppearanceApp();
+  };
+  noSelectRow.addEventListener("click", toggleNoSelect);
+  noSelectRow.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleNoSelect();
+    }
+  });
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
     currentApp = "settings";
     render();
@@ -721,12 +755,24 @@ function attachGymSettingsListeners() {
       nameInput.focus();
     });
   });
+  // Poids en cours de saisie dans "Ajouter un poids (kg)" : null si le champ est
+  // vide, NaN si ce qui est tapé n'est pas un poids valide, sinon le nombre.
+  // Partagé par le bouton "Ajouter" ET par "Enregistrer" (voir plus bas) : les
+  // deux se comportent forcément à l'identique. (La virgule décimale est déjà
+  // convertie en point, à la volée, par l'écouteur global de 03-state.js.)
+  function readPendingWeight() {
+    const raw = newWeightInput.value.trim();
+    if (raw === "") return null;
+    const val = parseFloat(raw);
+    return isNaN(val) || val < 0 ? NaN : val;
+  }
+  function addWeightToDraft(val) {
+    if (!gymSettingsFormDraft.baseWeights.includes(val)) gymSettingsFormDraft.baseWeights.push(val);
+  }
   document.getElementById("config-add-base-weight-btn").addEventListener("click", () => {
     syncFormFromInputs();
-    const val = parseFloat(newWeightInput.value);
-    if (!isNaN(val) && val >= 0 && !gymSettingsFormDraft.baseWeights.includes(val)) {
-      gymSettingsFormDraft.baseWeights.push(val);
-    }
+    const pending = readPendingWeight();
+    if (pending !== null && !isNaN(pending)) addWeightToDraft(pending);
     gymSettingsFocusTarget = "weight";
     renderGymSettingsContent();
   });
@@ -789,23 +835,48 @@ function attachGymSettingsListeners() {
   });
   document.getElementById("save-config-btn").addEventListener("click", () => {
     syncFormFromInputs();
-    const errorSlot = document.getElementById("config-form-error");
+    // Un poids tapé dans "Ajouter un poids (kg)" mais jamais validé par
+    // "Ajouter" (on va vite, entre deux séries) était perdu à l'enregistrement,
+    // en silence. On l'ajoute maintenant, exactement comme le bouton l'aurait
+    // fait — avant les vérifications ci-dessous, pour qu'il compte aussi dans
+    // "au moins un poids possible".
+    const pending = readPendingWeight();
+    let addedPending = false;
+    if (Number.isNaN(pending)) {
+      const slot = document.getElementById("config-form-error");
+      slot.innerHTML = `<div class="error-msg"><span style="text-transform:none;">« ${escapeHTML(newWeightInput.value.trim())} »</span> n'est pas un poids valide — corrige-le ou efface le champ.</div>`;
+      newWeightInput.focus();
+      return;
+    }
+    if (pending !== null && !gymSettingsFormDraft.baseWeights.includes(pending)) {
+      addWeightToDraft(pending);
+      addedPending = true;
+    }
+    // Si l'enregistrement s'arrête sur une erreur (nom manquant...), les
+    // pastilles de poids doivent montrer celui qu'on vient d'ajouter : on
+    // redessine le formulaire, puis on affiche l'erreur et on la ramène à l'écran.
+    const fail = (message) => {
+      if (addedPending) renderGymSettingsContent();
+      const slot = document.getElementById("config-form-error");
+      slot.innerHTML = `<div class="error-msg">${message}</div>`;
+      if (slot.scrollIntoView) slot.scrollIntoView({ block: "nearest" });
+    };
     const name = capitalizeFirst(gymSettingsFormDraft.name.trim());
     if (!name) {
-      errorSlot.innerHTML = `<div class="error-msg">Donne un nom à cet exercice.</div>`;
+      fail("Donne un nom à cet exercice.");
       return;
     }
     if (gymSettingsFormDraft.baseWeights.length === 0) {
-      errorSlot.innerHTML = `<div class="error-msg">Ajoute au moins un poids possible.</div>`;
+      fail("Ajoute au moins un poids possible.");
       return;
     }
     const nameLower = name.toLowerCase();
     const isDuplicate = gymExerciseConfigs.some((c) => c.id !== gymSettingsEditingConfigId && c.name.trim().toLowerCase() === nameLower);
     if (isDuplicate) {
-      errorSlot.innerHTML = `<div class="error-msg">Un exercice nommé « ${name} » existe déjà — choisis un nom différent.</div>`;
+      fail(`Un exercice nommé « ${escapeHTML(name)} » existe déjà — choisis un nom différent.`);
       return;
     }
-    errorSlot.innerHTML = "";
+    document.getElementById("config-form-error").innerHTML = "";
     const oldConfig = gymSettingsEditingConfigId ? gymExerciseConfigs.find((c) => c.id === gymSettingsEditingConfigId) : null;
     const oldPairedId = oldConfig ? oldConfig.pairedExerciseId || null : null;
     const newPairedId = gymSettingsFormDraft.pairedExerciseId || null;

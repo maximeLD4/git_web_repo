@@ -6,13 +6,7 @@
 window.__scriptableDirty = false;
 
 window.__scriptableExport = function () {
-  return JSON.stringify({
-    sessions, library, weights, gymExerciseConfigs,
-    runSessions, runLibrary,
-    swimSessions, swimLibrary,
-    bikeSessions, bikeLibrary,
-    exportedAt: new Date().toISOString(),
-  });
+  return JSON.stringify(buildBackupData());
 };
 
 window.__scriptableImport = function (jsonString) {
