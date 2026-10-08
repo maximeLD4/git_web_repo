@@ -28,6 +28,68 @@ important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
     course, cyan natation, violet vélo/poids, rose performance) n'ont pas
     été touchées.
 
+2.76.7 - 2026-10-07
+====================
+
+- **iPhone : cause du vide du bas enfin identifiée, dans le code source de
+  WebKit (le moteur d'iOS).** Pour calculer la fenêtre annoncée à la page,
+  iOS prend les limites de la vue moins les marges de sécurité, et la liste
+  des bords concernés par défaut est haut/gauche/droite — pas le bas
+  (WKWebView.mm). Sur un iPhone 11 : 896 − 48 = 848, exactement la valeur
+  mesurée. La vue fait bien 896 ; c'est la fenêtre de MISE EN PAGE qui est
+  amputée. Les éléments `position: fixed` (dont la racine de l'app) se
+  calent dessus et sont donc rognés à 848 — ce qui explique l'échec de
+  l'étirement de la v2.76.5.
+  - Un contenu en flux normal, lui, est dimensionné par la taille du
+    DOCUMENT, qui peut dépasser cette fenêtre. Le mode « flux » (désormais
+    le mode principal) transforme la racine en document normal de la
+    hauteur de l'écran, sans rognage ni défilement parasite.
+  - Nouveau mode « auto » (défaut) : l'app lit `visualViewport.height`, la
+    zone réellement visible. Si elle atteint le bas de l'écran, elle utilise
+    « flux » ; sinon elle reste en « bande » (tout dans la fenêtre visible,
+    couleur de la barre prolongée en dessous). Plus besoin de tester à la
+    main. Un toucher sur la ligne de version en bas de Réglages passe au
+    mode suivant : auto → flux → bande → étendu → off.
+  - La ligne de diagnostic indique aussi la zone visible (« visible 896 »).
+  - Vérifié (Chrome, défaut simulé 414×848 / écran 896, avec la zone
+    visible simulée à 896 puis 848) : « auto » choisit flux (racine, app,
+    barres : bas à 896) ou bande (bas à 848) ; appareil normal et bureau :
+    correctif non déclenché, 8 écrans strictement identiques à la version
+    précédente. NON vérifiable depuis ici : le rendu sur un vrai iPhone.
+
+2.76.6 - 2026-10-07
+====================
+
+- **iPhone : correction de la v2.76.5, qui rognait la barre du bas.** La
+  capture réelle a montré que ma supposition était fausse : la page ne peut
+  PAS peindre dans la bande de 48pt sous la fenêtre annoncée par iOS (848
+  pour un écran de 896) — l'étirement de la racine dessinait la barre
+  jusqu'à 896, mais tout était rogné à 848. La couleur de cette bande,
+  mesurée sur la capture, est exactement la couleur de fond de la page : iOS
+  la remplit avec le fond de la page sans que la page puisse y dessiner.
+  - Nouveau mode par défaut, « bande » : tout reste dans la fenêtre
+    visible (barre complète, aucun rognage) ; la zone de l'indicateur
+    d'accueil n'est plus réservée dans l'app, puisque le bas de la fenêtre
+    n'est pas le bas de l'écran ; et la couleur de la barre est prolongée
+    dans la bande du bas pour qu'elle paraisse aller jusqu'au bord de
+    l'écran. Barre de 50px au lieu de 84px.
+  - Deux modes d'ESSAI pour tenter de récupérer réellement la bande :
+    « étendu » (racine étirée sans rognage) et « flux » (la page devient
+    un document normal de la hauteur de l'écran), plus « off ». Un toucher
+    sur la ligne de version en bas de Réglages passe au mode suivant.
+  - La zone de sécurité du bas est maintenant une seule variable
+    (`--safe-bottom`) dans tout le CSS.
+  - Ligne de diagnostic de Réglages : mode actif, fenêtre/écran, et les
+    hauteurs que le navigateur donne aux unités vh/lvh/svh/dvh.
+  - Corrigé au passage : le bouton « Se déconnecter » de Réglages était
+    resté ancré à la fenêtre (une conversion de la v2.76.5 ne s'était pas
+    appliquée) ; il est maintenant ancré à l'app, et la ligne de
+    diagnostic ne le chevauche plus.
+  - Vérifié (Chrome, défaut simulé 414×848 / 896) : barre à 848 en mode
+    « bande », 896 en « étendu » et « flux » ; appareil normal : 7 écrans
+    strictement identiques à la version précédente. NON vérifiable
+    depuis ici : l'affichage réel sur iPhone.
+
 2.76.5 - 2026-10-07
 ====================
 

@@ -272,14 +272,43 @@ function ensureLogActionsBarResizeListener() {
 // Sur certains iPhone, la fenêtre annoncée à la page (window.innerHeight)
 // est plus courte que l'écran EXACTEMENT de la hauteur de la barre d'état
 // (ex. 848 pour un écran de 896 sur iPhone 11 : écart de 48 = zone de
-// sécurité du haut). Tout ce qui est calé sur "le bas de la fenêtre" s'arrêtait
-// alors 48pt trop haut, laissant un vide jamais utilisé sous la barre du bas
-// dans TOUTE l'app. On ne corrige que sur cette signature précise (portrait,
+// sécurité du haut). La page ne peut pas peindre dans cette bande du bas
+// (constaté : tout y est rogné), mais iOS la remplit avec la couleur de
+// fond de la page. On ne réagit que sur cette signature précise (portrait,
 // écart = zone de sécurité du haut à 6px près) pour ne jamais fausser un
 // appareil, un navigateur ou une fenêtre de bureau qui n'ont pas ce défaut.
-// Désactivable d'un toucher sur la ligne de version dans Réglages.
+//   "bande"  (défaut) : tout reste dans la fenêtre visible, la couleur de la
+//                       barre est prolongée dans la bande du bas.
+//   "etendu" (essai)  : étire la racine jusqu'au bas de l'écran, sans rognage.
+//   "flux"   (essai)  : la page devient un document normal de la hauteur de l'écran.
+//   "off"             : aucun correctif.
+// Un toucher sur la ligne de version (Réglages) passe au mode suivant.
 const VIEWPORT_FIX_KEY = "gymlog.viewportFix";
+const VIEWPORT_MODES = ["auto", "flux", "bande", "etendu", "off"];
 let viewportFixExtra = 0;
+let viewportResolvedMode = "off";
+let viewportAutoChoice = null;
+function getViewportMode() {
+  try {
+    const m = localStorage.getItem(VIEWPORT_FIX_KEY);
+    return VIEWPORT_MODES.includes(m) ? m : "auto";
+  } catch (e) {
+    return "auto";
+  }
+}
+// Mode "auto" : visualViewport.height est la zone RÉELLEMENT visible. Si elle
+// atteint le bas de l'écran alors que la fenêtre de mise en page (innerHeight)
+// s'arrête 48pt plus haut, la bande est affichable : un contenu en flux normal
+// (mode "flux") y sera peint. Sinon on reste dans la fenêtre visible ("bande").
+function resolveViewportMode() {
+  const stored = getViewportMode();
+  if (stored !== "auto") return stored;
+  if (viewportAutoChoice === null) {
+    const vv = window.visualViewport;
+    viewportAutoChoice = vv && Math.round(vv.height) + 6 >= window.screen.height ? "flux" : "bande";
+  }
+  return viewportAutoChoice;
+}
 function readSafeAreaTop() {
   const probe = document.createElement("div");
   probe.style.cssText = "position:absolute; visibility:hidden; pointer-events:none; padding-top:env(safe-area-inset-top);";
@@ -291,16 +320,21 @@ function readSafeAreaTop() {
 function applyViewportFix() {
   const root = document.documentElement;
   let extra = 0;
-  let disabled = false;
-  try { disabled = localStorage.getItem(VIEWPORT_FIX_KEY) === "off"; } catch (e) {}
-  if (!disabled && window.innerHeight > window.innerWidth) {
+  if (getViewportMode() !== "off" && window.innerHeight > window.innerWidth) {
     const insetTop = readSafeAreaTop();
     const gap = Math.round(window.screen.height - window.innerHeight);
     if (insetTop > 0 && gap > 0 && Math.abs(gap - insetTop) <= 6) extra = gap;
   }
+  if (extra === 0) viewportAutoChoice = null;
+  const mode = extra > 0 ? resolveViewportMode() : "off";
+  viewportResolvedMode = mode;
   viewportFixExtra = extra;
-  root.classList.toggle("viewport-fix", extra > 0);
-  if (extra > 0) {
+  ["flux", "bande", "etendu"].forEach((m) => root.classList.toggle("vfix-" + m, extra > 0 && mode === m));
+  // Mode "bande" : le bas de la fenêtre visible n'est PAS le bas de l'écran,
+  // donc la zone de l'indicateur d'accueil n'a pas à être réservée dans l'app.
+  if (extra > 0 && mode === "bande") root.style.setProperty("--safe-bottom", "0px");
+  else root.style.removeProperty("--safe-bottom");
+  if (extra > 0 && (mode === "etendu" || mode === "flux")) {
     const h = window.innerHeight + extra;
     root.style.setProperty("--viewport-h", h + "px");
     root.style.setProperty("--vh", h / 100 + "px");
@@ -308,16 +342,35 @@ function applyViewportFix() {
     root.style.removeProperty("--viewport-h");
     root.style.removeProperty("--vh");
   }
+  updateBarFlag();
 }
-function toggleViewportFix() {
-  let off = false;
-  try { off = localStorage.getItem(VIEWPORT_FIX_KEY) === "off"; localStorage.setItem(VIEWPORT_FIX_KEY, off ? "on" : "off"); } catch (e) {}
+// Mode "bande" : la bande du bas prend la couleur de FOND de la page — on la
+// veut de la couleur de la barre seulement quand une barre est affichée.
+function updateBarFlag() {
+  document.documentElement.classList.toggle("vfix-bar", !!document.querySelector(".home-bottom-nav, .tabbar"));
+}
+function cycleViewportMode() {
+  const next = VIEWPORT_MODES[(VIEWPORT_MODES.indexOf(getViewportMode()) + 1) % VIEWPORT_MODES.length];
+  try { localStorage.setItem(VIEWPORT_FIX_KEY, next); } catch (e) {}
+  viewportAutoChoice = null;
   applyViewportFix();
 }
+function viewportUnitsLabel() {
+  const measure = (unit) => {
+    const p = document.createElement("div");
+    p.style.cssText = "position:absolute; visibility:hidden; pointer-events:none; width:1px; height:100" + unit + ";";
+    document.body.appendChild(p);
+    const h = Math.round(p.getBoundingClientRect().height);
+    p.remove();
+    return h;
+  };
+  return ["vh", "lvh", "svh", "dvh"].map((u) => u + " " + measure(u)).join(" · ");
+}
 window.addEventListener("resize", applyViewportFix);
-window.addEventListener("orientationchange", () => setTimeout(applyViewportFix, 250));
+window.addEventListener("orientationchange", () => { viewportAutoChoice = null; setTimeout(applyViewportFix, 250); });
 window.addEventListener("pageshow", applyViewportFix);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) applyViewportFix(); });
+new MutationObserver(updateBarFlag).observe(document.getElementById("app"), { childList: true });
 applyViewportFix();
 
 function loadJSON(key, fallback) {

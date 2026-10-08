@@ -15,7 +15,8 @@
 
 /* ========== VARIABLES & THÈMES (couleur d'accent par module) ========== */
 :root {
-  --bottom-nav-h: calc(50px + env(safe-area-inset-bottom));
+  --safe-bottom: env(safe-area-inset-bottom);
+  --bottom-nav-h: calc(50px + var(--safe-bottom));
   --bg: #F3ECE4;
   --surface: #FFFDF8;
   --surface-2: rgba(var(--ink-rgb), 0.055);
@@ -121,7 +122,21 @@ html, body {
 /* Correctif iOS (voir applyViewportFix dans 02-utils.js) : quand la fenêtre
    annoncée à la page est plus courte que l'écran de la hauteur de la barre
    d'état, on étire la racine jusqu'au vrai bas de l'écran. */
-html.viewport-fix, html.viewport-fix body { bottom: auto; height: var(--viewport-h); }
+/* Trois façons de gérer ce défaut (voir applyViewportFix, 02-utils.js). Le mode
+   par défaut ("bande") ne tente PAS de peindre dans la zone que la page ne
+   peut pas atteindre : il ajuste ce qui est dans la fenêtre visible et
+   prolonge la couleur de la barre dans la bande en dessous (iOS la remplit
+   avec la couleur de fond de la page). Les deux autres sont des essais. */
+html.vfix-bande.vfix-bar { background: rgb(var(--surface-rgb)); }
+html.vfix-bande .home-bottom-nav, html.vfix-bande .tabbar {
+  background: rgb(var(--surface-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+html.vfix-etendu, html.vfix-etendu body { bottom: auto; height: var(--viewport-h); overflow: visible; }
+/* "flux" : la racine n'est plus ancrée à la fenêtre de mise en page (qui est
+   amputée, d'où le rognage du mode "etendu") mais devient un document normal
+   dont la HAUTEUR est celle de l'écran. #app (overflow: hidden) contient tout. */
+html.vfix-flux { position: relative; inset: auto; height: var(--viewport-h); overflow: visible; overscroll-behavior: none; }
+html.vfix-flux body { position: relative; inset: auto; height: var(--viewport-h); overflow: visible; }
 a { color: var(--text); }
 a:hover { color: var(--action); }
 #app {
@@ -183,7 +198,7 @@ a:hover { color: var(--action); }
 
 /* ========== CHAMPS DE FORMULAIRE (date, texte, désactivé...) ========== */
 .content { flex: 1; padding: 16px 20px 120px; overflow-y: auto; }
-#app.theme-home .content { overflow-y: hidden; display: flex; flex-direction: column; gap: 8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+#app.theme-home .content { overflow-y: hidden; display: flex; flex-direction: column; gap: 8px; padding-bottom: calc(10px + var(--safe-bottom)); }
 .field-row { display: flex; flex-direction: row; gap: 14px; margin-bottom: 18px; }
 /* La Date a un besoin de largeur prévisible (chiffres + séparateurs) ; le nom
    de séance/bloc, lui, doit pouvoir accueillir un texte libre nettement plus
@@ -441,7 +456,7 @@ select.ex-name-pill:focus { outline: none; }
   position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
   display: flex; gap: 6px; background: rgba(var(--surface-rgb), 0.92); backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--rule);
-  padding: 8px 20px calc(10px + env(safe-area-inset-bottom));
+  padding: 8px 20px calc(10px + var(--safe-bottom));
   z-index: 100;
 }
 .log-actions-bar {
@@ -805,7 +820,7 @@ select.ex-name-pill:focus { outline: none; }
 
 /* ========== SÉANCE EN DIRECT (écran plein, sans scroll, uniquement des boutons) ========== */
 #app.theme-live { --accent: var(--yellow); --accent-rgb: 217, 138, 43; }
-.live-screen { position: absolute; inset: 0; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); padding: calc(16px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.live-screen { position: absolute; inset: 0; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); padding: calc(16px + env(safe-area-inset-top)) 18px calc(16px + var(--safe-bottom)); box-sizing: border-box; }
 .live-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-shrink: 0; gap: 8px; }
 .live-header .back-btn { width: 34px; height: 34px; flex: none; border: 1px solid var(--rule); border-radius: var(--radius); justify-content: center; padding: 0; }
 .live-header-center { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -1044,7 +1059,7 @@ html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
   position: absolute; inset: 0; max-width: 480px; margin: 0 auto;
   overflow: hidden; display: flex; flex-direction: column;
   justify-content: center; gap: 26px; background: var(--bg);
-  padding: calc(40px + env(safe-area-inset-top)) 32px calc(40px + env(safe-area-inset-bottom));
+  padding: calc(40px + env(safe-area-inset-top)) 32px calc(40px + var(--safe-bottom));
 }
 .auth-brand { display: flex; flex-direction: column; gap: 14px; }
 .auth-mark {
@@ -1092,7 +1107,7 @@ html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
   text-transform: uppercase; color: var(--text-dim); text-align: center;
 }
 .auth-version {
-  position: absolute; right: 14px; bottom: calc(10px + env(safe-area-inset-bottom));
+  position: absolute; right: 14px; bottom: calc(10px + var(--safe-bottom));
   font-family: var(--font-mono); font-size: 10px; color: rgba(var(--ink-rgb), 0.62);
 }
 
@@ -1677,7 +1692,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    ========================================================================== */
 .home-bottom-nav {
   position: absolute; left: 0; right: 0; bottom: 0; height: var(--bottom-nav-h);
-  box-sizing: border-box; padding: 4px 8px env(safe-area-inset-bottom) 8px;
+  box-sizing: border-box; padding: 4px 8px var(--safe-bottom) 8px;
   background: rgba(var(--surface-rgb), 0.94); backdrop-filter: blur(8px);
   border-top: 0.5px solid var(--rule);
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start;

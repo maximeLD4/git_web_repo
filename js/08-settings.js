@@ -5,10 +5,11 @@ function categoryLabel(key) {
 }
 
 function viewportFixLabel() {
-  if (viewportFixExtra > 0) return "correctif écran +" + viewportFixExtra;
-  let off = false;
-  try { off = localStorage.getItem(VIEWPORT_FIX_KEY) === "off"; } catch (e) {}
-  return off ? "correctif désactivé" : "aucun correctif nécessaire";
+  const stored = getViewportMode();
+  if (stored === "off") return "correctif désactivé";
+  if (viewportFixExtra <= 0) return "aucun correctif nécessaire";
+  const names = { flux: "flux", bande: "bande", etendu: "étendu" };
+  return (stored === "auto" ? "auto → " : "mode ") + names[viewportResolvedMode] + " (+" + viewportFixExtra + ")";
 }
 
 function renderSettingsApp() {
@@ -18,15 +19,15 @@ function renderSettingsApp() {
       <div class="screen-title">Réglages</div>
     </div>
     <div class="content" id="content" style="padding-bottom: calc(var(--bottom-nav-h) + 10px);"></div>
-    <div style="position:fixed; left:0; right:0; bottom:calc(var(--bottom-nav-h) + 10px); display:flex; justify-content:center;">
+    <div style="position:absolute; left:0; right:0; bottom:calc(var(--bottom-nav-h) + 10px); display:flex; flex-direction:column; align-items:center; gap:10px;">
       <button type="button" class="backup-btn" id="logout-btn" style="flex:none; padding-left:22px; padding-right:22px;">${ICONS.logout} Se déconnecter</button>
+      <div id="viewport-diag" style="font-size:11px; line-height:1.4; color:var(--text-dim); opacity:0.6; font-family:-apple-system,system-ui,sans-serif; text-align:center; cursor:pointer; padding:2px 10px;"><span id="app-version-label">${appVersion ? "v" + appVersion : ""}</span> · ${viewportFixLabel()}<br>fenêtre ${window.innerWidth}×${window.innerHeight} · écran ${screen.width}×${screen.height} · visible ${window.visualViewport ? Math.round(window.visualViewport.height) : "?"}<br>${viewportUnitsLabel()}</div>
     </div>
-    <div id="viewport-diag" style="position:absolute; right:14px; bottom:calc(var(--bottom-nav-h) + 20px); font-size:11px; line-height:1.4; color:var(--text-dim); opacity:0.6; font-family:-apple-system,system-ui,sans-serif; text-align:right; cursor:pointer;"><span id="app-version-label">${appVersion ? "v" + appVersion : ""}</span> · ${viewportFixLabel()}<br>fenêtre ${window.innerWidth}×${window.innerHeight} · écran ${screen.width}×${screen.height}</div>
     ${bottomNavHTML("settings")}
   `;
   attachBottomNavListeners();
   document.getElementById("viewport-diag").addEventListener("click", () => {
-    toggleViewportFix();
+    cycleViewportMode();
     renderSettingsApp();
   });
   document.getElementById("logout-btn").addEventListener("click", () => {
@@ -439,7 +440,7 @@ function renderGymSettingsApp() {
       <div class="header-sub screen-subtitle">Préconfigurés pour la séance en direct</div>
     </div>
     <div class="content" id="content"></div>
-    <div class="log-actions-bar" id="settings-actions-bar" style="display:none; bottom:0; padding-bottom: calc(12px + env(safe-area-inset-bottom));"></div>
+    <div class="log-actions-bar" id="settings-actions-bar" style="display:none; bottom:0; padding-bottom: calc(12px + var(--safe-bottom));"></div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
     const formOpen = gymSettingsMode === "gainage" ? gainageSettingsFormOpen : gymSettingsFormOpen;
