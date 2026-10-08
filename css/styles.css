@@ -1950,15 +1950,16 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .live-btn[data-live-cardio-category]:active .live-cardio-cat-label { color: var(--on-ink); }
 
 
-/* ---------- Option : bloquer la sélection de texte (Réglages > Apparence) ---------- */
-/* Sur iOS, un appui long sélectionne le texte (loupe, poignées) et ouvre le
-   menu Copier/Partager : gênant dans une app qu'on manipule du pouce entre
-   deux séries. "-webkit-touch-callout" coupe aussi ce menu sur les liens et
-   images. Les champs de saisie sont explicitement réautorisés : sur iOS, un
-   "user-select: none" qui les atteindrait les rendrait non éditables. */
-html.no-text-select, html.no-text-select * {
+/* ---------- Pas de sélection de texte, nulle part ---------- */
+/* Sur iOS, un appui long sélectionne le texte (loupe, poignées) et ouvre le menu
+   Copier/Partager : gênant dans une app qu'on manipule du pouce entre deux séries.
+   Bloqué sur TOUT, sans réglage. "-webkit-touch-callout" coupe aussi ce menu sur
+   les liens et images. Les champs de saisie sont explicitement réautorisés : sur
+   iOS, un "user-select: none" qui les atteindrait les rendrait non éditables
+   (ils sont plus spécifiques que "*", donc l'emportent). */
+* {
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
-html.no-text-select input, html.no-text-select textarea, html.no-text-select [contenteditable="true"] {
+input, textarea, [contenteditable="true"] {
   -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
 }

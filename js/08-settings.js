@@ -122,30 +122,8 @@ function renderSettingsAppearanceApp() {
         </div>
       </div>
       <div class="field-hint">Nuit adoucit l'écran le soir. Anne passe l'app dans une palette rose.</div>
-      <div class="home-section-label" style="margin-top:22px;">Texte</div>
-      <div class="home-list">
-        <div class="home-list-row" id="no-text-select-row" role="switch" tabindex="0" aria-checked="${noTextSelect ? "true" : "false"}" style="cursor:pointer;">
-          <div class="home-list-icon home-list-icon-square" style="background: var(--ink); color: var(--on-ink);">${ICONS.textCursor}</div>
-          <div class="home-list-label">Bloquer la sélection de texte</div>
-          <span class="toggle-switch ${noTextSelect ? "on" : ""}" aria-hidden="true"><span class="toggle-switch-knob"></span></span>
-        </div>
-      </div>
-      <div class="field-hint">Un appui long ne sélectionne plus le texte et n'ouvre plus le menu Copier. Les champs de saisie restent modifiables.</div>
     </div>
   `;
-  const noSelectRow = document.getElementById("no-text-select-row");
-  const toggleNoSelect = () => {
-    applyTextSelectionPref(!noTextSelect);
-    saveJSON(KEYS.noTextSelect, noTextSelect);
-    renderSettingsAppearanceApp();
-  };
-  noSelectRow.addEventListener("click", toggleNoSelect);
-  noSelectRow.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleNoSelect();
-    }
-  });
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
     currentApp = "settings";
     render();

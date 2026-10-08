@@ -15,18 +15,12 @@ function applyColorMode(mode) {
 }
 applyColorMode(colorMode);
 
-// Sélection de texte par appui long : bloquée par défaut (comportement "app"
-// plutôt que "page web"). Réglage propre à l'appareil, comme le mode de
-// couleur — voir Réglages > Apparence. Appliqué tout de suite, avant le
-// premier rendu, pour ne jamais laisser le texte se sélectionner une
-// fraction de seconde au démarrage. Les champs de saisie restent éditables
-// dans tous les cas (voir le CSS : html.no-text-select input, textarea...).
-let noTextSelect = loadJSON(KEYS.noTextSelect, true);
-function applyTextSelectionPref(on) {
-  noTextSelect = !!on;
-  document.documentElement.classList.toggle("no-text-select", noTextSelect);
-}
-applyTextSelectionPref(noTextSelect);
+// Sélection de texte par appui long : bloquée PARTOUT, en dur (voir la fin de
+// styles.css) — ce n'est pas un réglage. Une version intermédiaire en avait fait
+// une option ; on supprime ici la valeur qu'elle a pu laisser dans le stockage.
+try {
+  localStorage.removeItem("gymlog:no-text-select");
+} catch (e) {}
 
 // Volume des bips de la boucle Gainage (voir 19-live-sound.js) — en
 // pourcentage, 100 = volume d'origine (celui d'avant ce réglage). Permet

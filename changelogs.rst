@@ -7,6 +7,27 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.77.3 - 2026-10-08
+====================
+
+- **La sélection de texte est bloquée PARTOUT, en dur — ce n'est plus un
+  réglage.** Les versions 2.77.0 à 2.77.2 en avaient fait une option
+  (Réglages > Apparence > Texte) : c'était une erreur d'interprétation de la
+  demande. L'interrupteur, son code et son icône sont supprimés ; le blocage
+  s'applique à toute l'application sans condition (`user-select: none` et
+  `-webkit-touch-callout: none` sur tout, sauf les champs de saisie, qui
+  restent modifiables et sélectionnables — sur iOS, un blocage qui les
+  atteindrait les rendrait non éditables).
+  - Un ancien réglage « désactivé » éventuellement resté sur l'appareil est
+    effacé au démarrage et n'a plus aucun effet.
+  - Vérifié sur 20 écrans (dont la modale de confirmation et la connexion) :
+    aucun élément sélectionnable (style calculé relevé sur chacun des 1 000+
+    éléments), et aucune sélection par double-clic, triple-clic, glisser ni
+    « Tout sélectionner ». Champs de saisie : pesée, nom d'exercice, poids à
+    ajouter, e-mail — saisie et sélection d'un mot fonctionnent. NON vérifiable
+    depuis ici : un vrai appui long sur iPhone (testé par les gestes
+    équivalents sur ordinateur).
+
 2.77.2 - 2026-10-08
 ====================
 

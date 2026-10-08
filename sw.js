@@ -16,7 +16,7 @@
 // BUILD_VERSION est posée par tools/release.py : les octets de ce fichier
 // changent à chaque publication, ce qui déclenche l'installation d'un nouveau
 // Service Worker (donc d'un nouveau cache complet) et la suppression des anciens.
-const BUILD_VERSION = "2.77.2";
+const BUILD_VERSION = "2.77.3";
 const CACHE_PREFIX = "gymlog-shell-";
 const CACHE_NAME = CACHE_PREFIX + BUILD_VERSION;
 
