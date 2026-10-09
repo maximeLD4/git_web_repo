@@ -476,7 +476,7 @@ function liveMuscuSetFormHTML(activeExercise) {
         </div>
         <div class="live-stepper-group">
           <div class="live-stepper-label">Poids</div>
-          <select class="live-weight-select" id="live-weight-select" ${weightList.length === 0 && !config ? "disabled" : ""}>${weightOptions}${editConfigOptionHTML}</select>
+          <select class="live-weight-select app-select app-select-large" id="live-weight-select" ${weightList.length === 0 && !config ? "disabled" : ""}>${weightOptions}${editConfigOptionHTML}</select>
           ${
             hasIncrement
               ? `<button type="button" class="increment-switch-btn live-increment-btn ${liveDraftWeightMode === "on" ? "active" : ""}" data-live-toggle-increment>${liveDraftWeightMode === "on" ? "+" + increment + "kg" : "Standard"}</button>`

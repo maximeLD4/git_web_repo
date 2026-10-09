@@ -26,8 +26,83 @@ function swimBlockDurationMin(b) {
   return 0;
 }
 function swimBlockHasData(b) {
-  if (b.mode === "pool") return !!(b.poolLength || b.lengths || b.stroke || b.duration);
+  // La taille du bassin seule n'en est pas une : elle est posée sur TOUS les blocs en mode
+  // Bassin (voir swimPoolContext) — un bloc laissé vide ne doit donc pas être enregistré
+  // sous prétexte qu'il porte la taille du bassin.
+  if (b.mode === "pool") return !!(b.lengths || b.stroke || b.duration);
   return !!(b.duration || b.distance || b.pace);
+}
+
+/* ---------- swim: le bassin se saisit UNE fois par séance ---------- */
+// On ne change pas de piscine en cours de séance : la taille se saisit une seule fois (ligne
+// « Bassin » en haut) et est recopiée dans chaque bloc en mode Bassin à l'enregistrement. Le
+// modèle de données reste inchangé (poolLength est toujours porté par chaque bloc) : historique,
+// calendrier, performances et exports n'ont rien à savoir de ce changement.
+function swimPoolValues(blocks) {
+  const seen = new Map();
+  blocks.forEach((b) => {
+    if (b.mode !== "pool") return;
+    const n = parseFloat(b.poolLength);
+    if (!isNaN(n) && n > 0 && !seen.has(n)) seen.set(n, String(b.poolLength).trim());
+  });
+  return [...seen.values()];
+}
+// Bassin de la séance la plus récente qui en a un : on nage presque toujours dans la même piscine.
+function lastSwimPoolLength() {
+  const sorted = [...swimSessions].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  for (const s of sorted) {
+    for (const b of s.blocks || []) if (b.mode === "pool" && parseFloat(b.poolLength) > 0) return String(b.poolLength).trim();
+  }
+  return "";
+}
+// { value, mixed } — "mixed" : une ancienne séance dont les blocs ont des bassins DIFFÉRENTS ; on
+// ne les écrase pas (chaque bloc garde alors son champ), sauf si on saisit une taille en haut.
+function swimPoolContext() {
+  const vals = swimPoolValues(swimDraft.blocks);
+  if (swimDraft.poolLength !== undefined && swimDraft.poolLength !== null) {
+    const typed = String(swimDraft.poolLength).trim();
+    if (typed) return { value: typed, mixed: false };
+    return { value: "", mixed: vals.length > 1 };
+  }
+  if (vals.length > 1) return { value: "", mixed: true };
+  return { value: vals[0] || lastSwimPoolLength(), mixed: false };
+}
+function swimBlocksWithPool(blocks, pool) {
+  if (pool.mixed || !pool.value) return blocks;
+  return blocks.map((b) => (b.mode === "pool" ? { ...b, poolLength: pool.value } : b));
+}
+// Taille de bassin à COPIER pour un bloc qui n'en a pas : celle du bloc en mode Bassin le plus proche
+// avant lui, à défaut après lui. On ne ressaisit jamais ce qu'un autre bloc de la séance sait déjà.
+function nearestSwimPoolLength(blocks, index) {
+  const has = (b) => b && b.mode === "pool" && parseFloat(b.poolLength) > 0;
+  for (let i = index - 1; i >= 0; i--) if (has(blocks[i])) return String(blocks[i].poolLength).trim();
+  for (let i = index + 1; i < blocks.length; i++) if (has(blocks[i])) return String(blocks[i].poolLength).trim();
+  return "";
+}
+// Texte de l'indication « Bassin » affichée dans chaque bloc en mode Bassin.
+function swimPoolChipHTML(poolVal) {
+  const n = parseFloat(poolVal);
+  return n > 0 ? `Bassin : <b>${String(poolVal).trim().replace(/</g, "&lt;")} m</b> <span>· modifier</span>` : `<b>Bassin à saisir</b> <span>· ligne « Bassin » en haut</span>`;
+}
+
+// Mise à jour de la ligne « Distance totale » d'un bloc en mode Bassin, d'après le DOM.
+function updateSwimPoolCardHint(card) {
+  const hintEl = card.querySelector("[data-total-hint]");
+  if (!hintEl) return;
+  const poolEl = document.getElementById("swim-pool-length");
+  const perBlockEl = card.querySelector(".swim-block-poollength");
+  const poolVal = poolEl && poolEl.value.trim() ? poolEl.value : perBlockEl ? perBlockEl.value : "";
+  const chipEl = card.querySelector("[data-pool-chip]");
+  if (chipEl) chipEl.innerHTML = swimPoolChipHTML(poolVal);
+  const dist = swimBlockDistanceM({ mode: "pool", poolLength: poolVal, lengths: card.querySelector(".swim-block-lengths").value });
+  const durVal = parseFloat(card.querySelector(".swim-block-duration").value);
+  const hintParts = [];
+  if (dist) hintParts.push(`${Math.round(dist)} m`);
+  if (dist && !isNaN(durVal) && durVal > 0) {
+    const paceDisp = formatSwimPaceDisplay(String((durVal * 100) / dist));
+    if (paceDisp) hintParts.push(paceDisp);
+  }
+  hintEl.textContent = hintParts.length ? `Distance totale : ${hintParts.join(" · ")}` : "";
 }
 function formatSwimBlockSummary(b) {
   if (b.mode === "pool") {
@@ -66,7 +141,21 @@ function formatSwimSessionTotalsLine(blocks) {
 
 /* ---------- swim: draft helpers ---------- */
 function serializeSwimBlocksFromDOM() {
+  // Le nom et la date saisis font partie du brouillon DÈS la saisie : jusqu'ici ils n'y entraient
+  // qu'après un délai de 350 ms, donc un nom tapé juste avant « Ajouter un bloc » (ou un
+  // changement de mode) était perdu sans un mot au réaffichage de l'écran.
+  {
+    const dateEl = document.getElementById("swim-date");
+    const labelEl = document.getElementById("swim-label");
+    if (dateEl) swimDraft.date = dateEl.value;
+    if (labelEl) swimDraft.label = labelEl.value;
+  }
   const cards = document.querySelectorAll("#swim-blocks-container .exercise-card");
+  const poolEl = document.getElementById("swim-pool-length");
+  // La taille saisie en haut fait partie du brouillon, même s'il n'y a pas (encore) de bloc en
+  // mode Bassin — sinon elle serait perdue au prochain réaffichage.
+  if (poolEl) swimDraft.poolLength = poolEl.value;
+  const sessionPool = poolEl ? poolEl.value.trim() : "";
   const result = [];
   cards.forEach((card) => {
     const id = card.dataset.id;
@@ -75,7 +164,10 @@ function serializeSwimBlocksFromDOM() {
     const block = { id, label, mode, duration: "", distance: "", pace: "", poolLength: "", lengths: "", stroke: "" };
     block.pace = getPaceDecimalFromCard(card);
     if (mode === "pool") {
-      block.poolLength = card.querySelector(".swim-block-poollength").value;
+      // Taille saisie en haut : elle vaut pour tous les blocs. Sinon (ancienne séance à plusieurs
+      // bassins) chaque bloc garde la sienne.
+      const perBlockEl = card.querySelector(".swim-block-poollength");
+      block.poolLength = sessionPool ? poolEl.value : perBlockEl ? perBlockEl.value : "";
       block.lengths = card.querySelector(".swim-block-lengths").value;
       block.stroke = card.querySelector(".swim-block-stroke").value;
       block.duration = card.querySelector(".swim-block-duration").value;
@@ -93,10 +185,12 @@ function scheduleSwimDraftSave() {
   swimDraftSaveTimer = setTimeout(() => {
     const dateEl = document.getElementById("swim-date");
     const labelEl = document.getElementById("swim-label");
+    const blocks = serializeSwimBlocksFromDOM(); // met aussi à jour swimDraft.poolLength
     swimDraft = {
       date: dateEl ? dateEl.value : swimDraft.date,
       label: labelEl ? labelEl.value : swimDraft.label,
-      blocks: serializeSwimBlocksFromDOM(),
+      blocks,
+      poolLength: swimDraft.poolLength,
       editingSessionId: swimEditingSessionId,
     };
     saveJSON(KEYS.swimDraft, swimDraft);
@@ -195,11 +289,13 @@ function switchSwimTopMode(newMode) {
   swimTopMode = newMode;
   const dateEl = document.getElementById("swim-date");
   const labelEl = document.getElementById("swim-label");
+  const blocks = serializeSwimBlocksFromDOM(); // met aussi à jour swimDraft.poolLength
   swimDraft = {
     kind: newMode,
     date: dateEl ? dateEl.value : swimDraft.date,
     label: labelEl ? labelEl.value : swimDraft.label,
-    blocks: serializeSwimBlocksFromDOM(),
+    blocks,
+    poolLength: swimDraft.poolLength,
     editingSessionId: null,
     editingPlanId: null,
   };
@@ -268,7 +364,19 @@ function renderSwimContent() {
   positionLogActionsBar();
 }
 
-function swimBlockCardHTML(b) {
+// Menu de la nage. Une séance ENREGISTRÉE avant ce menu peut porter un texte libre (« Pull »,
+// « crawl 25 »…) : on le garde comme choix supplémentaire plutôt que de l'effacer en silence ; il
+// disparaît du menu dès qu'on choisit autre chose. Une variante de casse (« crawl ») est rattachée
+// à la nage correspondante.
+function swimStrokeSelectHTML(current) {
+  const cur = String(current || "").trim();
+  const match = SWIM_STROKES.find((s) => s.toLowerCase() === cur.toLowerCase());
+  const legacy = cur && !match ? `<option value="${escapeHTML(cur)}" selected>${escapeHTML(cur)}</option>` : "";
+  const options = SWIM_STROKES.map((s) => `<option value="${s}" ${s === match ? "selected" : ""}>${s}</option>`).join("");
+  return `<select class="swim-block-stroke app-select app-select-field"><option value="" ${cur ? "" : "selected"}>— Choisis une nage —</option>${legacy}${options}</select>`;
+}
+
+function swimBlockCardHTML(b, pool) {
   const mode = b.mode === "pool" ? "pool" : "both";
   const isPool = mode === "pool";
   const paceFieldHTML = `
@@ -284,7 +392,10 @@ function swimBlockCardHTML(b) {
 
   let fieldsHTML;
   if (isPool) {
-    const dist = swimBlockDistanceM(b);
+    // Bassin saisi en haut (une fois pour la séance) : le bloc n'a plus son propre champ — sauf
+    // pour une ancienne séance à plusieurs bassins, qu'on ne veut pas écraser.
+    const unified = !pool.mixed;
+    const dist = swimBlockDistanceM(unified ? { ...b, poolLength: pool.value } : b);
     const durVal = parseFloat(b.duration);
     const hintParts = [];
     if (dist) hintParts.push(`${Math.round(dist)} m`);
@@ -292,15 +403,21 @@ function swimBlockCardHTML(b) {
       const paceDisp = formatSwimPaceDisplay(String((durVal * 100) / dist));
       if (paceDisp) hintParts.push(paceDisp);
     }
-    fieldsHTML = `
+    const strokeField = `<div class="field"><label>Nage</label>${swimStrokeSelectHTML(b.stroke)}</div>`;
+    const lengthsField = `<div class="field"><label>Longueurs</label><input class="swim-block-lengths" type="number" inputmode="numeric" placeholder="ex. 20" value="${b.lengths}"></div>`;
+    const durationField = `<div class="field"><label>Durée (min, optionnel)</label><input class="swim-block-duration" type="text" inputmode="decimal" placeholder="ex. 25" value="${b.duration}"></div>`;
+    const poolChip = `<div class="block-pool-chip ${parseFloat(pool.value) > 0 ? "" : "block-pool-chip-missing"}" data-pool-chip role="button" tabindex="0">${swimPoolChipHTML(pool.value)}</div>`;
+    fieldsHTML = (unified
+      ? `
+    ${poolChip}
+    <div class="block-fields-row">${lengthsField}${durationField}</div>
+    <div class="block-fields-row">${strokeField}</div>`
+      : `
     <div class="block-fields-row">
       <div class="field"><label>Taille du bassin (m)</label><input class="swim-block-poollength" type="text" inputmode="decimal" placeholder="ex. 25" value="${b.poolLength}"></div>
-      <div class="field"><label>Longueurs</label><input class="swim-block-lengths" type="number" inputmode="numeric" placeholder="ex. 20" value="${b.lengths}"></div>
+      ${lengthsField}
     </div>
-    <div class="block-fields-row">
-      <div class="field"><label>Nage</label><input class="swim-block-stroke" type="text" list="swim-stroke-suggestions" placeholder="Crawl, dos, brasse…" value="${(b.stroke || "").replace(/"/g, "&quot;")}"></div>
-      <div class="field"><label>Durée (min, optionnel)</label><input class="swim-block-duration" type="text" inputmode="decimal" placeholder="ex. 25" value="${b.duration}"></div>
-    </div>
+    <div class="block-fields-row">${strokeField}${durationField}</div>`) + `
     <div class="block-total-hint" data-total-hint>${hintParts.length ? `Distance totale : ${hintParts.join(" · ")}` : ""}</div>`;
   } else {
     fieldsHTML = `
@@ -329,7 +446,12 @@ function swimBlockCardHTML(b) {
 }
 
 function swimLogTabHTML() {
-  const blocksHTML = swimDraft.blocks.map(swimBlockCardHTML).join("");
+  const pool = swimPoolContext();
+  const blocksHTML = swimDraft.blocks.map((b) => swimBlockCardHTML(b, pool)).join("");
+  // « Bassin » : une ligne pour toute la séance. Toujours affichée (même sans bloc en mode Bassin)
+  // pour qu'on la trouve en passant un bloc en mode Bassin, plutôt que de la voir apparaître hors
+  // de l'écran, tout en haut.
+  const poolRowHTML = `<label class="field-list-row" for="swim-pool-length"><span>Bassin (m)</span><input type="text" inputmode="decimal" id="swim-pool-length" placeholder="${pool.mixed ? "Plusieurs — saisir pour tout unifier" : "ex. 25"}" value="${pool.value.replace(/"/g, "&quot;")}"></label>`;
   const libOptions = swimLibrary.map((n) => `<option value="${n.replace(/"/g, "&quot;")}">`).join("");
   const editBanner = swimEditingSessionId
     ? `<div class="edit-banner">Modification d'une séance existante<button type="button" id="swim-cancel-edit-btn">Annuler</button></div>`
@@ -338,11 +460,12 @@ function swimLogTabHTML() {
       : "";
   const isPlan = swimDraft.kind === "plan";
   const fieldsHTML = isPlan
-    ? `<div class="field-list-card"><label class="field-list-row" for="swim-label"><span>Nom du plan</span><input type="text" id="swim-label" placeholder="Séance technique…" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></label></div>`
+    ? `<div class="field-list-card"><label class="field-list-row" for="swim-label"><span>Nom du plan</span><input type="text" id="swim-label" placeholder="Séance technique…" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></label>${poolRowHTML}</div>`
     : `
     <div class="field-list-card">
       <label class="field-list-row" for="swim-date"><span>Date</span><input type="date" id="swim-date" value="${swimDraft.date}"></label>
       <label class="field-list-row" for="swim-label"><span>Séance</span><input type="text" id="swim-label" placeholder="Séance technique…" value="${(swimDraft.label || "").replace(/"/g, "&quot;")}"></label>
+      ${poolRowHTML}
     </div>`;
   return `
     <div class="backup-row">
@@ -352,10 +475,10 @@ function swimLogTabHTML() {
     </div>
     ${editBanner}
     ${fieldsHTML}
-    <div class="run-summary-bar" id="swim-summary-bar">${formatSwimSessionTotalsLine(swimDraft.blocks)}</div>
+    <div class="run-summary-bar" id="swim-summary-bar">${formatSwimSessionTotalsLine(swimBlocksWithPool(swimDraft.blocks, pool))}</div>
     <div id="swim-blocks-container">${blocksHTML}</div>
     <datalist id="swim-block-suggestions"><option value="Échauffement"><option value="Technique"><option value="Endurance"><option value="Récupération">${libOptions}</datalist>
-    <datalist id="swim-stroke-suggestions"><option value="Crawl"><option value="Dos"><option value="Brasse"><option value="Papillon"><option value="4 nages"></datalist>
+    
     <div id="log-bottom-spacer" style="height:0;"></div>
   `;
 }
@@ -402,6 +525,35 @@ function attachSwimLogListeners() {
   const labelEl = document.getElementById("swim-label");
   if (dateEl) dateEl.addEventListener("input", scheduleSwimDraftSave);
   labelEl.addEventListener("input", scheduleSwimDraftSave);
+
+  const poolEl = document.getElementById("swim-pool-length");
+  const goToPoolRow = () => {
+    poolEl.scrollIntoView({ block: "center", behavior: "smooth" });
+    poolEl.focus({ preventScroll: true });
+  };
+  document.querySelectorAll("#swim-blocks-container [data-pool-chip]").forEach((chip) => {
+    chip.addEventListener("click", goToPoolRow);
+    chip.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        goToPoolRow();
+      }
+    });
+  });
+  poolEl.addEventListener("input", () => {
+    document.querySelectorAll('#swim-blocks-container .exercise-card[data-mode="pool"]').forEach(updateSwimPoolCardHint);
+    updateSwimSummaryBar();
+    scheduleSwimDraftSave();
+  });
+  // Ancienne séance à plusieurs bassins : une taille saisie en haut s'applique à tous les blocs,
+  // on réaffiche donc la séance en mode unifié (sans les champs par bloc) une fois la saisie finie.
+  poolEl.addEventListener("change", () => {
+    if (poolEl.value.trim() && document.querySelector("#swim-blocks-container .swim-block-poollength")) {
+      swimDraft.blocks = serializeSwimBlocksFromDOM();
+      saveJSON(KEYS.swimDraft, swimDraft);
+      renderContentPreservingScroll(renderSwimContent, () => {});
+    }
+  });
 
   const importDraftBtn = document.getElementById("swim-import-draft-btn");
   const importDraftFile = document.getElementById("swim-import-draft-file");
@@ -475,30 +627,18 @@ function attachSwimLogListeners() {
     labelInput.addEventListener("input", scheduleSwimDraftSave);
 
     if (isPool) {
-      const poolLengthEl = card.querySelector(".swim-block-poollength");
+      const poolLengthEl = card.querySelector(".swim-block-poollength"); // seulement pour une ancienne séance à plusieurs bassins
       const lengthsEl = card.querySelector(".swim-block-lengths");
       const strokeEl = card.querySelector(".swim-block-stroke");
       const durationEl = card.querySelector(".swim-block-duration");
-      const totalHint = card.querySelector("[data-total-hint]");
-      const updateTotal = () => {
-        const dist = swimBlockDistanceM({ mode: "pool", poolLength: poolLengthEl.value, lengths: lengthsEl.value });
-        const durVal = parseFloat(durationEl.value);
-        const hintParts = [];
-        if (dist) hintParts.push(`${Math.round(dist)} m`);
-        if (dist && !isNaN(durVal) && durVal > 0) {
-          const paceDisp = formatSwimPaceDisplay(String((durVal * 100) / dist));
-          if (paceDisp) hintParts.push(paceDisp);
-        }
-        totalHint.textContent = hintParts.length ? `Distance totale : ${hintParts.join(" · ")}` : "";
-      };
-      [poolLengthEl, lengthsEl, durationEl].forEach((el) => {
+      [poolLengthEl, lengthsEl, durationEl].filter(Boolean).forEach((el) => {
         el.addEventListener("input", () => {
-          updateTotal();
+          updateSwimPoolCardHint(card);
           updateSwimSummaryBar();
           scheduleSwimDraftSave();
         });
       });
-      strokeEl.addEventListener("input", scheduleSwimDraftSave);
+      strokeEl.addEventListener("change", scheduleSwimDraftSave);
     } else {
       const durEl = card.querySelector(".swim-block-duration");
       const distEl = card.querySelector(".swim-block-distance");
@@ -561,6 +701,9 @@ function attachSwimLogListeners() {
         const blocks = serializeSwimBlocksFromDOM();
         const target = blocks.find((b) => b.id === card.dataset.id);
         target.mode = newMode;
+        if (newMode === "pool" && !(parseFloat(target.poolLength) > 0)) {
+          target.poolLength = nearestSwimPoolLength(blocks, blocks.indexOf(target));
+        }
         swimDraft.blocks = blocks;
         saveJSON(KEYS.swimDraft, swimDraft);
         renderContentPreservingScroll(renderSwimContent, () =>
@@ -580,6 +723,15 @@ function attachSwimLogActionsBarListeners() {
   document.getElementById("add-swim-block-btn").addEventListener("click", () => {
     const blocks = serializeSwimBlocksFromDOM();
     const newBlock = emptySwimBlock();
+    // En bassin, tous les blocs sont en mode Bassin : on ne refait pas le choix à chaque bloc.
+    // (Le mode « Distance + Durée » sert surtout en eau libre, aussi constant sur une séance ;
+    // il reste le choix par défaut tant qu'on n'a pas choisi Bassin.)
+    const previousBlock = blocks[blocks.length - 1];
+    if (previousBlock && previousBlock.mode === "pool") newBlock.mode = "pool";
+    // La taille du bassin est celle du bloc précédent : on ne la ressaisit pas. (En séance
+    // « normale » la ligne du haut l'impose déjà à tous les blocs ; cette copie sert quand chaque
+    // bloc a son propre champ — ancienne séance à plusieurs bassins.)
+    if (newBlock.mode === "pool") newBlock.poolLength = nearestSwimPoolLength([...blocks, newBlock], blocks.length);
     blocks.push(newBlock);
     swimDraft.blocks = blocks;
     saveJSON(KEYS.swimDraft, swimDraft);

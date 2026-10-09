@@ -89,6 +89,8 @@ const CARDIO_CATEGORIES = [
   { key: "velo", label: "Vélo" },
   { key: "course", label: "Course à pied" },
 ];
+// Nages proposées (liste fermée : un menu, pas de saisie au clavier).
+const SWIM_STROKES = ["Crawl", "Dos", "Brasse", "Papillon", "4 nages"];
 const GAINAGE_CATEGORY = { key: "gainage", label: "Gainage" };
 
 const EXERCISE_SUGGESTIONS = {

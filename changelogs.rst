@@ -7,6 +7,114 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.79.1 - 2026-10-09
+====================
+
+- **« Incrément possible » (Réglages > Exercices) : pas de 1 kg, et saisie libre.** Les boutons
+  − et + changeaient la valeur de 2,5 en 2,5 : un pas que j'avais fixé moi-même en 2.76.0, en
+  remplaçant le champ de saisie par des boutons pour coller à la maquette, sans qu'il ait été
+  demandé. Conséquence : seules les valeurs 0, 2,5, 5, 7,5… étaient atteignables, alors que
+  le champ d'avant acceptait n'importe quelle valeur (1, 0,5, 1,25…) ; et une valeur existante
+  de 1 kg passait à 3,5 au premier appui sur +.
+  - − et + font maintenant 1 kg (jamais en dessous de 0).
+  - La valeur est de nouveau une zone qu'on touche pour saisir directement n'importe quel nombre
+    (0,5 · 1,25 · 2,5…) ; la virgule française est convertie en point, un texte illisible vaut 0.
+    Le texte d'aide en dessous (« +0 ou +1.25kg ») se met à jour pendant la frappe, sans
+    réaffichage : un réaffichage au moment de toucher « Enregistrer » aurait fait perdre ce toucher.
+  - Les valeurs déjà enregistrées (1, 2,5…) sont affichées telles quelles, sans arrondi.
+  - Vérifié : 18 contrôles en clics réels, dont une valeur tapée puis « Enregistrer » sans autre
+    geste, et l'effet réel (Créer : 60 → 61 avec un incrément de 1 kg ; Séance en direct : bouton
+    « +1kg »). Batterie : `tools/tests/increment.js`.
+
+2.79.0 - 2026-10-09
+====================
+
+- **Menus déroulants uniformisés : tous comme « Choisis un exercice ».** Quatre habillages
+  coexistaient pour des menus de même nature : la pastille sombre avec chevron (le modèle), une
+  boîte grise SANS chevron pour les poids (rien n'indiquait que c'était un menu), du texte
+  souligné pour « Alterner avec », et un champ de saisie pour la nage. Tous ont maintenant la
+  pastille du modèle — couleur d'encre, texte clair, chevron à droite — en trois tailles qui ne
+  changent que les dimensions : normale (« Choisis un exercice », « Alterner avec »), à la
+  taille des champs voisins (poids d'une série en Créer, nage) et grande (poids en Séance en
+  direct).
+  - **« Nage » devient un menu** (Crawl, Dos, Brasse, Papillon, 4 nages) : plus de saisie au
+    clavier. Les anciennes séances ne perdent rien : un texte libre enregistré avant (« Pull
+    buoy ») reste affiché et choisi tant qu'on n'en choisit pas une autre ; « crawl » est
+    rattaché à « Crawl ». L'historique est inchangé.
+  - **Corrigé au passage, sur le modèle lui-même** : son chevron était blanc en dur, donc
+    INVISIBLE en mode Nuit (où la pastille est claire). Il suit maintenant le mode, pour tous
+    les menus. En mode Jour, le modèle est identique octet pour octet.
+  - `tools/release.py` refuse désormais tout `<select>` sans la classe commune `app-select` :
+    un menu ajouté plus tard ne pourra plus avoir un autre habillage.
+  - Vérifié : 29 contrôles (aucun menu hors style sur chaque écran qui en contient, chaque menu
+    enregistre bien son choix, option « ⚙ Modifier les poids… » de la Séance en direct,
+    anciennes séances de natation, modèle inchangé). Batterie : `tools/tests/dropdowns.js`.
+  - Pas des menus déroulants, donc laissés tels quels : les champs « Nom du bloc / de
+    l'exercice (optionnel) », qui proposent des suggestions mais acceptent un nom libre, et les
+    sélecteurs de date.
+
+2.78.1 - 2026-10-09
+====================
+
+- **Natation : la taille du bassin se saisit une seule fois, et on le VOIT.**
+  Dans la 2.78.0, la ligne « Bassin » du haut s'appliquait bien à tous les blocs, mais
+  rien dans un bloc ne l'indiquait : on ne pouvait pas deviner qu'il n'y avait rien à
+  retaper, et à la toute première séance (ligne vide) rien ne disait où la saisir.
+  - Chaque bloc en mode Bassin affiche maintenant « Bassin : 25 m · modifier » (mis à
+    jour en direct quand on change la ligne du haut). Sans taille connue, il affiche
+    « Bassin à saisir » ; toucher ce rappel (ou Entrée) amène sur la ligne du haut.
+  - Un nouveau bloc, ou un bloc repassé en mode Bassin, COPIE la taille du bloc
+    précédent (à défaut, du plus proche) — y compris dans une ancienne séance à
+    plusieurs bassins, où chaque bloc a son propre champ et où un nouveau bloc
+    arrivait avec un champ VIDE.
+  - Vérifié en clics réels : 33 contrôles (séance neuve, première séance sans
+    historique, rappel en direct, brouillon rechargé, modification d'une séance
+    uniforme et d'une séance à plusieurs bassins, plan, eau libre, séance mixte,
+    lecture par Calendrier / Performance / Historique). La batterie est conservée
+    dans `tools/tests/swim_create.js` pour être rejouée.
+
+2.78.0 - 2026-10-09
+====================
+
+Revue du parcours de saisie : ce qu'on ressaisit sans raison, ou qu'on perd sans le savoir.
+
+- **Natation : la taille du bassin se saisit UNE fois par séance.** On ne change
+  pas de piscine en cours de séance, et il fallait pourtant retaper la taille
+  dans chaque bloc. Une ligne « Bassin (m) » en haut de l'écran Créer (séance
+  ET plan) vaut maintenant pour tous les blocs en mode Bassin ; les blocs n'ont
+  plus de champ de taille.
+  - Le bassin de la dernière séance est proposé d'office (on nage presque
+    toujours dans la même piscine) ; il reste modifiable.
+  - Le modèle de données ne change pas : la taille est recopiée dans chaque bloc à
+    l'enregistrement. Historique, calendrier, performances et exports lisent donc
+    les séances comme avant (« 10×25m », distances, totaux).
+  - Anciennes séances à PLUSIEURS bassins (par exemple un bloc à 25 m et un à
+    50 m) : rien n'est écrasé. Chaque bloc garde alors son champ, la ligne
+    « Bassin » indique « Plusieurs », et saisir une taille en haut unifie tout.
+  - Un bloc en mode Bassin laissé vide n'est plus enregistré : il le devenait
+    à tort dès qu'il portait une taille de bassin.
+- **Natation : un nouveau bloc reprend le mode du bloc précédent.** Dans un
+  bassin, on retapait « Bassin » à chaque nouveau bloc (le mode par défaut est
+  « Distance + Durée »). Après un bloc en « Distance + Durée » (eau libre), le
+  nouveau bloc reste en « Distance + Durée » : aucun changement.
+- **Corrigé dans les 4 sports (préexistant) : un nom ou une date tapé juste avant une
+  action était perdu sans un mot.** Le nom et la date de la séance n'entraient dans
+  le brouillon qu'après 350 ms de pause ; si l'on tapait « Ajouter un bloc » (ou
+  changeait un mode) plus vite, l'écran se réaffichait avec l'ancien contenu.
+  Constaté avec la version précédente en natation, course, vélo ET musculation (et
+  pour la date en natation) ; même famille que le poids tapé sans « Ajouter ».
+  Désormais captés à chaque lecture du brouillon.
+- **Vérifié** : 23 contrôles en clics réels sur la natation (séance neuve, brouillon
+  rechargé, modification d'une séance uniforme et d'une séance à plusieurs bassins,
+  plan, eau libre, séance mixte, lecture par Calendrier / Performance / Historique)
+  avec la version précédente comme témoin ; enregistrement dans les 4 sports ;
+  batterie de sécurité inchangée.
+- **Déjà bien, laissé tel quel** : en musculation, une nouvelle série reprend le poids
+  et les répétitions de la précédente, et l'écran Créer affiche « Dernière fois » ;
+  en Séance en direct, la série suivante reprend le palier suivant ou la cible du plan.
+  Course et vélo n'ont aucune valeur constante sur une séance (pas d'équivalent du
+  bassin).
+
 2.77.3 - 2026-10-08
 ====================
 

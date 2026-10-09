@@ -102,6 +102,15 @@ function setPaceFieldsOnCard(card, decimalStr) {
 }
 
 function serializeBlocksFromDOM() {
+  // Le nom et la date saisis font partie du brouillon DÈS la saisie : jusqu'ici ils n'y entraient
+  // qu'après un délai de 350 ms, donc un nom tapé juste avant « Ajouter un bloc » (ou un
+  // changement de mode) était perdu sans un mot au réaffichage de l'écran.
+  {
+    const dateEl = document.getElementById("run-date");
+    const labelEl = document.getElementById("run-label");
+    if (dateEl) runDraft.date = dateEl.value;
+    if (labelEl) runDraft.label = labelEl.value;
+  }
   const cards = document.querySelectorAll("#blocks-container .exercise-card");
   const result = [];
   cards.forEach((card) => {

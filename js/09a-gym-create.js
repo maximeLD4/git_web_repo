@@ -60,6 +60,15 @@ function setRestLineHTML(restSec) {
 
 /* ---------- draft helpers ---------- */
 function serializeExercisesFromDOM() {
+  // Le nom et la date saisis font partie du brouillon DÈS la saisie : jusqu'ici ils n'y entraient
+  // qu'après un délai de 350 ms, donc un nom tapé juste avant « Ajouter un bloc » (ou un
+  // changement de mode) était perdu sans un mot au réaffichage de l'écran.
+  {
+    const dateEl = document.getElementById("log-date");
+    const labelEl = document.getElementById("log-label");
+    if (dateEl) draft.date = dateEl.value;
+    if (labelEl) draft.label = labelEl.value;
+  }
   const cards = document.querySelectorAll("#exercises-container .exercise-card");
   const result = [];
   cards.forEach((card) => {
@@ -528,7 +537,7 @@ function nameSelectHTML(configsInCategory, effectiveConfig) {
         `<option value="${c.name.replace(/"/g, "&quot;")}" ${effectiveConfig && c.id === effectiveConfig.id ? "selected" : ""}>${c.name}</option>`
     )
     .join("");
-  return `<select class="ex-name-input ex-name-pill">${placeholder}${options}</select>`;
+  return `<select class="ex-name-input ex-name-pill app-select">${placeholder}${options}</select>`;
 }
 
 // Configuration de boucle (tours/travail/repos) pour un exercice de gainage
@@ -656,7 +665,7 @@ function exerciseCardHTML(ex) {
             : "";
           const weightField = `
         <div class="set-weight-col">
-          <select class="set-weight" data-mode="${startsIncremented ? "on" : "off"}" data-increment="${effectiveConfig ? effectiveConfig.maxIncrement || 0 : 0}" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
+          <select class="set-weight app-select app-select-field" data-mode="${startsIncremented ? "on" : "off"}" data-increment="${effectiveConfig ? effectiveConfig.maxIncrement || 0 : 0}" ${weightList.length === 0 ? "disabled" : ""}>${weightOptions}</select>
           ${incrementToggle}
         </div>`;
           const repsField = `

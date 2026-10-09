@@ -371,14 +371,15 @@ function gymSettingsFormHTML() {
         </div>
         <div class="field-list-row">
           <span style="flex:1;">Incrément possible</span>
-          <span style="color:var(--text-dim); margin-right:10px;">${gymSettingsFormDraft.maxIncrement || 0} kg</span>
+          <input type="text" inputmode="decimal" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}" aria-label="Incrément possible, en kg" style="flex:0 0 auto; width:56px; text-align:right; color:var(--text-dim); font-weight:600;">
+          <span style="color:var(--text-dim); margin:0 10px 0 4px;">kg</span>
           <div class="rep-stepper" style="flex:none;">
             <button type="button" class="rep-step-btn" id="config-max-increment-minus" aria-label="Moins">−</button>
             <button type="button" class="rep-step-btn" id="config-max-increment-plus" aria-label="Plus">+</button>
           </div>
         </div>
       </div>
-      <div class="field-hint">Poids fixe qu'on peut ajouter à la main sur la machine. Sur chaque palier, le choix sera +0 ou +${gymSettingsFormDraft.maxIncrement || 0}kg.</div>
+      <div class="field-hint" id="config-increment-hint">Poids fixe qu'on peut ajouter à la main sur la machine. Sur chaque palier, le choix sera +0 ou +${gymSettingsFormDraft.maxIncrement || 0}kg.</div>
 
       <div class="home-section-label" style="margin-top:22px;">Options avancées</div>
       <div class="field-list-card">
@@ -397,7 +398,7 @@ function gymSettingsFormHTML() {
             <span>Alterner avec</span>
             <button type="button" class="field-help-btn ${gymSettingsHelpOpen.paired ? "active" : ""}" data-field-help="paired">?</button>
           </div>
-          <select class="field-select" id="config-paired-exercise-select" style="text-align:right;">
+          <select class="field-select app-select app-select-row" id="config-paired-exercise-select">
             <option value="">Aucun</option>
             ${gymExerciseConfigs
               .filter((c) => c.id !== gymSettingsEditingConfigId)
@@ -718,6 +719,10 @@ function attachGymSettingsListeners() {
 
   function syncFormFromInputs() {
     gymSettingsFormDraft.name = nameInput.value;
+    const incEl = document.getElementById("config-max-increment");
+    // L'incrément se saisit librement (0,5 · 1 · 1,25 · 2,5…) : la virgule est déjà convertie en point
+    // à la saisie (03-state.js) et le signe moins retiré ; un texte illisible vaut 0.
+    if (incEl) gymSettingsFormDraft.maxIncrement = Math.max(0, parseFloat(incEl.value) || 0);
   }
 
   document.querySelectorAll("[data-form-category]").forEach((btn) => {
@@ -759,14 +764,24 @@ function attachGymSettingsListeners() {
     gymSettingsFormDraft.autoIncrement = !gymSettingsFormDraft.autoIncrement;
     renderGymSettingsContent();
   });
+  const maxIncEl = document.getElementById("config-max-increment");
+  maxIncEl.addEventListener("input", () => {
+    syncFormFromInputs();
+    document.getElementById("config-increment-hint").textContent = `Poids fixe qu'on peut ajouter à la main sur la machine. Sur chaque palier, le choix sera +0 ou +${gymSettingsFormDraft.maxIncrement}kg.`;
+  });
+  // Une fois la saisie terminée, on affiche la valeur réellement retenue (« 2,50 » → 2.5, « abc » → 0).
+  maxIncEl.addEventListener("change", () => {
+    syncFormFromInputs();
+    maxIncEl.value = gymSettingsFormDraft.maxIncrement;
+  });
   document.getElementById("config-max-increment-minus").addEventListener("click", () => {
     syncFormFromInputs();
-    gymSettingsFormDraft.maxIncrement = Math.max(0, round2((gymSettingsFormDraft.maxIncrement || 0) - 2.5));
+    gymSettingsFormDraft.maxIncrement = Math.max(0, round2((gymSettingsFormDraft.maxIncrement || 0) - 1));
     renderGymSettingsContent();
   });
   document.getElementById("config-max-increment-plus").addEventListener("click", () => {
     syncFormFromInputs();
-    gymSettingsFormDraft.maxIncrement = round2((gymSettingsFormDraft.maxIncrement || 0) + 2.5);
+    gymSettingsFormDraft.maxIncrement = round2((gymSettingsFormDraft.maxIncrement || 0) + 1);
     renderGymSettingsContent();
   });
   document.getElementById("config-unilateral-toggle").addEventListener("click", () => {

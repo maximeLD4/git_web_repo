@@ -1963,3 +1963,64 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 input, textarea, [contenteditable="true"] {
   -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
 }
+
+
+/* ---------- Natation : rappel de la taille du bassin dans chaque bloc en mode Bassin ---------- */
+/* La taille se saisit UNE fois (ligne « Bassin » en haut) ; chaque bloc la montre, pour qu'on voie
+   qu'elle s'applique sans avoir à la ressaisir. Toucher le rappel mène à la ligne du haut. */
+.block-pool-chip {
+  margin: 0 16px 10px 18px; font-size: 13px; color: var(--text-dim); cursor: pointer;
+}
+.block-pool-chip b { color: var(--text); font-weight: 700; }
+.block-pool-chip span { opacity: 0.75; }
+.block-pool-chip-missing b { color: var(--accent); }
+
+
+/* ==========================================================================
+   MENUS DÉROULANTS — un seul habillage, celui de « Choisis un exercice »
+   ==========================================================================
+   Pastille de la couleur d'encre, texte clair, chevron à droite : on reconnaît d'un coup d'œil
+   un menu, partout. Avant, quatre habillages coexistaient (boîte grise SANS chevron pour les
+   poids, texte souligné pour « Alterner avec », et un champ de saisie au clavier pour la nage).
+   Le chevron suit le mode : il est clair sur l'encre foncée (Jour, Anne) et FONCÉ sur l'encre
+   claire du mode Nuit — celui du modèle d'origine était blanc en dur, donc invisible en Nuit.
+   Les variantes ne changent que la TAILLE, pour s'accorder à ce qui entoure le menu. */
+:root { --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
+html.mode-night { --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23211C19' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
+
+/* L'habillage est répété sur chaque variante (sélecteurs groupés) : certains menus avaient une règle
+   d'origine plus spécifique (ex. « .set-main select.set-weight ») qui, sinon, l'aurait emporté. */
+select.app-select,
+select.app-select.app-select-field,
+select.app-select.app-select-large,
+select.app-select.app-select-row {
+  -webkit-appearance: none; appearance: none;
+  background-color: var(--ink); color: var(--on-ink); border: none; border-radius: var(--radius);
+  font-family: var(--font); letter-spacing: normal; cursor: pointer;
+  background-image: var(--select-chevron); background-repeat: no-repeat;
+}
+select.app-select {
+  padding: 7px 28px 7px 13px; font-size: 12px; font-weight: 700;
+  background-position: right 10px center; background-size: 11px;
+}
+select.app-select:focus { outline: none; }
+select.app-select:disabled { opacity: 0.45; cursor: default; }
+
+/* Dans une série (Créer) et dans un bloc (Natation) : à la taille des champs voisins. */
+select.app-select.app-select-field {
+  padding: 11px 34px 11px 13px; font-size: 15px; font-weight: 800; text-align: center; text-align-last: center;
+  background-position: right 13px center; background-size: 12px;
+}
+.block-fields-row .field select.app-select { width: 100%; }
+
+/* Séance en direct : le poids est LA valeur qu'on règle, grande et centrée. */
+select.app-select.app-select-large {
+  width: 100%; padding: 16px 42px 16px 16px; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+  text-align: center; text-align-last: center; background-position: right 16px center; background-size: 14px;
+}
+
+/* Dans une ligne de liste (Réglages) : la pastille se range à droite, après le libellé. */
+select.app-select.app-select-row {
+  width: auto; max-width: 60%; margin-left: auto; flex: 0 1 auto; min-width: 0; border-bottom: none;
+  text-align: left; text-overflow: ellipsis;
+}

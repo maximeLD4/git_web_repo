@@ -104,7 +104,18 @@ for fname, expected in re.findall(r"^(\S+\.min\.js)\n(?:.*\n)*?\s+(sha384-\S+)",
 if not re.search(r"sha384-", sources):
     problems.append("vendor/SOURCES.txt : aucune empreinte trouvée")
 
-# 6) Syntaxe JS (si node est disponible)
+# 6) Menus déroulants : tout <select> doit porter le style commun « app-select » (voir styles.css,
+#    section MENUS DÉROULANTS). Un menu ajouté sans lui aurait un autre habillage que les autres.
+for name in sorted(os.listdir(path("js"))):
+    if not name.endswith(".js"):
+        continue
+    src = read(f"js/{name}")
+    for m in re.finditer(r"<select\b[^>]*>", src):
+        if "app-select" not in m.group(0):
+            line = src.count("\n", 0, m.start()) + 1
+            problems.append(f"js/{name}:{line} : <select> sans la classe « app-select » (habillage commun des menus déroulants)")
+
+# 7) Syntaxe JS (si node est disponible)
 try:
     for name in sorted(os.listdir(path("js"))) + ["../sw.js"]:
         if name.endswith(".js"):
