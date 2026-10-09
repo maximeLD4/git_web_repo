@@ -30,7 +30,7 @@ function swimBlockHasData(b) {
   // Bassin (voir swimPoolContext) — un bloc laissé vide ne doit donc pas être enregistré
   // sous prétexte qu'il porte la taille du bassin.
   if (b.mode === "pool") return !!(b.lengths || b.stroke || b.duration);
-  return !!(b.duration || b.distance || b.pace);
+  return !!(b.duration || b.distance || b.pace || b.stroke);
 }
 
 /* ---------- swim: le bassin se saisit UNE fois par séance ---------- */
@@ -120,6 +120,8 @@ function formatSwimBlockSummary(b) {
     const p = formatSwimPaceDisplay(b.pace);
     if (p) parts.push(p);
   }
+  // La nage s'applique aux DEUX modes (même place que dans le résumé du mode Bassin : après les chiffres).
+  if (b.stroke) parts.push(b.stroke);
   return parts.length ? parts.join(" · ") : "—";
 }
 function computeSwimSessionTotals(blocks) {
@@ -174,6 +176,7 @@ function serializeSwimBlocksFromDOM() {
     } else {
       block.duration = card.querySelector(".swim-block-duration").value;
       block.distance = card.querySelector(".swim-block-distance").value;
+      block.stroke = card.querySelector(".swim-block-stroke").value;
     }
     result.push(block);
   });
@@ -426,6 +429,7 @@ function swimBlockCardHTML(b, pool) {
       <div class="field"><label>Distance (m)</label><input class="swim-block-distance" type="text" inputmode="decimal" placeholder="ex. 1000" value="${b.distance}"></div>
       ${paceFieldHTML}
     </div>
+    <div class="block-fields-row"><div class="field"><label>Nage</label>${swimStrokeSelectHTML(b.stroke)}</div></div>
     <div class="block-mode-hint">Allure calculée automatiquement à partir de la durée et de la distance.</div>`;
   }
 
@@ -659,6 +663,7 @@ function attachSwimLogListeners() {
           scheduleSwimDraftSave();
         });
       });
+      card.querySelector(".swim-block-stroke").addEventListener("change", scheduleSwimDraftSave);
     }
 
     card.querySelector("[data-duplicate-block]").addEventListener("click", () => {

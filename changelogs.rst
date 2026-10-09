@@ -7,6 +7,31 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.79.2 - 2026-10-09
+====================
+
+- **Natation : la nage se choisit aussi en mode « Distance + Durée ».** Quand j'ai fait de « Nage »
+  un menu (2.79.0), je n'ai traité que le champ tel qu'il existait — dans le mode Bassin seulement —
+  sans me demander s'il devait exister dans l'autre mode. Une nage s'applique évidemment à un bloc
+  « Distance + Durée » (eau libre, ou bassin sans comptage des longueurs) aussi.
+  - Le menu est dans les deux modes, à la même place (dernière ligne du bloc), pour une séance
+    comme pour un plan.
+  - Enregistrée dans les deux modes, et CONSERVÉE quand on change de mode (elle était perdue en
+    passant de Bassin à Distance + Durée).
+  - Le résumé du bloc (historique, calendrier) l'indique dans les deux modes : « 30min · 1500m ·
+    2'00"/100m · Brasse », comme « 16×25m Crawl (400m) » en mode Bassin.
+  - Une nage choisie seule, sans chiffres, compte comme une donnée dans les deux modes.
+  - Les anciens blocs gardent leur texte libre éventuel (« Pull buoy »), comme en mode Bassin.
+- **Audit de parité (à refaire d'office à chaque nouvelle saisie)** : pour chaque sport et chaque
+  mode, les champs qui doivent être communs le sont-ils ? Résultat : seule la nage manquait.
+  Course : « Allure » dans ses trois modes (Durée, Distance, Fractionné). Vélo : un seul mode. Les
+  écrans Créer des quatre sports ont les mêmes boutons ; l'historique offre les mêmes cinq actions
+  partout. Batterie : `tools/tests/mode_parity.js` (déclarer les champs communs d'un sport dans
+  `SHARED` pour qu'un oubli soit détecté).
+- Vérifié : 21 contrôles (champs de chaque mode de chaque sport, nage de la saisie à l'historique,
+  changement de mode dans les deux sens, plan, anciens blocs) ; les batteries natation, menus
+  déroulants et incrément passent toujours.
+
 2.79.1 - 2026-10-09
 ====================
 
