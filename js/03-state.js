@@ -15,6 +15,19 @@ function applyColorMode(mode) {
 }
 applyColorMode(colorMode);
 
+// Textes d'aide (les petites phrases grises sous les boutons et les champs :
+// .field-hint, .block-mode-hint, .cal-empty-hint) — MASQUÉS par défaut,
+// réaffichables dans Réglages > Apparence. Une simple classe sur <html>,
+// comme le mode de couleur : les textes restent dans les gabarits (et ceux que
+// le code met à jour en direct, ex. config-increment-hint, continuent d'exister),
+// seule la feuille de style les cache. Réglage local à l'appareil, comme le mode.
+let showHints = loadJSON(KEYS.showHints, false) === true;
+function applyShowHints(on) {
+  showHints = !!on;
+  document.documentElement.classList.toggle("hide-hints", !showHints);
+}
+applyShowHints(showHints);
+
 // Sélection de texte par appui long : bloquée PARTOUT, en dur (voir la fin de
 // styles.css) — ce n'est pas un réglage. Une version intermédiaire en avait fait
 // une option ; on supprime ici la valeur qu'elle a pu laisser dans le stockage.

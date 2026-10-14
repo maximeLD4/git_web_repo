@@ -63,17 +63,31 @@ function hapticPulse(pattern) {
   if (navigator.vibrate) navigator.vibrate(pattern);
 }
 
-// Signal de fin de "travail" (on passe au repos) : un seul bip grave, plutôt
-// posé — pas la peine d'être alarmant, on vient de finir un effort.
-function playLiveRestSignal() {
-  playLiveBeep(440, 160);
-  hapticPulse(120);
+// Boucle (Gainage) : chaque changement de phase s'annonce par un DÉCOMPTE
+// sur les 4 dernières secondes, en bips seulement — « 3, 2, 1, GO » avant
+// l'effort, « 3, 2, 1, STOP » avant le repos — pour le voir venir plutôt
+// que d'être surpris par un bip unique. Les trois bips du décompte sont
+// identiques (courts, médium) ; le quatrième, au moment exact du
+// changement, est long et dit lequel : aigu = GO, grave = STOP. Le
+// calendrier des bips est tenu par 18-live.js (scheduleLiveLoopCountdown).
+function playLiveCountdownTick() {
+  playLiveBeep(660, 110);
+  hapticPulse(40);
 }
-// Signal de fin de "repos" (on relance un tour) : un bip plus aigu, un peu
-// plus insistant — c'est le signal "c'est reparti".
-function playLiveWorkSignal() {
-  playLiveBeep(880, 160);
-  hapticPulse([80, 60, 80]);
+// « GO » : on (re)part dans l'effort — long et aigu.
+function playLiveGoSignal() {
+  playLiveBeep(1046, 520);
+  hapticPulse([80, 60, 160]);
+}
+// « STOP » : fin de l'effort, place au repos — long et grave.
+function playLiveStopSignal() {
+  playLiveBeep(392, 520);
+  hapticPulse(220);
+}
+// Aperçu dans Réglages > Son : le décompte complet, « 3, 2, 1, GO ».
+function playLiveCountdownDemo() {
+  [0, 1000, 2000].forEach((t) => setTimeout(playLiveCountdownTick, t));
+  setTimeout(playLiveGoSignal, 3000);
 }
 // Signal de fin de boucle complète : petit arpège ascendant, façon "bravo".
 function playLiveLoopDoneSignal() {

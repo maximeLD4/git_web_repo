@@ -22,36 +22,13 @@ function formatSetsSummary(exType, sets) {
   return sets.map((s) => formatSetChip(exType, s)).join(", ");
 }
 // Comme formatSetsSummary, mais gère aussi le cas d'une boucle (Gainage,
-// voir cardioSetsHistoryHTML) — utilisé pour le rappel "Dernière fois" en
+// voir gxLoopRowHTML dans 09b-gym-history.js) — utilisé pour le rappel "Dernière fois" en
 // haut d'un exercice dans l'écran Créer.
 function formatLastPerfSummary(last) {
   if (last.loop) return `${last.loop.rounds}×${last.loop.workSec}s/${last.loop.restSec}s`;
   return formatSetsSummary(last.exType, last.sets);
 }
-// Résumé "Cardio" d'un exercice dans l'historique (séances, calendrier
-// partagé) : soit la liste habituelle de puces temps/distance, soit — pour
-// le Gainage, désormais saisi en boucle plutôt qu'en séries individuelles,
-// même en séance déjà faite (même mécanisme qu'un plan, voir Créer et la
-// discussion sur l'uniformisation de la saisie) — un résumé du type
-// "8×40s/15s".
-function cardioSetsHistoryHTML(ex) {
-  if (ex.loop) {
-    return `<div class="history-sets"><div class="history-set-chip">${ex.loop.rounds}×${ex.loop.workSec}s/${ex.loop.restSec}s</div></div>`;
-  }
-  return `<div class="history-sets">${ex.sets.map((set) => `${historyRestBadgeHTML(set.restSec)}<div class="history-set-chip">${formatSetChip(ex.exType, set)}</div>`).join("")}</div>`;
-}
-// Petit badge "repos" affiché dans l'historique/le calendrier partagé, entre
-// deux séries — repris depuis la Séance en direct (restSec mesuré
-// manuellement via "Débuter"/"Finir la série"). Absent si le repos n'a pas
-// été chronométré pour cette série (séance créée manuellement, ou série
-// enregistrée avant l'ajout de cette fonctionnalité).
-function historyRestBadgeHTML(restSec) {
-  if (restSec === undefined || restSec === null) return "";
-  return `<div class="history-set-rest">${ICONS.stopwatch}<span>${formatLiveChrono(restSec)}</span></div>`;
-}
-// Version "ligne pleine largeur, plutôt fine" utilisée dans l'écran Créer
-// (contrairement au badge compact ci-dessus, pensé pour être intercalé
-// entre des barres/puces) — affichée juste au-dessus de la série à
+// Ligne pleine largeur, plutôt fine, utilisée dans l'écran Créer — affichée juste au-dessus de la série à
 // laquelle ce repos est attaché (celle qui LE SUIT chronologiquement).
 function setRestLineHTML(restSec) {
   if (restSec === undefined || restSec === null) return "";

@@ -17,7 +17,7 @@ function swimSessionCardHTML(s) {
   const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-swim-toggle="${s.id}">
-      <div class="history-row-icon">${ICONS.swim}</div>
+      <div class="history-row-icon">${open ? animIconHTML("swim", { anim: "once" }) : ICONS.swim}</div>
       <div class="history-head-left">
         <div class="history-date">${s.label || formatDateFR(s.date)}</div>
         <div class="history-label">${formatDateFR(s.date)} · ${pacePart}</div>

@@ -98,11 +98,7 @@ function sharedSessionPreviewHTML(s, type) {
         (ex) => `
     <div>
       <div class="history-ex-name">${ex.name}${getExerciseDurationSeconds(ex) != null ? ` <span style="color:var(--text-dim); font-weight:600;">· ${formatLiveDuration(getExerciseDurationSeconds(ex))}</span>` : ""}</div>
-      ${
-        (ex.exType || "muscu") === "cardio"
-          ? cardioSetsHistoryHTML(ex)
-          : setBarsHTML(ex, color)
-      }
+      ${exerciseDetailHTML(ex, color)}
     </div>`
       )
       .join("");
@@ -126,7 +122,10 @@ function sharedSessionPreviewHTML(s, type) {
     else if (type === "swim") { valueHTML = totals.m > 0 ? `${Math.round(totals.m)} m` : "0 m"; subtitleExtra = totals.pace ? ` · ${formatSwimPaceDisplay(String(totals.pace)) || ""}` : ""; }
     else { valueHTML = totals.km > 0 ? `${Math.round(totals.km * 10) / 10} km` : "0 km"; subtitleExtra = totals.speed ? ` · ${Math.round(totals.speed * 10) / 10} km/h` : ""; }
   }
-  const activityIcon = { gym: ICONS.dumbbell, gainage: ICONS.dumbbell, run: ICONS.stopwatch, swim: ICONS.swim, bike: ICONS.bike }[type];
+  // Course, Natation, Vélo, Gainage : l'icône fait sa micro-animation de 2 s quand on
+  // ouvre la séance, puis se fige (voir 09c-anim-icons.js).
+  const animKind = { run: "stopwatch", swim: "swim", bike: "bike", gainage: "plank" }[type];
+  const activityIcon = open && animKind ? animIconHTML(animKind, { anim: "once" }) : { gym: ICONS.dumbbell, gainage: ICONS.plank, run: ICONS.stopwatch, swim: ICONS.swim, bike: ICONS.bike }[type];
 
   const cardHTML = `
   <div class="history-card" style="border-color: rgba(${rgb},0.35);">

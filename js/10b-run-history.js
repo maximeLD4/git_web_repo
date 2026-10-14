@@ -17,7 +17,7 @@ function runSessionCardHTML(s) {
   const cardHTML = `
   <div class="history-card ${justLanded ? "just-landed" : ""}">
     <div class="history-head" data-run-toggle="${s.id}">
-      <div class="history-row-icon">${ICONS.stopwatch}</div>
+      <div class="history-row-icon">${open ? animIconHTML("stopwatch", { anim: "once" }) : ICONS.stopwatch}</div>
       <div class="history-head-left">
         <div class="history-date">${s.label || formatDateFR(s.date)}</div>
         <div class="history-label">${formatDateFR(s.date)} · ${pacePart}</div>

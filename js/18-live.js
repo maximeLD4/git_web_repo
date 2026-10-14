@@ -102,6 +102,8 @@ function liveStatusHeroHTML() {
   const loop = liveSession.loop;
   if (liveSession.restStartedAt) {
     const label = loop ? `${ICONS.stopwatch} Repos — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} Repos — ${liveDraftName || "Repos"}`;
+    // (Le bonhomme du repos n'est plus dans ce bandeau depuis 2.87.0 : il est
+    // au centre de l'écran, voir liveRestCenterHTML.)
     return `
     <div class="live-rest-hero" id="live-rest-hero">
       <div class="live-rest-hero-label">${label}</div>
@@ -220,7 +222,7 @@ function liveCategoryStepHTML() {
     // du curseur (voir data-live-type-switch), pendant que tout le reste
     // de l'écran, lui, glissait en douceur.
     const catShouldAnimateEnter = liveTypeJustSwitched;
-    const catIcon = { rameur: ICONS.rower, velo: ICONS.bike, course: ICONS.stopwatch, gainage: ICONS.bolt };
+    const catIcon = { rameur: ICONS.rower, velo: ICONS.bike, course: ICONS.stopwatch, gainage: ICONS.plank };
     const catColorRgb = { rameur: "var(--rgb-swim)", velo: "var(--rgb-bike)", course: "var(--rgb-run)", gainage: "var(--rgb-gym)" };
     const categoriesHTML = `
       <div class="home-section-label" style="margin-top:0;">Quelle activité ?</div>
@@ -377,6 +379,23 @@ function liveTimelineHTML() {
   return `<div class="live-timeline" id="live-timeline">${chips}</div>`;
 }
 
+// Repos en cours : le bonhomme qui reprend son souffle, en GRAND au centre de
+// l'écran, comme le rameur pendant une série de rameur (voir
+// 09c-anim-icons.js) — SEULEMENT là où il y a la place : écran de la série
+// suivante en Cardio (à la place du nom et de « Précédent », le bouton
+// « Lancer <nom> » disant déjà de quoi il s'agit) et repos d'une boucle de
+// gainage. Jamais en Muscu : répétitions, poids, incrément, côté… l'écran est
+// déjà plein, le repos n'y change rien.
+function liveRestCenterHTML() {
+  if (!liveSession || !liveSession.restStartedAt) return "";
+  return `<div class="live-activity-anim live-rest-center">${animIconHTML("rest", { anim: "loop", size: 112 })}</div>`;
+}
+
+// Série de cardio en cours : l'activité s'anime en boucle au-dessus de
+// « Chrono en cours » (voir 09c-anim-icons.js) — gainage compris, et dans la
+// boucle de gainage pendant le travail (fixe pendant le repos).
+const LIVE_ANIM_ICONS = { rameur: "rower", velo: "bike", course: "stopwatch", gainage: "plank" };
+
 function liveLogSetStepHTML() {
   const activeExercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
   const form = liveDraftType === "cardio" ? liveCardioSetFormHTML(activeExercise) : liveMuscuSetFormHTML(activeExercise);
@@ -384,6 +403,8 @@ function liveLogSetStepHTML() {
 }
 
 // Phase dans laquelle se trouve la série en cours de préparation :
+// (Le bouton « Débuter la série » s'appelle « Lancer <nom de l'exercice> »
+// depuis la 2.86.0 ; les commentaires gardent l'ancien nom.)
 // - "in-progress" : "Débuter la série" a été tapé, on est en train de la
 //   faire physiquement — plus rien à saisir, juste "Finir la série" à
 //   taper une fois fait.
@@ -403,8 +424,8 @@ function liveMuscuSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          <div class="live-in-progress-banner">Série en cours${lastSet ? ` : ${formatSetChip("muscu", lastSet)}` : ""}</div>
-          ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
+          <div class="live-in-progress-banner live-hint">Série en cours${lastSet ? ` : ${formatSetChip("muscu", lastSet)}` : ""}</div>
+          ${lastSet && lastSet.restSec != null ? `<div class="live-prev-set live-hint">Repos avant cette série : ${formatLiveChrono(lastSet.restSec)}</div>` : ""}
         </div>
         <div class="live-set-form-actions">
           <button type="button" class="live-validate-btn live-finish-btn" data-live-finish-set>${ICONS.stop} Finir la série</button>
@@ -464,8 +485,6 @@ function liveMuscuSetFormHTML(activeExercise) {
     <div class="live-set-form">
       <div class="live-set-form-scroll">
         <div class="live-exercise-name">${liveDraftName}</div>
-        <div class="live-exercise-subtitle">Muscu · ${categoryLabel(liveDraftCategory)}</div>
-        ${lastSet ? `<div class="live-prev-set">Précédent : ${formatSetChip("muscu", lastSet)}</div>` : ""}
         <div class="live-stepper-group">
           <div class="live-stepper-label">Répétitions</div>
           <div class="live-stepper">
@@ -486,7 +505,7 @@ function liveMuscuSetFormHTML(activeExercise) {
         ${sideSelectorHTML}
       </div>
       <div class="live-set-form-actions">
-        <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} Débuter la série</button>
+        <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} <span class="live-btn-label">Lancer ${liveDraftName}</span></button>
         ${switchPairHTML}
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
@@ -522,7 +541,8 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          <div class="live-in-progress-banner">${workingNow ? "Travail" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span></div>
+          ${workingNow ? `<div class="live-activity-anim">${animIconHTML("plank", { anim: "loop", size: 112 })}</div>` : liveRestCenterHTML()}
+          <div class="live-in-progress-banner live-hint">${workingNow ? "Travail" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span></div>
         </div>
         <div class="live-set-form-actions">
           <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-skip-loop-phase>${ICONS.chevronRight} ${skipLabel}</button>
@@ -538,8 +558,9 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          <div class="live-in-progress-banner">Chrono en cours</div>
-          ${inProgressSet && inProgressSet.restSec != null ? `<div class="live-prev-set">Repos avant cette série : ${formatLiveChrono(inProgressSet.restSec)}</div>` : ""}
+          ${LIVE_ANIM_ICONS[liveDraftCategory] ? `<div class="live-activity-anim">${animIconHTML(LIVE_ANIM_ICONS[liveDraftCategory], { anim: "loop", size: 112 })}</div>` : ""}
+          <div class="live-in-progress-banner live-hint">Chrono en cours</div>
+          ${inProgressSet && inProgressSet.restSec != null ? `<div class="live-prev-set live-hint">Repos avant cette série : ${formatLiveChrono(inProgressSet.restSec)}</div>` : ""}
           ${
             isGainage
               ? ""
@@ -573,7 +594,6 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll live-set-form-scroll-fixed">
           <div class="live-exercise-name">${liveDraftName}</div>
-          <div class="live-exercise-subtitle">${GAINAGE_CATEGORY.label} · en boucle</div>
           ${liveLoopStepperHTML()}
         </div>
         <div class="live-set-form-actions">
@@ -586,12 +606,15 @@ function liveCardioSetFormHTML(activeExercise) {
   return `
     <div class="live-set-form">
       <div class="live-set-form-scroll">
-        <div class="live-exercise-name">${liveDraftName}</div>
-        ${lastSet ? `<div class="live-prev-set">Précédent : ${formatCardioDuration(lastSet.weight)}${lastSet.reps ? " · " + lastSet.reps + "km" : ""}</div>` : ""}
-        <div class="live-prev-set">Le temps est chronométré automatiquement dès que tu débutes.</div>
+        ${
+          liveSession.restStartedAt
+            ? liveRestCenterHTML()
+            : `<div class="live-exercise-name">${liveDraftName}</div>`
+        }
+        <div class="live-prev-set live-hint">Le temps est chronométré automatiquement dès que tu lances.</div>
       </div>
       <div class="live-set-form-actions">
-        <button type="button" class="live-validate-btn" data-live-start-set>${ICONS.play} Débuter la série</button>
+        <button type="button" class="live-validate-btn" data-live-start-set>${ICONS.play} <span class="live-btn-label">Lancer ${liveDraftName}</span></button>
         ${isGainage ? `<button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-open-loop-form>${ICONS.stopwatch} Lancer en boucle</button>` : ""}
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
@@ -633,7 +656,7 @@ function liveLoopStepperHTML() {
         </div>
       </div>
     </div>
-    <div class="field-hint">Un bip marque chaque changement entre travail et repos.</div>`;
+    <div class="field-hint">Chaque changement s'annonce par un décompte en bips sur les 4 dernières secondes : 3, 2, 1 puis un bip long — aigu pour repartir, grave pour s'arrêter.</div>`;
 }
 
 function computeNextLiveBaseWeight(name, currentBaseWeight) {
@@ -832,7 +855,50 @@ function ensureLiveRestTicking() {
 
 function liveTick() {
   checkLiveLoopAutoAdvance();
+  scheduleLiveLoopCountdown();
   updateLiveRestChronoDisplay();
+}
+
+// Décompte sonore de la boucle (voir 19-live-sound.js) : pour la phase en
+// cours (travail ou repos), trois bips à 3, 2 et 1 seconde(s) de la fin, puis
+// le passage à la phase suivante À L'INSTANT EXACT de la fin — avec son bip
+// long, GO ou STOP. Programmé une fois par phase (clé = son heure de départ),
+// au lieu de compter sur le tic d'une seconde, qui pouvait arriver jusqu'à
+// une seconde en retard : le dernier bip tombe ainsi pile au rythme des trois
+// premiers. Une phase plus courte que 4 s ne joue que les bips qui y tiennent.
+// Un « Passer » manuel ou un arrêt change la clé : les bips prévus pour
+// l'ancienne phase se taisent (chacun revérifie la clé avant de sonner).
+let liveLoopCountdownKey = null;
+let liveLoopCountdownTimers = [];
+function clearLiveLoopCountdown() {
+  liveLoopCountdownTimers.forEach((t) => clearTimeout(t));
+  liveLoopCountdownTimers = [];
+  liveLoopCountdownKey = null;
+}
+function scheduleLiveLoopCountdown() {
+  const loop = liveSession ? liveSession.loop : null;
+  const startedAt = loop ? liveSession.setInProgressStartedAt || liveSession.restStartedAt : null;
+  if (!loop || !startedAt) {
+    if (liveLoopCountdownKey) clearLiveLoopCountdown();
+    return;
+  }
+  const working = !!liveSession.setInProgressStartedAt;
+  const key = `${working ? "w" : "r"}:${startedAt}`;
+  if (key === liveLoopCountdownKey) return;
+  clearLiveLoopCountdown();
+  liveLoopCountdownKey = key;
+  const endsAt = startedAt + (working ? loop.workSec : loop.restSec) * 1000;
+  const now = Date.now();
+  [3, 2, 1].forEach((sec) => {
+    const at = endsAt - sec * 1000;
+    if (at > now && at > startedAt)
+      liveLoopCountdownTimers.push(setTimeout(() => { if (liveLoopCountdownKey === key) playLiveCountdownTick(); }, at - now));
+  });
+  liveLoopCountdownTimers.push(
+    setTimeout(() => {
+      if (liveLoopCountdownKey === key) liveTick();
+    }, Math.max(0, endsAt - now))
+  );
 }
 
 // Le chrono de repos/travail habituel (manuel) compte le temps ÉCOULÉ,
@@ -885,7 +951,7 @@ function updateLiveRestChronoDisplay() {
 // repos vers le tour suivant une fois la durée de repos écoulée — jusqu'au
 // nombre de tours prévu, où la boucle s'arrête d'elle-même. Ne fait rien si
 // aucune boucle n'est en cours (voir startLiveLoop/stopLiveLoop). Les
-// signaux sonores/haptiques appelés ici (playLiveRestSignal, etc.) vivent
+// signaux sonores/haptiques appelés ici (playLiveStopSignal, etc.) vivent
 // dans 19-live-sound.js.
 // Force le passage à la phase suivante de la boucle MAINTENANT, sans
 // attendre l'écoulement du chrono — logique partagée entre le passage
@@ -897,7 +963,7 @@ function advanceLiveLoopPhase() {
   const loop = liveSession ? liveSession.loop : null;
   if (!loop) return;
   if (liveSession.setInProgressStartedAt) {
-    playLiveRestSignal();
+    playLiveStopSignal();
     finishLiveSet();
   } else if (liveSession.restStartedAt) {
     if (loop.currentRound >= loop.rounds) {
@@ -921,7 +987,7 @@ function advanceLiveLoopPhase() {
       saveJSON(KEYS.liveSession, liveSession);
       renderLiveApp();
     } else {
-      playLiveWorkSignal();
+      playLiveGoSignal();
       loop.currentRound += 1;
       liveLoopRoundJustChanged = true;
       startLiveSet();
@@ -949,7 +1015,7 @@ function startLiveLoop(rounds, workSec, restSec) {
   liveSession.loop = { rounds, workSec, restSec, currentRound: 1 };
   liveLoopFormOpen = false;
   saveJSON(KEYS.liveSession, liveSession);
-  playLiveWorkSignal();
+  playLiveGoSignal();
   startLiveSet();
 }
 

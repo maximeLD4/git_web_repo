@@ -7,6 +7,454 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.91.0 - 2026-10-14
+====================
+
+- **Boucle de gainage : chaque changement de phase s'annonce par un décompte en bips** sur
+  les 4 dernières secondes, pour le voir venir au lieu d'être surpris par un bip unique :
+  - avant l'effort : « 3, 2, 1, GO » — trois bips courts, puis un bip long et aigu ;
+  - avant le repos : « 3, 2, 1, STOP » — trois bips courts, puis un bip long et grave ;
+  - les trois bips du décompte sont identiques (courts, médium) : seul le dernier dit si
+    l'on repart ou si l'on s'arrête ;
+  - le lancement de la boucle sonne GO ; le dernier repos se termine par le petit arpège
+    de fin de boucle, après son décompte.
+  - Vibrations (Android) calées sur les bips.
+- **Le dernier bip tombe pile au changement de phase.** Le passage travail → repos ne
+  dépend plus du tic d'une seconde, qui pouvait arriver jusqu'à 1 s en retard : chaque phase
+  programme ses trois bips et son changement à l'instant exact de sa fin. Le chrono affiché,
+  les bips et l'écran basculent ensemble.
+  - Une phase plus courte que 4 s ne joue que les bips qui y tiennent (2 s : un bip, puis
+    le bip long).
+  - « Passer » ou « Arrêter la boucle » : les bips prévus pour la phase abandonnée se taisent.
+- Réglages > Son : « Tester le son » joue le décompte complet (3, 2, 1, GO) ; le curseur de
+  volume fait entendre un bip du décompte au relâchement.
+- Vérifié : nouvelle batterie ``tools/tests/loop_countdown.js`` (11 contrôles, sur une vraie
+  boucle de 2 tours) : séquence exacte, instants des bips à ±0,25 s (tics à 2-3-4 s, STOP à
+  5 s ; tics à 7-8-9 s, GO à 10 s…), durées et hauteurs, phase courte, « Passer », arrêt,
+  bouton de test, aucune erreur JS. Les autres batteries passent toujours.
+
+2.90.0 - 2026-10-14
+====================
+
+- **Réglages > Exercices : tout le formulaire suit le modèle des sections « Incrément » et
+  « Options avancées »** — un titre de section, puis des lignes « libellé à gauche, réglage à
+  droite », séparées par un filet. Plus de rangées de puces au milieu des lignes :
+  - *Exercice* : Nom, puis **Suggestions**, **Catégorie** et **Type de poids** en lignes avec
+    un menu en bout de ligne, exactement comme « Alterner avec ». Le type de poids reste
+    choisi d'office d'après le nom et suit la frappe tant qu'on n'y a pas touché (le menu
+    change de valeur sous les yeux) ; choisir une suggestion remplit le nom puis le menu
+    revient sur « Choisir… ».
+  - *Poids possibles* : les poids saisis forment la première ligne, puis « Ajouter un poids »
+    et « Scanner depuis une photo ».
+  - *Gainage* : même modèle — Nom, Suggestions (menu), puis Boucle par défaut.
+  - Les puces de choix ne restent que sur la liste (Muscu / Gainage, filtres), où elles
+    servent à filtrer.
+- Vérifié : ``tools/tests/settings_layout.js`` (36 contrôles : chaque section = titre +
+  lignes, menus en bout de ligne comme « Alterner avec », mêmes bords à gauche et à droite,
+  Jour / Nuit, aides masquées / affichées) ; ``session_detail.js`` et ``dropdowns.js`` mis à
+  jour pour les menus (type de poids d'office, suivi du nom, suggestion qui remplit le nom,
+  menus tous au style commun). Les autres batteries passent toujours.
+
+2.89.0 - 2026-10-14
+====================
+
+- **Réglages > Exercices : tout est aligné sur une seule grille.** Les titres de section, les
+  puces, le texte des lignes, les aides et les boutons étaient à quatre bords différents
+  selon le bloc (puces de catégorie et de type en retrait, ligne « Ajouter un poids » à
+  part, cartes intérieures avec leur propre marge…). Désormais :
+  - *Liste* : la bascule Muscu / Gainage, les filtres et les cartes partent du même bord.
+  - *Formulaires* : un seul bord intérieur pour tout, à gauche comme à droite (interrupteurs,
+    − / +, menus et chiffres alignés sur le même bord droit) ; sections séparées par des
+    filets plutôt que par des cartes dans la carte ; même espacement entre toutes les
+    sections. « Ajouter un poids (kg) » s'écrit à gauche, comme un champ.
+- **Un style de bouton par rôle, le même partout sur ces écrans :**
+  - action principale, une par écran : pleine, encre — *Enregistrer* ;
+  - action secondaire : contour, texte encre — *Annuler* (pleine largeur, sous
+    Enregistrer, au lieu d'un petit bouton gris en capitales) et *Ajouter* un poids (qui
+    était un bouton plein, comme Enregistrer) ;
+  - choix unique : puce à contour, la choisie pleine couleur du module — Muscu / Gainage,
+    filtres, catégorie, type de poids ;
+  - suggestion : même puce, précédée de « + » ;
+  - valeur saisie (poids) : même puce, fond gris, « × » pour retirer ;
+  - toutes les puces à la même hauteur et dans la même typographie.
+- **Le formulaire Gainage suit le même modèle que le formulaire Muscu** : section
+  « Exercice » (nom en ligne de liste), « Suggestions », puis « Boucle par défaut » en trois
+  lignes Tours / Travail / Repos avec − / + (au lieu de trois gros compteurs de la Séance en
+  direct). Les phrases entre parenthèses des anciens libellés deviennent un texte d'aide
+  (« Modifiables à chaque lancement de la boucle », masqué par défaut).
+- La planche (icône du gainage depuis 2.84.0) remplace le chronomètre sur la bascule
+  Muscu / Gainage et dans la liste des exercices de gainage.
+- Vérifié : nouvelle batterie ``tools/tests/settings_layout.js`` (34 contrôles), en mode Jour
+  (aides masquées) et Nuit (aides affichées) : mêmes bords à gauche et à droite sur la liste et
+  les deux formulaires, une seule action principale, Annuler et Ajouter en secondaire, « + »
+  sur les suggestions, puces de même hauteur, − / + du gainage fonctionnels, aucune erreur JS.
+  Les autres batteries passent toujours.
+
+2.88.1 - 2026-10-14
+====================
+
+- **Nouvelle icône Rameur**, d'après le dessin fourni (``icone-rameur-jambes-tendues.svg``) :
+  le rameur en fin de poussée, jambes tendues, dos en arrière, poignée tirée au ventre ;
+  roue sans rayons, siège sur son pied, chaîne fine. Reproduite à l'identique partout où
+  l'icône est fixe (« Quelle activité ? », Accueil…).
+- **L'animation part de ce dessin et y revient** : retour vers l'attaque (bras, dos, puis
+  jambes qui se plient), nouvelle poussée, et arrêt sur le dessin fourni — en boucle
+  pendant une série de rameur en direct, une fois (2 s) quand on consulte une séance. Les
+  longueurs des segments (cuisse, tibia, bras, buste) sont celles du dessin, la pose
+  d'arrivée tombe donc exactement dessus.
+  - La roue n'a plus de rayons, comme sur le dessin : c'est le rameur qui bouge.
+- Vérifié : la pose fixe calculée reproduit les coordonnées du dessin fourni (au
+  centième) ; batterie ``tools/tests/activity_icons.js`` et les autres inchangées et vertes.
+
+2.88.0 - 2026-10-14
+====================
+
+- **Séance en direct : l'écran de saisie ne défile plus, tout tient dans la hauteur.** Le
+  contenu ne peut plus défiler (``overflow: hidden``) et a été resserré pour tenir, même dans
+  le pire cas, sur un iPhone SE (667 px de haut).
+  - Retirés car inutiles : le sous-titre « Muscu · <catégorie> » (et « Gainage · en
+    boucle »), et « Précédent : … » en Muscu comme en Cardio — la frise des séries en haut
+    et le bouton « Lancer <nom> » disent déjà tout.
+  - Resserré : bandeau Repos / série en cours (chrono 60 px au lieu de 76), espacements
+    (12 px au lieu de 18), compteurs (boutons 48 px au lieu de 56), menu des poids, boutons
+    Gauche / Droite, incrément, « Lancer… », boutons du bas, en-tête et frise. Encore un
+    cran sous 740 px de haut (chrono 48 px, compteurs 42 px, grande icône animée 84 px).
+- Vérifié : nouvelle batterie ``tools/tests/live_fixed.js`` (72 contrôles) : 9 écrans du
+  direct — Muscu prêt dans le pire cas (côté + incrément + exercice jumelé + nom long),
+  série en cours, repos ; Rameur en repos et en cours ; Gainage prêt, réglage de la boucle,
+  travail, repos — à 4 hauteurs (667, 740, 844, 932 px), textes d'aide masqués puis
+  activés : rien de caché sous le bord, boutons du bas toujours à l'écran, aucune erreur JS.
+  Les autres batteries passent toujours.
+
+2.87.1 - 2026-10-14
+====================
+
+- **Pas de bonhomme du repos là où il n'y a pas la place.** En Muscu, l'écran de la série
+  suivante est déjà plein (répétitions, poids, incrément, côté, exercice jumelé…) : pendant
+  un repos, il redevient exactement comme hors repos — nom, sous-titre, « Précédent : … »,
+  réglages — sans bonhomme. Le chrono du bandeau « Repos » suffit à dire qu'on se repose.
+- Le bonhomme reste là où il y a de la place : écran de la série suivante en Cardio
+  (Rameur, Vélo, Course : à la place du nom et de « Précédent », voir 2.87.0) et repos d'une
+  boucle de gainage.
+- Vérifié : batterie ``tools/tests/activity_icons.js`` (48 contrôles), dont : Muscu en
+  repos sans bonhomme et écran inchangé ; Cardio en repos avec le bonhomme au centre, aux
+  trois tailles.
+
+2.87.0 - 2026-10-14
+====================
+
+- **Repos en séance en direct : le bonhomme qui reprend son souffle prend la place du nom
+  de l'exercice**, au centre de l'écran de la série suivante. Pendant un repos, le nom, le
+  sous-titre (« Muscu · Jambes ») et « Précédent : … » ne s'affichent plus : le bouton
+  « Lancer <nom> » dit déjà de quoi il s'agit. Ils reviennent dès que le repos s'arrête.
+  Muscu comme Cardio (Rameur, Vélo, Course).
+  - Plus de bonhomme dans le bandeau « Repos » du haut : le bandeau ne montre plus que le
+    libellé et le chrono, comme avant la 2.85.0.
+  - Tailles fixes (jamais en pourcentage, voir 2.85.2) : 112 px, 80 px sous 800 px de haut,
+    56 px sous 700 px. Le nom libérant de la place, il n'a plus besoin de céder sa place
+    sur les petits écrans.
+  - Repos d'une boucle de gainage : inchangé (le bonhomme à la place de la planche, sous le
+    nom de l'exercice — il n'y a pas de bouton « Lancer » pour le rappeler).
+- Vérifié : batterie ``tools/tests/activity_icons.js`` (47 contrôles), dont : hors repos le
+  nom est là ; en repos le bonhomme au centre à sa place, plus de « Précédent », le bouton
+  dit « Lancer Squat », rien dans le bandeau ; 112 / 80 / 56 px selon la hauteur, toujours
+  dans sa case et rien de coupé.
+
+2.86.0 - 2026-10-14
+====================
+
+- **Séance en direct : le bouton « Débuter la série » devient « Lancer <nom> »** —
+  « Lancer Leg extension », « Lancer Rameur »… Le bouton dit ce qu'il lance. Un nom long se
+  termine par « … » plutôt que de casser le bouton sur deux lignes. (Le bouton de la boucle
+  de gainage, « Démarrer la boucle », est inchangé.)
+- **Séance en direct : les textes d'aide suivent le réglage « Textes d'aide »** (Réglages >
+  Apparence, désactivé par défaut, voir 2.81.0). Masqués avec les autres : les phrases qui
+  redisent ce que le bandeau du haut affiche déjà, ou qui expliquent —
+  « Chrono en cours », « Série en cours : 40kg × 10 », « Travail — Tour 2/6 » (boucle de
+  gainage), « Repos avant cette série : 01:30 », « Le temps est chronométré automatiquement
+  dès que tu lances. » (ex-« …dès que tu débutes », suit le nouveau nom du bouton).
+  - Restent affichées, car ce sont des données : « Précédent : 40kg × 10 », et le sous-titre
+    « Muscu · Jambes ».
+- **Correctif de centrage** (écran de saisie du direct) : depuis 2.85.1, un texte d'aide
+  masqué en dernière position décentrait le contenu vers le bas (le nom de l'exercice
+  collé au bouton). Le centrage passe par deux cales élastiques avant / après le contenu :
+  centré quoi qu'il soit masqué, et toujours rien de coupé en haut sur un petit écran.
+- Vérifié : batterie ``tools/tests/hints.js`` (34 contrôles) étendue à quatre écrans du
+  direct — Muscu série en cours, Rameur avant de lancer et chrono en cours, boucle de
+  gainage : masqués par défaut, tous visibles une fois activés — et au bouton : « Lancer
+  Squat », « Lancer Rameur », plus aucun « Débuter la série », nom long sur une ligne.
+
+2.85.2 - 2026-10-14
+====================
+
+- **Correctif : le grand bonhomme du repos s'affichait par-dessus le texte** (des « taches »
+  sur le nom de l'exercice, sur iPhone). Pour le faire rétrécir, la 2.85.1 lui donnait une
+  hauteur en pourcentage dans un élément flexible ; Safari sur iPhone ignore ce
+  pourcentage : l'icône s'affichait en pleine taille (112 px) dans une case plus petite et
+  débordait sur le texte en dessous.
+  - Tailles FIXES selon la hauteur de l'écran, plus aucun pourcentage : 112 px à partir de
+    900 px de haut, 60 px en dessous ; sous 820 px, le grand cède la place au petit du
+    bandeau « Repos ». La case coupe tout ce qui dépasserait : l'icône ne peut plus jamais
+    déborder sur le texte.
+  - Le retour au petit bonhomme sur les écrans bas ne marchait pas (la règle était écrasée
+    par une autre, plus loin dans la feuille de style) : corrigé.
+- **Feuille de style nettoyée** : le bloc du bandeau « Repos » ajouté en 2.85.0 avait été
+  inséré deux fois, et une accolade en trop, laissée en le retirant, désactivait la règle
+  suivante (couleur du libellé du bandeau pendant une série). Un seul bloc, accolades
+  équilibrées.
+- Vérifié : 48 contrôles, dont : l'icône a une taille fixe (60 px, puis 112 px sur un grand
+  écran), reste dans sa case et au-dessus du nom de l'exercice sans le toucher ; écran bas :
+  le petit du bandeau à la place. Batterie : ``tools/tests/activity_icons.js``.
+
+2.85.1 - 2026-10-14
+====================
+
+- **Le bonhomme du repos passe au centre de l'écran, en grand**, comme le rameur pendant une
+  série de rameur — plutôt qu'en petit dans le bandeau « Repos ».
+  - Pendant un repos, sur l'écran de saisie de la série suivante (Muscu comme Cardio) :
+    au-dessus du nom de l'exercice, jusqu'à 112 px. Il prend la place libre et rétrécit
+    plutôt que de pousser le nom ou les réglages hors de l'écran ; lui seul rétrécit.
+  - Repos d'une boucle de gainage : il remplace la planche (qui s'anime pendant le travail) ;
+    on voit donc d'un coup d'œil « travail » (planche) ou « repos » (bonhomme).
+  - Le petit, dans le bandeau, ne reste que là où le grand n'a pas sa place : choix de
+    l'exercice pendant un repos, et écrans trop bas (moins de 720 px de haut), où le grand
+    cède la place pour que les réglages restent visibles. Jamais les deux à la fois.
+- **Correctif : sur un petit écran, le haut de l'écran de saisie était coupé.** Le contenu
+  était centré verticalement ; quand il dépassait, c'est le HAUT (le nom de l'exercice) qui
+  disparaissait, sans qu'on puisse y défiler. Il est maintenant centré par des marges
+  automatiques : le surplus part vers le bas et se fait défiler normalement. Le problème
+  existait avant, il se voyait davantage avec le bonhomme.
+- Vérifié : 47 contrôles (dont : petit dans le bandeau sur le choix de l'exercice, grand au
+  centre sur l'écran de saisie et le petit effacé, au-dessus du nom qui reste visible, écran
+  bas : retour au petit et nom plus jamais coupé en haut, repos de boucle : bonhomme à la place
+  de la planche, rien pendant une série). Batterie : ``tools/tests/activity_icons.js``.
+
+2.85.0 - 2026-10-14
+====================
+
+- **Pendant le repos, un petit bonhomme reprend son souffle.** D'après la maquette fournie
+  (``repos.gif``) : penché en avant, mains sur les genoux ; à chaque respiration le buste et
+  la tête se soulèvent (montée rapide, tenue, descente plus lente), les bras se tendent, les
+  jambes ne bougent pas. Une respiration toutes les ~3,8 s, comme dans le GIF.
+  - Séance en direct, dans le bandeau « Repos » (le bloc moutarde avec le chrono), à gauche
+    du libellé et du chrono : pendant TOUT repos — entre deux séries, et pendant le repos
+    d'une boucle de gainage. Il disparaît dès que la série suivante démarre (le bandeau
+    redevient « série en cours »).
+  - Placé dans la même grille que le texte, jamais par-dessus : le chrono reste centré et
+    lisible même sur un écran étroit (320 px). Même couleur que le texte du bandeau.
+  - Même module et même moteur que les icônes d'activité (``js/09c-anim-icons.js``,
+    ``ICONS.rest``), « réduire les animations » respecté (bonhomme fixe).
+- Vérifié : 42 contrôles (les 37 précédents, plus : pas de bonhomme hors repos, respiration
+  en boucle pendant un repos de Muscu et pendant le repos d'une boucle de gainage, à côté du
+  chrono sans le chevaucher, disparu dès « Débuter la série »). Batterie :
+  ``tools/tests/activity_icons.js``.
+
+2.84.0 - 2026-10-14
+====================
+
+- **Une icône pour le Gainage, animée comme les autres**, d'après la maquette fournie
+  (``gainage.gif``) : une planche sur les avant-bras, de profil, au sol. Pendant l'effort,
+  les hanches s'affaissent un peu et tremblent, une goutte de sueur perle au front et tombe,
+  puis tout revient en place. Un peu redressée par rapport au GIF (très plat) pour rester
+  lisible dans une icône carrée.
+  - *Séance en direct* : remplace l'éclair dans « Quelle activité ? » (fixe) ; s'anime en
+    boucle pendant une série de gainage au chrono, et dans la boucle de gainage PENDANT LE
+    TRAVAIL — elle se fige pendant le repos, ce qui rend la phase visible d'un coup d'œil.
+  - *Consulter une séance* : micro-animation de 2 s puis figée, au bout de la frise des tours
+    (séance de salle, Historique et Calendrier) et sur l'icône d'une séance de gainage seule
+    dans le Calendrier (qui montrait jusqu'ici un haltère).
+  - Même module que les autres (``js/09c-anim-icons.js``, ``ICONS.plank``), même moteur,
+    « réduire les animations » respecté. ``ICONS.bolt`` n'est plus utilisé nulle part mais
+    reste défini.
+- Vérifié : 37 contrôles (les 32 précédents, plus : la planche dans « Quelle activité ? »,
+  en boucle pendant une série au chrono, en boucle pendant le travail de la boucle et fixe
+  pendant le repos, frise de gainage et séance de gainage du Calendrier animées une fois puis
+  figées). Batterie : ``tools/tests/activity_icons.js``.
+
+2.83.0 - 2026-10-14
+====================
+
+- **Vélo, Natation et Course s'animent aussi**, comme le Rameur (2.82.0), d'après les
+  maquettes animées fournies (``velo.gif``, ``natation.gif``, ``chronometre.gif``) :
+  - *Vélo* : nouveau dessin — un cycliste (tête pleine, buste, bras au guidon) sur deux roues
+    à trois rayons. Il pédale (le genou monte et descend, le pied tourne autour du
+    pédalier, le buste suit à peine) et les roues tournent.
+  - *Natation* : les deux vagues avancent d'une longueur d'onde.
+  - *Course* (chronomètre) : l'aiguille fait le tour du cadran ; la petite aiguille reste.
+- **Où** — mêmes règles que le rameur :
+  - *Consulter une séance* : micro-animation de 2 s puis figée sur la pose de départ, à
+    l'ouverture d'une séance de Course, de Natation ou de Vélo (leur liste de séances ET
+    le Calendrier : l'icône de la séance), et dans une séance de salle au bout du couloir
+    de chaque série de Rameur, Vélo ou Course. Une séance fermée garde son icône fixe.
+  - *Séance en direct* : pendant une série de Vélo ou de Course (entre « Débuter la série »
+    et « Finir la série »), la grande icône tourne en boucle au-dessus de « Chrono en
+    cours », comme pour le Rameur. Rien pour le Gainage.
+  - *Partout ailleurs* : icône fixe. Le nouveau vélo remplace l'ancien dans toute l'app
+    (Accueil, listes, Calendrier, « Quelle activité ? »). Le chronomètre garde exactement
+    son dessin et reste fixe là où il ne veut pas dire « Course » (repos, minuteur,
+    boutons « Convertir en plan »…).
+- Un seul module pour les quatre (``js/09c-anim-icons.js``, qui remplace
+  ``js/09c-rower.js``) : une fonction de pose par activité, une seule boucle d'animation
+  qui s'arrête d'elle-même dès que tout est figé, « réduire les animations » respecté.
+- Vérifié : 32 contrôles (dessins fixes, chronomètre inchangé, chaque couloir de séance de
+  salle avec son icône animée une fois puis figée, Course / Natation / Vélo à l'ouverture
+  dans leur liste et dans le Calendrier, carte fermée fixe, Muscu jamais animée, en direct :
+  rameur, vélo et course en boucle pendant la série seulement, gainage non animé, chronomètre
+  fixe ailleurs, réduction des animations, aucune erreur JS). Batterie :
+  ``tools/tests/activity_icons.js`` (remplace ``tools/tests/rower.js``).
+
+2.82.0 - 2026-10-14
+====================
+
+- **Le rameur rame.** D'après la maquette animée fournie (``rameur.gif``) : rail, siège sur
+  son pied, roue d'inertie à trois rayons, et un vrai coup de rame — poussée des jambes,
+  bascule du dos, tirage des bras, puis retour dans l'ordre inverse, la roue qui tourne.
+  - **Séance en direct** : pendant une série de rameur (entre « Débuter la série » et
+    « Finir la série »), un grand rameur rame en boucle au-dessus de « Chrono en cours »
+    (~33 coups par minute). Rien pour le vélo, la course ou le gainage.
+  - **Détail d'une séance** (Historique et Calendrier) : l'icône au bout du couloir de
+    chaque série de rameur fait UN coup de rame en 2 s (la roue se lance puis ralentit),
+    puis se fige sur la pose de départ.
+  - **Partout ailleurs** (« Quelle activité ? » en direct) : la même icône, fixe. Elle
+    remplace celle de la 2.81.1 : une seule silhouette dans toute l'app.
+  - Le GIF lui-même n'est pas utilisé : noir en dur (invisible en mode Nuit, hors palette en
+    mode Anne), 390 Ko, et impossible à figer proprement. Le même mouvement est recalculé
+    en traits SVG (``js/09c-rower.js`` : une fonction de pose, des articulations genou et
+    coude), dans le style des autres icônes : il prend la couleur du thème et ne pèse rien.
+  - Une seule boucle d'animation pour toutes les icônes à l'écran ; elle s'arrête d'elle-même
+    dès qu'aucune n'est animée (rien ne tourne en fond, pas d'effet sur la batterie une fois
+    figé). Les dessins sont modifiés en place, sans réécrire l'écran.
+  - Appareil réglé sur « réduire les animations » : pose fixe partout, aucune animation.
+- Vérifié : 16 contrôles (icône fixe, micro-animation qui bouge puis se fige sur la pose de
+  départ dans l'Historique et le Calendrier, boucle arrêtée ensuite, vélo non animé, en
+  direct : rien avant la série, rame en continu pendant, disparaît à « Finir la série »,
+  réduction des animations respectée, aucune erreur JS). Batterie : ``tools/tests/rower.js``.
+
+2.81.1 - 2026-10-14
+====================
+
+- **Nouvelle icône Rameur.** L'ancienne (trois traits et un point) ne se reconnaissait pas,
+  surtout en petit. Elle montre maintenant un rameur sur sa machine, vu de profil : le rail,
+  la roue d'inertie à l'avant, la personne assise genoux pliés qui tire la poignée. Même
+  épaisseur de trait que les autres icônes (Vélo, Course).
+  - Une seule définition (``ICONS.rower``), donc changée partout où elle sert : Séance en
+    direct (« Quelle activité ? ») et détail d'une séance (au bout du couloir de chaque
+    série de rameur, Historique et Calendrier).
+- Vérifié : rendu dans les deux écrans, en petit (18 px) comme en grand ; aucune erreur JS ;
+  les batteries passent toujours.
+
+2.81.0 - 2026-10-14
+====================
+
+- **Textes d'aide masqués, réaffichables : Réglages > Apparence > « Textes d'aide ».** Les
+  petites phrases grises sous les boutons et les champs (« Nuit adoucit l'écran le soir… »,
+  « Les paliers de poids de la machine. », « Distance calculée automatiquement… », « Touche
+  un jour pour voir ses séances. »…) ne sont plus affichées. Un interrupteur, DÉSACTIVÉ par
+  défaut, les remet toutes d'un coup.
+  - Concernés : tous les textes d'aide existants, et seulement eux — ``.field-hint``
+    (Apparence, Son, Sauvegarde, formulaire d'un exercice : type de poids, poids possibles,
+    incrément ; minuteur de gainage en direct), ``.block-mode-hint`` (Course, Natation,
+    Vélo) et ``.cal-empty-hint`` (Calendrier). Aucun texte d'aide n'a été ajouté, pas même
+    pour le nouvel interrupteur.
+  - Pas concernés : les données calculées qui en ont l'allure (« Durée totale estimée : ≈ 19
+    min », « Distance totale… »), et les aides à la demande derrière un bouton « ? »
+    (Travail unilatéral, Alterner avec), qui ne s'affichent que si on les demande.
+  - Une classe sur ``<html>`` (``hide-hints``) et une règle de style : les textes restent
+    dans les écrans, donc ceux que le code met à jour en direct (texte de l'incrément, type
+    de poids d'après le nom) continuent de fonctionner, masqués. Les espacements ne
+    dépendent plus d'un texte d'aide (Type de poids).
+  - Réglage propre à l'appareil, comme le mode de couleur (``gymlog:show-hints``), retenu
+    au redémarrage.
+- Vérifié : 22 contrôles (masqués par défaut sur les 7 écrans qui en ont, interrupteur
+  désactivé et sans texte d'aide, tous visibles une fois activé, retenu au redémarrage,
+  masqués de nouveau, texte de l'incrément toujours mis à jour, données calculées toujours
+  visibles, aucune erreur JS). Batterie : ``tools/tests/hints.js``.
+
+2.80.0 - 2026-10-14
+====================
+
+- **Détail d'une séance : chaque série est dessinée comme ce qu'on a fait à la salle.** Les
+  barres (hauteur = poids, largeur = reps) étaient trop « graphique », pas amusantes, et pas
+  si lisibles. Elles sont remplacées, dans l'Historique comme dans le Calendrier (même
+  fonction, ``exerciseDetailHTML``), par une ligne par série : son numéro, l'objet manipulé,
+  puis les chiffres en gros à droite.
+  - **Muscu**, selon le nouveau réglage « Type de poids » (voir plus bas) :
+    - *Machine* : la pile de plaques. Une plaque par palier de Réglages > Exercices,
+      soulevées jusqu'à la broche posée sur le palier de la série. Pas de code couleur.
+    - *Barre* : la barre de 20 kg et ses disques de chaque côté, aux couleurs des disques de
+      compétition — rouge 25, bleu 20, jaune 15, vert 10, blanc 5, noir 2,5, gris 1,25. Une
+      couleur veut toujours dire le même poids, partout (aucune légende : le poids est écrit
+      à côté).
+    - *Haltères* / *Kettlebell* : deux objets, un par main, et le poids de CHACUN : « 8kg
+      chacun » (« 2 × 8kg », essayé d'abord, se lisait comme 16 kg au total) ; pour une
+      série unilatérale, un seul, du côté travaillé, l'autre main en pointillés, et le poids
+      seul. La kettlebell prend la couleur du disque de même poids (20 kg = bleu), neutre
+      sinon (24 kg), poids écrit dessus.
+    - *Haltères* : l'allure dit le poids — un disque de plus de chaque côté tous les 2,5 kg
+      (6 kg = 2, 8 kg = 3, 10 kg = 4, plafonné à 5), des disques plus hauts (+2 px par kg)
+      et une poignée plus longue ; échelle fixe (un 10 kg a la même allure dans toutes les
+      séances), donc 8 et 10 kg se distinguent sans lire le chiffre. Disques sans code
+      couleur : contrairement à ceux de la barre, ils ne représentent pas des poids réels.
+    - À droite, toujours « ×12 » et le poids.
+  - **Incrément possible** : quand il a été ajouté (Standard / +X kg), le petit poids est
+    posé sur la pile, au-dessus de la broche, et le poids se lit « 40 + 2,5kg ». La broche
+    reste sur le palier réel, jamais sur palier + incrément. Une ancienne série sans
+    ``weightMode`` est lue comme dans Créer (un poids qui n'est pas un palier mais qui le
+    devient une fois l'incrément retiré).
+  - **Unilatéral** : « gauche / droite » sous la pile, le côté travaillé en gras ; « les deux »
+    reste silencieux, comme le (G)/(D) d'avant.
+  - **Pas de pastille de progression** (« +5kg » d'une série à l'autre) : essayée, puis
+    retirée à la demande — les chiffres de chaque série suffisent.
+  - **Cardio** (Rameur, Vélo, Course) : un couloir dont la longueur est la durée (le plus long
+    de l'exercice remplit la ligne), un repère par minute (par 5 ou 10 min au-delà de 20 et
+    60 min), l'icône du sport au bout. La durée en gros, la distance en dessous seulement si
+    elle a été saisie (souvent on n'enregistre que le temps).
+  - **Gainage en boucle** : la frise des tours, travail plein, repos en creux ; « 8 tours »,
+    « 40s / 15s ».
+  - **Poids du corps** (poids 0) : pas de pile vide, « Poids du corps » à la place.
+  - Sans configuration (exercice supprimé ou renommé dans Réglages), ou un poids qui ne
+    tombe sur aucun palier : la pile est approchée en proportion du poids le plus lourd de
+    l'exercice.
+  - Les colonnes sont alignées entre les séries d'un même exercice (une grille par exercice) :
+    une durée longue à écrire (« 12min 30s ») ne raccourcit plus son couloir et ne fausse
+    pas la comparaison.
+  - Couleurs : la teinte du module (``--accent``), ou la couleur d'activité dans le
+    calendrier ; tout le reste suit les variables de thème (Jour, Nuit, Anne).
+- **Réglages > Exercices : « Type de poids »** (Machine · Barre · Haltères · Kettlebell), juste
+  au-dessus des poids possibles. Un des quatre est TOUJOURS sélectionné — pas d'option
+  « Automatique » : la sélection est faite d'office, d'après le nom, pour que l'affichage soit
+  juste sans rien régler.
+  - Déduction : Squat, Développé couché, Soulevé de terre, Hip thrust → Barre ; Élévations
+    latérales, Oiseau, Curl marteau/biceps, Fentes, et tout nom qui cite « haltère » →
+    Haltères ; Mollets, Swing, Goblet → Kettlebell ; Leg curl, Leg extension,
+    Adducteurs/Abducteurs, Presse, Tirage, Poulie, Hack squat… et tout ce qui n'est pas
+    reconnu → Machine. Un nom qui cite un matériel l'emporte sur le mouvement
+    (« Développé haltères » → Haltères, « Mollets machine » → Machine).
+  - Tant qu'on n'a touché aucun type, la sélection suit la frappe du nom (suggestions
+    comprises) ; dès qu'on en touche un, c'est ce choix qui compte, et il ne bouge plus.
+    Le texte en dessous dit ce que l'historique dessinera (« Choisi d'après le nom : … »).
+  - Enregistré dans la configuration de l'exercice (``equipment``) ; ``""`` = jamais
+    touché, le type reste déduit du nom (et suit donc un renommage). Les exercices existants
+    sont dans ce cas : rien à régler. La liste des exercices affiche le type
+    (« Jambes · Barre · 60, 70, 80 kg ») ; Dupliquer le copie.
+  - Une valeur inconnue (import, sauvegarde ancienne ou modifiée) est ignorée : retour à la
+    déduction. Rien à changer dans les règles Firebase (la configuration d'un exercice
+    accepte déjà ses champs librement).
+  - Choix par boutons, comme la catégorie, plutôt qu'un menu : un coup d'œil montre les
+    quatre types et celui retenu.
+- **Le repos entre les séries n'est plus affiché dans le détail d'une séance** : il éloignait
+  les séries les unes des autres sans aider à la lecture. Il reste enregistré (``restSec``),
+  et toujours visible dans Créer.
+- Retiré car devenu inutilisé : ``setBarsHTML``, ``cardioSetsHistoryHTML``,
+  ``historyRestBadgeHTML`` et leurs styles (``.set-bar*``, ``.history-set-rest``).
+- Vérifié : 35 contrôles (paliers et broche, incrément explicite et déduit, côté
+  travaillé, aucune pastille de progression, poids du corps, couloirs proportionnels, boucle, disques de la barre,
+  haltères et kettlebells à une ou deux mains, poids « chacun », disques et taille des haltères, couleur des kettlebells, valeur inconnue
+  ignorée, déductions par défaut, type toujours sélectionné, qui suit le nom tant qu'on n'y a pas touché,
+  absence du repos, calendrier dans sa couleur, aucune erreur JS). Batterie : ``tools/tests/session_detail.js``.
+  Les batteries incrément, menus déroulants, parité des modes, natation et sécurité passent
+  toujours.
+
 2.79.2 - 2026-10-09
 ====================
 

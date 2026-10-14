@@ -492,14 +492,75 @@ select.ex-name-pill:focus { outline: none; }
 .history-ex-name { font-family: var(--font); font-weight: 700; font-size: 13px; letter-spacing: -0.2px; margin-bottom: 4px; }
 .history-sets { display: flex; flex-wrap: wrap; gap: 5px; }
 .history-set-chip { background: var(--surface-2); border-radius: var(--radius); padding: 6px 10px; font-family: var(--font); font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
-.history-set-rest { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; align-self: stretch; color: rgba(var(--ink-rgb), 0.62); font-family: var(--font-mono); font-size: 8.5px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 2px 1px; }
-.history-set-rest svg { width: 10px; height: 10px; flex-shrink: 0; }
-.history-set-rest span { writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 0.1em; }
-.set-bars-row { display: flex; align-items: flex-end; gap: 10px; padding: 6px 2px 2px; flex-wrap: wrap; }
-.set-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.set-bar-reps { font-family: var(--font); font-weight: 800; font-size: 10.5px; color: var(--text); min-height: 14px; }
-.set-bar { background: var(--accent); border-radius: var(--radius); }
-.set-bar-weight { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); white-space: nowrap; font-weight: 500; }
+/* ---------- Détail d'un exercice (historique, calendrier) : voir exerciseDetailHTML ----------
+   Une ligne par série : numéro, l'objet manipulé (pile de la machine, couloir
+   de cardio, frise de gainage), puis les chiffres en gros. --gx-accent est la
+   teinte du module, ou la couleur d'activité imposée par le calendrier. */
+/* Une seule grille par exercice (les lignes en display: contents) : la colonne
+   des chiffres a la même largeur pour toutes les séries, donc les piles et les
+   couloirs aussi — sans quoi « 12min 30s » raccourcirait son couloir et
+   fausserait la comparaison avec les autres séries. */
+.gx-sets { --gx-accent: var(--accent); display: grid; grid-template-columns: 22px minmax(0, 1fr) minmax(84px, auto); align-items: center; column-gap: 12px; row-gap: 2px; }
+.gx-row { display: contents; }
+.gx-n { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); color: var(--text); font-family: var(--font); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.gx-visual { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 64px; }
+.gx-figures { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+.gx-big { font-family: var(--font-display); font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -0.5px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gx-sub { font-family: var(--font); font-size: 13px; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Pile de la machine : une plaque par palier, soulevées jusqu'à la broche. */
+.gx-stack { display: flex; align-items: flex-end; justify-content: center; gap: 2px; width: 100%; max-width: 190px; padding-top: 22px; }
+.gx-slat { position: relative; flex: 1 1 0; min-width: 2px; max-width: 6px; height: 34px; border-radius: 2px; background: rgba(var(--ink-rgb), 0.12); }
+.gx-slat.on, .gx-slat.pin { background: var(--gx-accent); }
+.gx-slat.pin::before { content: ""; position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); width: 4px; height: 9px; border-radius: 2px; background: var(--ink); }
+/* Incrément ajouté à la main : le petit poids posé au-dessus de la broche. */
+.gx-slat.pin.plus::after { content: ""; position: absolute; left: 50%; bottom: calc(100% + 13px); transform: translateX(-50%); width: 11px; height: 7px; border-radius: 2px; background: var(--gx-accent); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.gx-sides { display: flex; gap: 12px; font-family: var(--font); font-size: 11px; color: rgba(var(--ink-rgb), 0.45); }
+.gx-sides .on { color: var(--text); font-weight: 800; }
+.gx-bodyweight { font-family: var(--font); font-size: 12px; color: var(--text-dim); }
+/* Barre : disques aux couleurs de compétition, une couleur = un poids partout. */
+.gx-barbell { display: flex; align-items: center; justify-content: center; width: 100%; max-width: 200px; height: 62px; }
+.gx-bar-end { width: 10px; height: 7px; border-radius: 2px; background: rgba(var(--ink-rgb), 0.35); flex-shrink: 0; }
+.gx-collar { width: 4px; height: 16px; border-radius: 1px; background: rgba(var(--ink-rgb), 0.6); flex-shrink: 0; }
+.gx-shaft { flex: 1 1 auto; min-width: 24px; height: 5px; background: rgba(var(--ink-rgb), 0.45); }
+.gx-plate { flex-shrink: 0; width: 8px; margin: 0 1px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2); }
+.gx-plate.p25 { height: 58px; width: 9px; background: #B8473A; }
+.gx-plate.p20 { height: 58px; background: #3F6593; }
+.gx-plate.p15 { height: 50px; background: #D9A93A; }
+.gx-plate.p10 { height: 42px; width: 7px; background: #6B7F45; }
+.gx-plate.p5 { height: 30px; width: 6px; background: #FFFDF8; box-shadow: inset 0 0 0 1px rgba(var(--ink-rgb), 0.55); }
+.gx-plate.p2-5 { height: 22px; width: 5px; background: #3D3230; box-shadow: inset 0 0 0 1px rgba(var(--ink-rgb), 0.55); }
+.gx-plate.p1-25 { height: 16px; width: 4px; background: #8C8279; }
+/* Haltères et kettlebells : deux à la main, ou un seul du côté travaillé. */
+.gx-pair { display: flex; align-items: flex-end; justify-content: center; gap: 18px; min-height: 52px; }
+.gx-slot { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-width: 52px; }
+.gx-slot-label { font-family: var(--font); font-size: 11px; color: rgba(var(--ink-rgb), 0.45); }
+.gx-slot.on .gx-slot-label { color: var(--text); font-weight: 800; }
+.gx-ghost { display: block; border: 1.5px dashed rgba(var(--ink-rgb), 0.28); }
+.gx-ghost.db { width: 56px; height: 26px; border-radius: 6px; }
+.gx-ghost.kb { width: 30px; height: 30px; border-radius: 50%; }
+.gx-dumbbell { display: inline-flex; align-items: center; gap: 1px; height: 56px; }
+.gx-db-disc { width: 4px; border-radius: 2px; background: var(--ink); flex-shrink: 0; }
+.gx-db-handle { height: 5px; flex-shrink: 0; background: rgba(var(--ink-rgb), 0.55); }
+.gx-kb { display: inline-flex; flex-direction: column; align-items: center; --kb: rgba(var(--ink-rgb), 0.75); --kb-ink: var(--on-ink); }
+.gx-kb.p25 { --kb: #B8473A; --kb-ink: #FFFDF8; }
+.gx-kb.p20 { --kb: #3F6593; --kb-ink: #FFFDF8; }
+.gx-kb.p15 { --kb: #D9A93A; --kb-ink: #3D3230; }
+.gx-kb.p10 { --kb: #6B7F45; --kb-ink: #FFFDF8; }
+.gx-kb.p5 { --kb: #FFFDF8; --kb-ink: #3D3230; }
+.gx-kb-handle { height: 15px; border: 5px solid var(--kb); border-bottom: none; border-radius: 12px 12px 0 0; margin-bottom: -4px; }
+.gx-kb.p5 .gx-kb-handle { border-color: rgba(var(--ink-rgb), 0.55); }
+.gx-kb-body { display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--kb); color: var(--kb-ink); font-family: var(--font-display); font-size: 12px; font-weight: 800; box-shadow: inset 0 0 0 1px rgba(var(--ink-rgb), 0.25); }
+/* Cardio : la longueur du couloir est la durée, un repère par pas de temps. */
+.gx-lane { position: relative; width: 100%; height: 20px; border-radius: 10px; background: rgba(var(--ink-rgb), 0.08); margin-top: 18px; }
+.gx-lane-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 10px; background: var(--gx-accent); opacity: 0.6; }
+.gx-tick { position: absolute; top: 8px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: rgba(var(--ink-rgb), 0.3); }
+.gx-tick.in { background: rgba(var(--surface-rgb), 0.85); }
+.gx-lane-icon { position: absolute; top: -20px; transform: translateX(-100%); color: var(--text); line-height: 0; }
+.gx-lane-icon svg { width: 18px; height: 18px; }
+/* Gainage en boucle : travail plein, repos en creux. */
+.gx-loop { position: relative; display: flex; align-items: center; gap: 2px; width: 100%; height: 18px; margin-top: 18px; }
+.gx-loop-work { flex-basis: 0; height: 18px; border-radius: 3px; background: var(--gx-accent); min-width: 2px; }
+.gx-loop-rest { flex-basis: 0; height: 4px; border-radius: 2px; background: rgba(var(--ink-rgb), 0.18); min-width: 1px; }
 .chev { transition: transform 0.18s ease; color: rgba(var(--ink-rgb), 0.62); }
 .chev.open { transform: rotate(180deg); }
 .delete-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 14px; padding: 0 16px 14px; }
@@ -835,6 +896,19 @@ select.ex-name-pill:focus { outline: none; }
 /* Série en cours : bloc encre plein — l'effort, pas un danger. Le contraste
    avec l'aplat moutarde du repos tient au fond, pas à la teinte. */
 .live-rest-hero-active { background: var(--ink); }
+/* Repos : le bonhomme qui reprend son souffle, au centre de l'écran (plus dans
+   ce bandeau depuis 2.87.0), à la place du nom de l'exercice et de
+   « Précédent : … ». Tailles FIXES selon la hauteur de l'écran, jamais une
+   hauteur en pourcentage (Safari sur iPhone l'ignore : l'icône débordait sur
+   le texte, voir 2.85.2), et la case coupe tout ce qui dépasserait. */
+.live-rest-center { flex: none; overflow: hidden; margin: 0; }
+.live-rest-center svg { display: block; width: 112px; height: 112px; }
+@media (max-height: 799px) {
+  .live-rest-center svg { width: 80px; height: 80px; }
+}
+@media (max-height: 699px) {
+  .live-rest-center svg { width: 56px; height: 56px; }
+}
 .live-rest-hero-active .live-rest-hero-label { color: var(--yellow); }
 .live-rest-hero-active .live-rest-hero-value { color: var(--on-ink); }
 .live-timeline-rest { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex-shrink: 0; align-self: center; color: rgba(var(--ink-rgb), 0.62); font-family: var(--font-mono); font-size: 8.5px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 1px; }
@@ -894,7 +968,17 @@ select.ex-name-pill:focus { outline: none; }
 .live-set-form { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .live-set-form-scroll::-webkit-scrollbar, .content::-webkit-scrollbar, .live-timeline::-webkit-scrollbar { width: 0; height: 0; }
 .live-set-form-scroll, .content, .live-timeline { scrollbar-width: none; }
-.live-set-form-scroll { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; min-height: 0; overflow-y: auto; }
+.live-set-form-scroll { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 18px; min-height: 0; overflow-y: auto; }
+/* Centré verticalement par deux cales élastiques (avant / après le contenu)
+   plutôt que par justify-content: center — qui, quand le contenu dépasse
+   (petit écran), coupait le HAUT (le nom de l'exercice) sans qu'on puisse y
+   défiler : ici les cales tombent à zéro et le surplus défile vers le bas.
+   Des pseudo-éléments plutôt que des marges sur le premier / dernier enfant :
+   un texte d'aide masqué (display: none) en dernière position décentrait
+   sinon tout vers le bas. Leur marge négative annule l'espacement (gap). */
+.live-set-form-scroll::before, .live-set-form-scroll::after { content: ""; flex: 1 1 0; min-height: 0; }
+.live-set-form-scroll::before { margin-bottom: -18px; }
+.live-set-form-scroll::after { margin-top: -18px; }
 .live-set-form-scroll-fixed { overflow-y: hidden; }
 .live-set-form-actions { flex-shrink: 0; display: flex; flex-direction: column; gap: 9px; padding-top: 12px; }
 .live-exercise-name { text-align: center; font-family: var(--font-display); font-weight: 900; font-size: 26px; letter-spacing: -1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -916,10 +1000,16 @@ select.ex-name-pill:focus { outline: none; }
 .live-weight-select { width: 100%; font-family: var(--font); font-size: 20px; padding: 16px; text-align: center; text-align-last: center; border-radius: var(--radius); background: var(--surface-2); border: 1px solid transparent; color: var(--text); font-weight: 800; letter-spacing: -0.5px; -webkit-appearance: none; appearance: none; }
 .live-increment-btn { width: 100%; margin-top: 8px; padding: 12px; border-radius: var(--radius); }
 .live-validate-btn { width: 100%; background: var(--ink); color: var(--on-ink); border: none; border-radius: var(--radius); padding: 20px; font-family: var(--font); font-size: 16px; font-weight: 800; letter-spacing: -0.2px; cursor: pointer; box-shadow: var(--shadow-card); flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 9px; }
+/* « Lancer <nom de l'exercice> » : un nom long se termine par « … » plutôt
+   que de casser le bouton sur deux lignes. */
+.live-btn-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .live-post-btn { width: 100%; border: none; border-radius: var(--radius); padding: 16px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 /* « Finir la série » mène au repos, donc moutarde — et se distingue ainsi de
    « Débuter » qui reste encre, sans emprunter le rouge du destructif. */
 .live-validate-btn.live-finish-btn { background: var(--yellow); color: var(--ink); box-shadow: var(--shadow-card); }
+/* Série de cardio en cours (Séance en direct) : l'activité s'anime en boucle
+   tant que la série n'est pas finie — voir animIconHTML (09c-anim-icons.js). */
+.live-activity-anim { display: flex; justify-content: center; color: var(--text); margin: 4px 0 8px; }
 .live-in-progress-banner {
   text-align: center; background: none; color: var(--text-dim); border-radius: 0; padding: 0;
   font-family: var(--font); font-size: 15px; font-weight: 500; letter-spacing: normal;
@@ -1210,9 +1300,6 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .cal-cell.selected { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
 .cal-cell.selected .cal-dot-mini { box-shadow: 0 0 0 1px var(--on-ink); }
 .cal-dot-mini, .cal-dot { border-radius: var(--radius); width: 5px; height: 5px; }
-
-/* ---------- Barres de séries : colonnes franches ---------- */
-.set-bar { border-radius: var(--radius); }
 
 
 /* ==========================================================================
@@ -1911,6 +1998,13 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 
 /* ---------- Petit texte d'aide sous un groupe de réglages ---------- */
 .field-hint { font-family: var(--font); font-size: 13px; line-height: 1.4; color: var(--text-dim); margin: 10px 4px 0; }
+/* Textes d'aide masqués par défaut (Réglages > Apparence > Textes d'aide, voir
+   applyShowHints). .live-hint : en Séance en direct, les phrases qui redisent
+   ce que le bandeau du haut montre déjà (« Chrono en cours », « Série en
+   cours : … », « Travail — Tour 2/6 ») ou qui expliquent (« Repos avant cette
+   série : … », « Le temps est chronométré automatiquement… »). Les données calculées (.block-total-hint : « Durée totale
+   estimée… ») et les aides à la demande (bouton « ? ») ne sont pas concernées. */
+html.hide-hints .field-hint, html.hide-hints .block-mode-hint, html.hide-hints .cal-empty-hint, html.hide-hints .live-hint { display: none; }
 
 /* ---------- Réglages > Son : carte volume + bouton de test ---------- */
 .sound-card { background: var(--surface); border-radius: var(--radius-lg); padding: 18px 16px; margin-bottom: 10px; }
@@ -2024,3 +2118,105 @@ select.app-select.app-select-row {
   width: auto; max-width: 60%; margin-left: auto; flex: 0 1 auto; min-width: 0; border-bottom: none;
   text-align: left; text-overflow: ellipsis;
 }
+
+/* ==========================================================================
+   SÉANCE EN DIRECT : ÉCRAN FIXE, RESSERRÉ (2.88.0)
+   L'écran de saisie ne défile plus jamais : tout tient dans la hauteur du
+   téléphone. Plus de sous-titre ni de « Précédent : … » (le bouton « Lancer
+   <nom> » et la frise des séries disent déjà tout) ; espacements, bandeau,
+   compteurs et boutons resserrés, encore un cran sur les écrans bas.
+   ========================================================================== */
+.live-header { margin-bottom: 10px; }
+.live-timeline { margin-bottom: 8px; padding-bottom: 8px; }
+.live-rest-hero { padding: 10px 14px; margin-bottom: 8px; }
+.live-rest-hero-value { font-size: 60px; letter-spacing: -3px; line-height: 1; }
+.live-set-form-scroll { overflow: hidden; gap: 12px; }
+.live-set-form-scroll::before { margin-bottom: -12px; }
+.live-set-form-scroll::after { margin-top: -12px; }
+.live-set-form-actions { gap: 7px; padding-top: 10px; }
+.live-stepper-group { gap: 5px; }
+.live-stepper { padding: 6px; }
+.live-stepper-btn { width: 48px; height: 48px; font-size: 26px; }
+.live-stepper-value { font-size: 30px; }
+.live-weight-select { padding: 12px; font-size: 18px; }
+.live-increment-btn { margin-top: 6px; padding: 9px; }
+.live-side-btn { padding: 11px 10px; }
+.live-validate-btn { padding: 16px; }
+.live-post-btn { padding: 11px !important; }
+.live-exercise-name { font-size: 26px; }
+.live-activity-anim { margin: 0; }
+@media (max-height: 740px) {
+  .live-rest-hero-value { font-size: 48px; letter-spacing: -2.2px; }
+  .live-rest-hero { padding: 8px 12px; }
+  .live-set-form-scroll { gap: 8px; }
+  .live-set-form-scroll::before { margin-bottom: -8px; }
+  .live-set-form-scroll::after { margin-top: -8px; }
+  .live-stepper-btn { width: 42px; height: 42px; font-size: 22px; }
+  .live-stepper-value { font-size: 26px; }
+  .live-weight-select { padding: 10px; font-size: 17px; }
+  .live-validate-btn { padding: 13px; }
+  .live-post-btn { padding: 9px !important; }
+  .live-exercise-name { font-size: 22px; }
+  .live-activity-anim svg[data-anim-icon]:not([data-anim-icon="rest"]) { width: 84px; height: 84px; }
+}
+
+/* ==========================================================================
+   RÉGLAGES > EXERCICES : UNE SEULE GRILLE, DES BOUTONS PAR RÔLE (2.89.0)
+   Alignement : tout part du MÊME bord. Sur la liste, la bascule Muscu /
+   Gainage, les filtres et les cartes ; dans un formulaire, les titres de
+   section, les puces, le texte des lignes, les aides et les boutons — plus
+   aucun retrait propre à un bloc (ils étaient à 4 bords différents).
+   Boutons, un style par rôle, le même partout sur ces écrans :
+     - action principale (une par écran) : plein encre (.save-btn) — Enregistrer ;
+     - action secondaire : contour, texte encre (.secondary-btn) — Annuler,
+       et en ligne, Ajouter (un poids) ;
+     - choix unique, sur la LISTE : puce à contour, la choisie pleine couleur
+       du module (.ex-type-btn) — Muscu/Gainage, filtres ;
+     - choix dans un FORMULAIRE (2.90.0) : menu en bout de ligne, comme
+       « Alterner avec » — catégorie, type de poids, suggestions. Tout le
+       formulaire suit le modèle des sections Incrément / Options avancées :
+       un titre, puis des lignes « libellé à gauche, réglage à droite » ;
+     - valeur saisie : même puce, fond gris, « × » pour retirer (.weight-chip.removable) ;
+     - réglages de ligne : interrupteur, − / +, menu — inchangés.
+   ========================================================================== */
+.exercise-settings .ex-type-toggle,
+.exercise-settings .ex-type-toggle.wrap-toggle { margin: 0 0 12px 0; }
+.exercise-settings .ex-type-toggle:not(.wrap-toggle) { margin-bottom: 14px; }
+
+/* Formulaire : un seul bord intérieur (18 px) pour tout. */
+.exercise-form { padding: 18px; }
+.exercise-form .home-section-label { margin: 22px 0 8px !important; }
+.exercise-form > .home-section-label:first-child { margin-top: 0 !important; }
+.exercise-form .ex-type-toggle.wrap-toggle { margin: 10px 0 0 0; gap: 6px; }
+.exercise-form .weight-chip-row { margin: 0; gap: 6px; }
+.exercise-form .field-list-card { margin: 0; background: transparent; border-radius: 0; border-top: 0.5px solid var(--rule); border-bottom: 0.5px solid var(--rule); }
+.exercise-form .field-list-row { padding: 10px 0; }
+.exercise-form #config-base-weights-row { padding: 12px 0; }
+.exercise-form #config-base-weights-row + .field-list-row { border-top: 0.5px solid var(--rule); }
+.exercise-form .field-hint { margin: 8px 0 0; }
+.exercise-form .field-help-text { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+.exercise-form input.field-list-input-left { text-align: left; }
+.exercise-form .field-list-value { font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; margin-right: 6px; }
+.exercise-form .home-list-icon { margin-left: 0; }
+.exercise-form-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.exercise-form-actions .save-btn { margin: 0; }
+
+/* Puces : une taille, une typo, quel que soit leur rôle. */
+.exercise-settings .ex-type-btn,
+.exercise-settings .weight-chip { box-sizing: border-box; min-height: 34px; padding: 7px 12px; font-family: var(--font); font-size: 12.5px; font-weight: 700; border-radius: var(--radius); display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.exercise-settings .ex-type-btn svg { width: 15px; height: 15px; }
+.exercise-settings .weight-chip.suggest-chip { color: var(--text); border: 1px solid var(--rule); background: transparent; }
+.exercise-settings .weight-chip.suggest-chip svg { width: 12px; height: 12px; opacity: 0.6; }
+.exercise-settings .weight-chip.removable { background: var(--surface-2); border-color: transparent; color: var(--text); padding-right: 9px; }
+
+/* Action secondaire : contour, texte encre ; pleine largeur sous l'action
+   principale, ou compacte dans une ligne (Ajouter). */
+.secondary-btn {
+  box-sizing: border-box; width: 100%; min-height: 48px; padding: 12px 16px;
+  background: transparent; border: 1px solid var(--rule); border-radius: var(--radius); color: var(--text);
+  font-family: var(--font); font-size: 15px; font-weight: 700; letter-spacing: -0.1px;
+  display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+}
+.secondary-btn:active { transform: scale(0.98); }
+.secondary-btn svg { width: 14px; height: 14px; }
+.secondary-btn.secondary-btn-inline { width: auto; min-height: 36px; padding: 7px 13px; font-size: 13px; flex: none; }

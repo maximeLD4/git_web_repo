@@ -122,8 +122,22 @@ function renderSettingsAppearanceApp() {
         </div>
       </div>
       <div class="field-hint">Nuit adoucit l'écran le soir. Anne passe l'app dans une palette rose.</div>
+      <div class="home-section-label" style="margin-top:22px;">Aide</div>
+      <div class="field-list-card">
+        <div class="field-list-row">
+          <span style="flex:1;">Textes d'aide</span>
+          <button type="button" class="toggle-switch ${showHints ? "on" : ""}" id="show-hints-toggle" role="switch" aria-checked="${showHints ? "true" : "false"}" aria-label="Afficher les textes d'aide">
+            <span class="toggle-switch-knob"></span>
+          </button>
+        </div>
+      </div>
     </div>
   `;
+  document.getElementById("show-hints-toggle").addEventListener("click", () => {
+    applyShowHints(!showHints);
+    saveJSON(KEYS.showHints, showHints);
+    renderSettingsAppearanceApp();
+  });
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
     currentApp = "settings";
     render();
@@ -183,12 +197,13 @@ function renderSettingsSoundApp() {
     });
     soundSlider.addEventListener("change", () => {
       saveJSON(KEYS.soundVolume, soundVolume);
-      playLiveRestSignal();
+      playLiveCountdownTick();
     });
   }
   if (testSoundBtn) {
+    // Le décompte complet tel qu'on l'entendra dans la boucle.
     testSoundBtn.addEventListener("click", () => {
-      playLiveRestSignal();
+      playLiveCountdownDemo();
     });
   }
 }
@@ -298,7 +313,7 @@ function gymSettingsListHTML() {
           <div class="history-row-icon">${ICONS.dumbbell}</div>
           <div class="history-head-left">
             <div class="exercise-config-name">${c.name}</div>
-            <div class="history-label">${categoryLabel(c.category)} · ${bases ? bases + " kg" : "Aucun palier"}${incLabel}${autoIncLabel}</div>
+            <div class="history-label">${categoryLabel(c.category)} · ${gymEquipmentLabel(resolveGymEquipment(c))} · ${bases ? bases + " kg" : "Aucun palier"}${incLabel}${autoIncLabel}</div>
           </div>
           <button type="button" class="icon-btn" data-duplicate-config="${c.id}" aria-label="Dupliquer">${ICONS.duplicate}</button>
         </div>
@@ -307,6 +322,25 @@ function gymSettingsListHTML() {
     })
     .join("");
   return `${tabsHTML}${filtered.length === 0 ? emptyState : items}`;
+}
+
+// « Type de poids » : pas d'option « Automatique » — un des quatre types est
+// TOUJOURS sélectionné. Tant qu'on n'en a pas touché un (equipment ""), la
+// sélection est déduite du nom (guessGymEquipment) et suit la frappe, voir
+// updateEquipmentFromName ; dès qu'on en touche un, c'est ce choix qui compte.
+function gymFormEquipment(d) {
+  return d.equipment && GYM_EQUIPMENT.some((e) => e.key === d.equipment) ? d.equipment : guessGymEquipment(d.name);
+}
+function gymEquipmentHint(d) {
+  const shown = {
+    machine: "la pile de la machine, broche sur le palier",
+    barre: "la barre avec ses disques",
+    halteres: "les haltères",
+    kettlebell: "les kettlebells",
+  };
+  const what = `chaque série montrera ${shown[gymFormEquipment(d)]}`;
+  if (d.equipment) return `Dans l'historique, ${what}.`;
+  return `Choisi d'après le nom : dans l'historique, ${what}. Touche un autre type pour le changer.`;
 }
 
 function gymSettingsFormHTML() {
@@ -326,32 +360,51 @@ function gymSettingsFormHTML() {
   const suggestions = (EXERCISE_SUGGESTIONS[gymSettingsFormDraft.category] || []).filter(
     (n) => !usedNamesLower.has(n.trim().toLowerCase())
   );
-  const suggestionsHTML = suggestions
-    .map((n) => `<button type="button" class="weight-chip" data-suggest-name="${n.replace(/"/g, "&quot;")}">${n}</button>`)
-    .join("");
+  // Tout le formulaire est bâti sur le modèle des sections « Incrément » et
+  // « Options avancées » : un titre de section, puis des lignes « libellé à
+  // gauche, réglage à droite » séparées par un filet. Catégorie, type de poids
+  // et suggestions sont donc des menus en bout de ligne (comme « Alterner
+  // avec ») plutôt que des rangées de puces. Voir « RÉGLAGES > EXERCICES »
+  // dans styles.css.
+  const opt = (v, label, sel) => `<option value="${String(v).replace(/"/g, "&quot;")}" ${sel ? "selected" : ""}>${label}</option>`;
+  const suggestionRowHTML = suggestions.length
+    ? `<label class="field-list-row" for="config-suggest-select">
+          <span style="flex:1;">Suggestions</span>
+          <select class="field-select app-select app-select-row" id="config-suggest-select">
+            ${opt("", "Choisir…", true)}${suggestions.map((n) => opt(n, n, false)).join("")}
+          </select>
+        </label>`
+    : "";
   return `
-    <div class="exercise-card" style="padding: 16px 14px 16px 19px;">
-      <div class="home-section-label" style="margin-top:0;">Exercice</div>
+    <div class="exercise-card exercise-form">
+      <div class="home-section-label">Exercice</div>
       <div class="field-list-card">
         <label class="field-list-row" for="config-name-input">
           <span>Nom</span>
           <input type="text" id="config-name-input" placeholder="Ex. Leg press, Développé couché…" value="${(gymSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
         </label>
+        ${suggestionRowHTML}
+        <label class="field-list-row" for="config-category-select">
+          <span style="flex:1;">Catégorie</span>
+          <select class="field-select app-select app-select-row" id="config-category-select">
+            ${GYM_EXERCISE_CATEGORIES.map((t) => opt(t.key, t.label, gymSettingsFormDraft.category === t.key)).join("")}
+          </select>
+        </label>
+        <label class="field-list-row" for="config-equipment-select">
+          <span style="flex:1;">Type de poids</span>
+          <select class="field-select app-select app-select-row" id="config-equipment-select">
+            ${GYM_EQUIPMENT.map((e) => opt(e.key, e.label, gymFormEquipment(gymSettingsFormDraft) === e.key)).join("")}
+          </select>
+        </label>
       </div>
-      <div class="ex-type-toggle wrap-toggle" id="config-category-toggle" style="margin-bottom:18px;">
-        ${GYM_EXERCISE_CATEGORIES.map(
-          (t) => `<button type="button" class="ex-type-btn ${gymSettingsFormDraft.category === t.key ? "active" : ""}" data-form-category="${t.key}">${t.label}</button>`
-        ).join("")}
-      </div>
+      <div class="field-hint" id="config-equipment-hint">${gymEquipmentHint(gymSettingsFormDraft)}</div>
 
-      ${suggestionsHTML ? `<div class="home-section-label" style="margin-top:0;">Suggestions</div><div class="weight-chip-row" id="config-suggestions-row" style="margin-bottom:18px;">${suggestionsHTML}</div>` : ""}
-
-      <div class="home-section-label" style="margin-top:0;">Poids possibles</div>
+      <div class="home-section-label">Poids possibles</div>
       <div class="field-list-card">
-        <div class="weight-chip-row" id="config-base-weights-row" style="padding:14px 14px 10px;">${chips}</div>
+        <div class="field-list-row weight-chip-row" id="config-base-weights-row">${chips}</div>
         <div class="field-list-row">
-          <input type="text" inputmode="decimal" id="config-new-base-weight" placeholder="Ajouter un poids (kg)" style="border:none; background:none; outline:none; flex:1; font-family:var(--font); font-size:15px; color:var(--text);">
-          <button type="button" class="save-btn" id="config-add-base-weight-btn" style="margin:0; width:auto; padding:9px 16px; font-size:14px; flex:none;">Ajouter</button>
+          <input type="text" inputmode="decimal" id="config-new-base-weight" class="field-list-input-left" placeholder="Ajouter un poids (kg)">
+          <button type="button" class="secondary-btn secondary-btn-inline" id="config-add-base-weight-btn">${ICONS.plus} Ajouter</button>
         </div>
         <div class="field-list-row" id="config-scan-weights-btn" style="cursor:pointer;">
           <div class="home-list-icon home-list-icon-square" style="background:var(--ink); color:var(--on-ink); flex-shrink:0;">${ICONS.camera}</div>
@@ -361,7 +414,7 @@ function gymSettingsFormHTML() {
       </div>
       <div class="field-hint">Les paliers de poids de la machine.</div>
 
-      <div class="home-section-label" style="margin-top:22px;">Incrément</div>
+      <div class="home-section-label">Incrément</div>
       <div class="field-list-card">
         <div class="field-list-row">
           <span style="flex:1;">Incrément automatique</span>
@@ -381,7 +434,7 @@ function gymSettingsFormHTML() {
       </div>
       <div class="field-hint" id="config-increment-hint">Poids fixe qu'on peut ajouter à la main sur la machine. Sur chaque palier, le choix sera +0 ou +${gymSettingsFormDraft.maxIncrement || 0}kg.</div>
 
-      <div class="home-section-label" style="margin-top:22px;">Options avancées</div>
+      <div class="home-section-label">Options avancées</div>
       <div class="field-list-card">
         <div class="field-list-row">
           <div class="field-label-row" style="flex:1; margin-bottom:0;">
@@ -411,8 +464,10 @@ function gymSettingsFormHTML() {
       </div>
 
       <div id="config-form-error"></div>
-      <button class="save-btn" id="save-config-btn" style="margin-top:20px;">${ICONS.check} Enregistrer</button>
-      <button class="backup-btn" id="cancel-config-btn" style="margin-top:10px;">Annuler</button>
+      <div class="exercise-form-actions">
+        <button class="save-btn" id="save-config-btn">${ICONS.check} Enregistrer</button>
+        <button class="secondary-btn" id="cancel-config-btn">Annuler</button>
+      </div>
     </div>
   `;
 }
@@ -452,7 +507,7 @@ function renderGymSettingsApp() {
       <div class="screen-title">Exercices</div>
       <div class="header-sub screen-subtitle">Préconfigurés pour la séance en direct</div>
     </div>
-    <div class="content" id="content"></div>
+    <div class="content exercise-settings" id="content"></div>
     <div class="log-actions-bar" id="settings-actions-bar" style="display:none; bottom:0; padding-bottom: calc(12px + var(--safe-bottom));"></div>
   `;
   document.querySelector("[data-back-settings]").addEventListener("click", () => {
@@ -525,7 +580,7 @@ function gymSettingsModeToggleHTML() {
   return `
     <div class="ex-type-toggle" style="margin-bottom:16px;">
       <button type="button" class="ex-type-btn ${gymSettingsMode === "muscu" ? "active" : ""}" data-gym-settings-mode="muscu">${ICONS.dumbbell} Muscu</button>
-      <button type="button" class="ex-type-btn ${gymSettingsMode === "gainage" ? "active" : ""}" data-gym-settings-mode="gainage">${ICONS.stopwatch} Gainage</button>
+      <button type="button" class="ex-type-btn ${gymSettingsMode === "gainage" ? "active" : ""}" data-gym-settings-mode="gainage">${ICONS.plank} Gainage</button>
     </div>`;
 }
 
@@ -542,7 +597,7 @@ function gainageSettingsListHTML() {
           `
       <div class="history-card">
         <div class="history-head" data-edit-gainage-config="${c.id}" style="cursor:pointer;">
-          <div class="history-row-icon">${ICONS.stopwatch}</div>
+          <div class="history-row-icon">${ICONS.plank}</div>
           <div class="history-head-left">
             <div class="exercise-config-name">${c.name}</div>
             <div class="history-label">${c.rounds || 10} tours · ${c.workSec || 30} s de travail · ${c.restSec ?? 30} s de repos</div>
@@ -561,51 +616,49 @@ function gainageSettingsFormHTML() {
     gainageExerciseConfigs.filter((c) => c.id !== gainageSettingsEditingConfigId).map((c) => c.name.trim().toLowerCase())
   );
   const suggestions = (EXERCISE_SUGGESTIONS.gainage || []).filter((n) => !usedNamesLower.has(n.trim().toLowerCase()));
-  const suggestionsHTML = suggestions
-    .map((n) => `<button type="button" class="weight-chip" data-suggest-gainage-name="${n.replace(/"/g, "&quot;")}">${n}</button>`)
-    .join("");
+  const opt = (v, label, sel) => `<option value="${String(v).replace(/"/g, "&quot;")}" ${sel ? "selected" : ""}>${label}</option>`;
+  // Même modèle que le formulaire Muscu (voir gymSettingsFormHTML) : titres
+  // de section et lignes « libellé à gauche, réglage à droite ».
+  const loopRow = (label, value, key) => `
+        <div class="field-list-row">
+          <span style="flex:1;">${label}</span>
+          <span class="field-list-value">${value}</span>
+          <div class="rep-stepper" style="flex:none;">
+            <button type="button" class="rep-step-btn" data-gainage-loop-${key}-minus aria-label="Moins">−</button>
+            <button type="button" class="rep-step-btn" data-gainage-loop-${key}-plus aria-label="Plus">+</button>
+          </div>
+        </div>`;
   return `
-    <div class="exercise-card" style="padding: 16px 14px 16px 19px;">
-      <div class="field" style="margin-bottom:14px;">
-        <label>Suggestions (tape sur un nom pour le préremplir)</label>
-        <div class="weight-chip-row" id="gainage-suggestions-row">${suggestionsHTML}</div>
+    <div class="exercise-card exercise-form">
+      <div class="home-section-label">Exercice</div>
+      <div class="field-list-card">
+        <label class="field-list-row" for="gainage-config-name-input">
+          <span>Nom</span>
+          <input type="text" id="gainage-config-name-input" placeholder="Ex. Planche, Gainage latéral…" value="${(gainageSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
+        </label>
+        ${
+          suggestions.length
+            ? `<label class="field-list-row" for="gainage-suggest-select">
+          <span style="flex:1;">Suggestions</span>
+          <select class="field-select app-select app-select-row" id="gainage-suggest-select">
+            ${opt("", "Choisir…", true)}${suggestions.map((n) => opt(n, n, false)).join("")}
+          </select>
+        </label>`
+            : ""
+        }
       </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label>Nom de l'exercice de gainage</label>
-        <input type="text" id="gainage-config-name-input" placeholder="Ex. Planche, Gainage latéral…" value="${(gainageSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
+      <div class="home-section-label">Boucle par défaut</div>
+      <div class="field-list-card">
+        ${loopRow("Tours", gainageSettingsFormDraft.rounds, "rounds")}
+        ${loopRow("Travail", `${gainageSettingsFormDraft.workSec} s`, "work")}
+        ${loopRow("Repos", `${gainageSettingsFormDraft.restSec} s`, "rest")}
       </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label>Réglages par défaut de la boucle (modifiables à chaque lancement)</label>
-        <div class="live-loop-config">
-          <div class="live-stepper-group">
-            <div class="live-stepper-label">Tours</div>
-            <div class="live-stepper">
-              <button type="button" class="live-stepper-btn" data-gainage-loop-rounds-minus aria-label="Moins">−</button>
-              <div class="live-stepper-value">${gainageSettingsFormDraft.rounds}</div>
-              <button type="button" class="live-stepper-btn" data-gainage-loop-rounds-plus aria-label="Plus">+</button>
-            </div>
-          </div>
-          <div class="live-stepper-group">
-            <div class="live-stepper-label">Travail (secondes)</div>
-            <div class="live-stepper">
-              <button type="button" class="live-stepper-btn" data-gainage-loop-work-minus aria-label="Moins">−</button>
-              <div class="live-stepper-value">${gainageSettingsFormDraft.workSec}s</div>
-              <button type="button" class="live-stepper-btn" data-gainage-loop-work-plus aria-label="Plus">+</button>
-            </div>
-          </div>
-          <div class="live-stepper-group">
-            <div class="live-stepper-label">Repos (secondes)</div>
-            <div class="live-stepper">
-              <button type="button" class="live-stepper-btn" data-gainage-loop-rest-minus aria-label="Moins">−</button>
-              <div class="live-stepper-value">${gainageSettingsFormDraft.restSec}s</div>
-              <button type="button" class="live-stepper-btn" data-gainage-loop-rest-plus aria-label="Plus">+</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="field-hint">Modifiables à chaque lancement de la boucle.</div>
       <div id="gainage-config-form-error"></div>
-      <button class="save-btn" id="save-gainage-config-btn">${ICONS.check} Enregistrer</button>
-      <button class="backup-btn" id="cancel-gainage-config-btn" style="margin-top:10px;">Annuler</button>
+      <div class="exercise-form-actions">
+        <button class="save-btn" id="save-gainage-config-btn">${ICONS.check} Enregistrer</button>
+        <button class="secondary-btn" id="cancel-gainage-config-btn">Annuler</button>
+      </div>
     </div>
   `;
 }
@@ -660,7 +713,7 @@ function attachGymSettingsListeners() {
       gymSettingsFormOpen = true;
       gymSettingsEditingConfigId = null;
       const defaultCategory = gymSettingsActiveCategory === "other" || gymSettingsActiveCategory === "all" ? "pecs" : gymSettingsActiveCategory;
-      gymSettingsFormDraft = { name: "", category: defaultCategory, baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
+      gymSettingsFormDraft = { name: "", category: defaultCategory, equipment: "", baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
       gymSettingsHelpOpen = {};
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
@@ -675,6 +728,7 @@ function attachGymSettingsListeners() {
       gymSettingsFormDraft = {
         name: config.name,
         category: GYM_EXERCISE_CATEGORIES.some((c) => c.key === config.category) ? config.category : "pecs",
+        equipment: GYM_EQUIPMENT.some((e) => e.key === config.equipment) ? config.equipment : "",
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
         autoIncrement: config.autoIncrement || false,
@@ -696,6 +750,7 @@ function attachGymSettingsListeners() {
       gymSettingsFormDraft = {
         name: config.name + " (copie)",
         category: config.category || "pecs",
+        equipment: GYM_EQUIPMENT.some((e) => e.key === config.equipment) ? config.equipment : "",
         baseWeights: [...config.baseWeights],
         maxIncrement: config.maxIncrement || 0,
         autoIncrement: config.autoIncrement || false,
@@ -725,19 +780,41 @@ function attachGymSettingsListeners() {
     if (incEl) gymSettingsFormDraft.maxIncrement = Math.max(0, parseFloat(incEl.value) || 0);
   }
 
-  document.querySelectorAll("[data-form-category]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      syncFormFromInputs();
-      gymSettingsFormDraft.category = btn.dataset.formCategory;
-      renderGymSettingsContent();
-    });
+  const categorySelect = document.getElementById("config-category-select");
+  categorySelect.addEventListener("change", () => {
+    syncFormFromInputs();
+    gymSettingsFormDraft.category = categorySelect.value;
+    gymSettingsFocusTarget = null;
+    renderGymSettingsContent();
   });
-  document.querySelectorAll("[data-suggest-name]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      nameInput.value = btn.dataset.suggestName;
-      nameInput.focus();
-    });
+  // Tant qu'aucun type n'a été touché, le type sélectionné suit le nom tapé
+  // (sans réafficher le formulaire, qui ferait perdre le clavier) — y compris
+  // quand le nom vient d'une suggestion.
+  function updateEquipmentFromName() {
+    gymSettingsFormDraft.name = nameInput.value;
+    const equipmentSelect = document.getElementById("config-equipment-select");
+    if (equipmentSelect) equipmentSelect.value = gymFormEquipment(gymSettingsFormDraft);
+    const hintEl = document.getElementById("config-equipment-hint");
+    if (hintEl) hintEl.textContent = gymEquipmentHint(gymSettingsFormDraft);
+  }
+  nameInput.addEventListener("input", updateEquipmentFromName);
+  const equipmentSelect = document.getElementById("config-equipment-select");
+  equipmentSelect.addEventListener("change", () => {
+    syncFormFromInputs();
+    gymSettingsFormDraft.equipment = equipmentSelect.value;
+    gymSettingsFocusTarget = null;
+    renderGymSettingsContent();
   });
+  // Choisir une suggestion remplit le nom, puis le menu revient sur
+  // « Choisir… » : c'est une aide à la saisie, pas un réglage.
+  const suggestSelect = document.getElementById("config-suggest-select");
+  if (suggestSelect)
+    suggestSelect.addEventListener("change", () => {
+      if (!suggestSelect.value) return;
+      nameInput.value = suggestSelect.value;
+      suggestSelect.value = "";
+      updateEquipmentFromName();
+    });
   // Poids en cours de saisie dans "Ajouter un poids (kg)" : null si le champ est
   // vide, NaN si ce qui est tapé n'est pas un poids valide, sinon le nombre.
   // Partagé par le bouton "Ajouter" ET par "Enregistrer" (voir plus bas) : les
@@ -883,6 +960,10 @@ function attachGymSettingsListeners() {
       id: gymSettingsEditingConfigId || uid(),
       name,
       category: gymSettingsFormDraft.category,
+      // "" = aucun type touché : le type reste déduit du nom (affiché
+      // sélectionné dans le formulaire, dessiné dans l'historique, voir
+      // resolveGymEquipment) et suit donc un changement de nom.
+      equipment: GYM_EQUIPMENT.some((e) => e.key === gymSettingsFormDraft.equipment) ? gymSettingsFormDraft.equipment : "",
       baseWeights: Array.from(new Set(gymSettingsFormDraft.baseWeights)).sort((a, b) => a - b),
       maxIncrement: gymSettingsFormDraft.maxIncrement || 0,
       autoIncrement: !!gymSettingsFormDraft.autoIncrement,
@@ -976,9 +1057,12 @@ function attachGainageSettingsListeners() {
   nameInput.addEventListener("input", () => {
     gainageSettingsFormDraft.name = nameInput.value;
   });
-  document.querySelectorAll("[data-suggest-gainage-name]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      nameInput.value = btn.dataset.suggestGainageName;
+  const gainageSuggest = document.getElementById("gainage-suggest-select");
+  [gainageSuggest].filter(Boolean).forEach((sel) => {
+    sel.addEventListener("change", () => {
+      if (!sel.value) return;
+      nameInput.value = sel.value;
+      sel.value = "";
       // Ce clic ne passe jamais par l'événement "input" du champ (voir
       // juste au-dessus) — sans cette ligne, le nom réapparaît correct à
       // l'écran mais reste vide dans l'état, et le premier stepper touché

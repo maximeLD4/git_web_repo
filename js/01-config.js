@@ -2,6 +2,7 @@
 const KEYS = {
   lastUid: "gymlog:last-uid",
   colorMode: "gymlog:color-mode",
+  showHints: "gymlog:show-hints",
   soundVolume: "gymlog:sound-volume",
   sessions: "gymlog:sessions",
   library: "gymlog:library",
@@ -62,7 +63,10 @@ const ICONS = {
   camera: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>',
   trending: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
   bolt: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-  rower: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="5" r="1.6" fill="currentColor" stroke="none"/><path d="M4 19h8M15 19l3-3M4 11l8 2 6-3"/></svg>',
+  // rower : défini dans 09c-anim-icons.js (icône articulée, fixe ou animée).
+  // bike, swim et stopwatch y sont aussi redéfinis, d'après la même fonction de
+  // pose que leurs animations ; les tracés ci-dessous ne servent plus que de
+  // repli si ce fichier manquait.
   stopwatch: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>',
   play: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none"><polygon points="6 4 20 12 6 20 6 4"/></svg>',
   stop: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
@@ -77,6 +81,47 @@ const GYM_EXERCISE_CATEGORIES = [
   { key: "fessiers", label: "Fessiers" },
   { key: "abdos", label: "Abdos" },
 ];
+
+// Type de poids d'un exercice Muscu (Réglages > Exercices) — sert à dessiner
+// chaque série dans le détail d'une séance (voir exerciseDetailHTML) : la pile
+// de la machine, la barre avec ses disques, les haltères ou la kettlebell.
+// Pas d'option « Automatique » : equipment "" (jamais choisi) = le type déduit
+// du nom (guessGymEquipment), affiché sélectionné comme s'il avait été choisi.
+const GYM_EQUIPMENT = [
+  { key: "machine", label: "Machine" },
+  { key: "barre", label: "Barre" },
+  { key: "halteres", label: "Haltères" },
+  { key: "kettlebell", label: "Kettlebell" },
+];
+// Déduction par défaut, d'après le nom (sans accents ni majuscules). L'ordre
+// compte : un nom qui cite un matériel (« Développé haltères », « Mollets
+// machine ») l'emporte sur le mouvement (« développé » = barre, « mollets » =
+// kettlebell) ; tout ce qui n'est pas reconnu reste une machine, le cas le plus
+// courant dans l'app.
+const GYM_EQUIPMENT_GUESSES = [
+  ["kettlebell", /kettle|swing|goblet/],
+  ["halteres", /haltere|elevation|oiseau|marteau|concentre|curl biceps|fente|arnold/],
+  ["machine", /machine|poulie|presse|pec deck|smith|hack|guide|leg |extension|curl|tirage|ecarte|crunch|adducteur|abducteur|face pull/],
+  ["kettlebell", /mollet/],
+  ["barre", /barre|squat|souleve de terre|developpe|hip thrust|rowing menton|shrug|good morning/],
+];
+function guessGymEquipment(name) {
+  const n = String(name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  for (const [key, re] of GYM_EQUIPMENT_GUESSES) if (re.test(n)) return key;
+  return "machine";
+}
+// Type de poids retenu pour un exercice : le choix explicite de Réglages s'il
+// est valide (une valeur inconnue venue d'un import est ignorée), sinon la
+// déduction d'après le nom.
+function resolveGymEquipment(config, name) {
+  const chosen = config && config.equipment;
+  if (chosen && GYM_EQUIPMENT.some((e) => e.key === chosen)) return chosen;
+  return guessGymEquipment(config ? config.name : name);
+}
+function gymEquipmentLabel(key) {
+  const e = GYM_EQUIPMENT.find((x) => x.key === key);
+  return e ? e.label : "Machine";
+}
 
 // Catégories du type Cardio/Gainage (Salle de sport). Rameur/Vélo/Course
 // sont des catégories "simples" : leur nom EST déjà l'exercice, pas besoin
