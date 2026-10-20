@@ -299,6 +299,8 @@ function renderLoginScreen() {
         </div>
         <button type="submit" class="auth-submit">Se connecter</button>
         <div id="login-error" class="auth-error"></div>
+        <button type="button" class="auth-forgot" id="login-forgot-btn">Mot de passe oublié ?</button>
+        <div id="login-info" class="auth-info" role="status" aria-live="polite"></div>
       </form>
       <div id="app-version-label" class="auth-version">${appVersion ? "v" + appVersion : ""}</div>
     </div>
@@ -308,8 +310,60 @@ function renderLoginScreen() {
   const passwordInput = document.getElementById("login-password");
   const errorEl = document.getElementById("login-error");
   emailInput.focus();
+  // « Mot de passe oublié ? » : Firebase envoie à l'adresse saisie un e-mail
+  // avec un lien pour choisir un nouveau mot de passe. L'e-mail n'arrive QUE
+  // si un compte existe pour cette adresse — mais l'écran ne dit jamais si
+  // c'est le cas (même message dans tous les cas) : sinon n'importe qui
+  // pourrait s'en servir pour tester quelles adresses ont un compte.
+  // (Firebase lui-même, avec sa « protection contre l'énumération des
+  // e-mails », répond de toute façon pareil que le compte existe ou non.)
+  const forgotBtn = document.getElementById("login-forgot-btn");
+  const infoEl = document.getElementById("login-info");
+  forgotBtn.addEventListener("click", () => {
+    errorEl.textContent = "";
+    infoEl.textContent = "";
+    const email = emailInput.value.trim();
+    if (!email || !emailInput.checkValidity()) {
+      errorEl.textContent = "Saisis d'abord ton e-mail ci-dessus.";
+      emailInput.focus();
+      return;
+    }
+    forgotBtn.disabled = true;
+    infoEl.textContent = "Envoi en cours...";
+    const neutral = `Si un compte existe pour ${email}, un e-mail pour choisir un nouveau mot de passe vient d'y être envoyé. Pense à regarder dans les indésirables.`;
+    const auth = firebase.auth();
+    try {
+      auth.languageCode = "fr";
+    } catch (err) {
+      /* sans conséquence : l'e-mail partira dans la langue du projet */
+    }
+    Promise.resolve()
+      .then(() => auth.sendPasswordResetEmail(email))
+      .then(
+        () => {
+          infoEl.textContent = neutral;
+        },
+        (err) => {
+          const code = (err && err.code) || "";
+          infoEl.textContent = "";
+          if (code === "auth/user-not-found") infoEl.textContent = neutral; // ne rien révéler
+          else if (code === "auth/invalid-email") errorEl.textContent = "Adresse e-mail invalide.";
+          else if (code === "auth/too-many-requests") errorEl.textContent = "Trop de demandes. Réessaie dans quelques minutes.";
+          else if (code === "auth/network-request-failed") errorEl.textContent = "Pas de connexion internet.";
+          else errorEl.textContent = "Envoi impossible pour le moment.";
+        }
+      )
+      .finally(() => {
+        // Petit délai avant de pouvoir redemander, pour éviter les envois
+        // en rafale (Firebase en limite le nombre).
+        setTimeout(() => {
+          forgotBtn.disabled = false;
+        }, 30000);
+      });
+  });
   form.addEventListener("submit", (e) => {
     e.preventDefault();
+    infoEl.textContent = "";
     errorEl.textContent = "Connexion en cours...";
     firebase
       .auth()
@@ -377,7 +431,19 @@ function resetLocalDomainDataForNewAccount() {
   saveJSONLocalOnly(KEYS.liveSession, liveSession);
 }
 
-firebase.auth().onAuthStateChanged((user) => {
+// Branché par startAuthStateListener(), appelée (depuis 17-main.js) au
+// DOMContentLoaded, donc une fois TOUS les fichiers de l'app exécutés —
+// jamais directement ici. Firebase peut en
+// effet répondre (« personne n'est connecté ») pendant que le navigateur
+// télécharge encore les fichiers suivants : l'écran de connexion s'affichait
+// alors, puis 17-main.js le recouvrait de « Chargement... », qui ne partait
+// plus jamais (chargement infini avant l'écran de connexion, plus fréquent
+// juste après une mise à jour, quand les fichiers viennent du réseau). Un
+// utilisateur connecté pouvait de même tomber sur des fonctions pas encore
+// chargées.
+let authStateKnown = false;
+function handleAuthStateChanged(user) {
+  authStateKnown = true;
   if (user) {
     currentUser = user;
     // Les clés locales (gymlog:sessions, gymlog:weights...) ne sont pas
@@ -415,9 +481,48 @@ firebase.auth().onAuthStateChanged((user) => {
       .finally(() => {
         currentApp = "home";
         render();
+        // Guide de première utilisation (20-onboarding.js) : une seule fois,
+        // pour un compte neuf, une fois ses données récupérées.
+        onboardingMaybeStart();
       });
   } else {
     currentUser = null;
     renderLoginScreen();
   }
-});
+}
+
+// Filet de sécurité : si Firebase ne répond pas du tout (pas de réseau au tout
+// premier lancement, service de connexion injoignable, script Firebase
+// bloqué), on ne laisse pas « Chargement... » indéfiniment : au bout de
+// AUTH_WATCHDOG_MS, un message explique et propose de réessayer. Si la
+// réponse arrive ensuite malgré tout, elle remplace ce message normalement.
+const AUTH_WATCHDOG_MS = 12000;
+function renderAuthStuckScreen(reason) {
+  app.className = "theme-auth";
+  app.innerHTML = `
+    <div class="auth-loading">
+      <div class="auth-mark">${ICONS.dumbbell}</div>
+      <div class="auth-loading-label">${reason}</div>
+      <button type="button" class="auth-retry" id="auth-retry-btn">Réessayer</button>
+    </div>
+  `;
+  document.getElementById("auth-retry-btn").addEventListener("click", () => location.reload());
+}
+function startAuthStateListener() {
+  if (typeof firebase === "undefined" || !firebase.auth) {
+    renderAuthStuckScreen("Impossible de joindre le service de connexion. Vérifie ta connexion internet.");
+    return;
+  }
+  setTimeout(() => {
+    // Seulement si on est toujours sur l'écran de chargement : rien n'est
+    // remplacé si quoi que ce soit d'autre s'est affiché entre-temps.
+    if (authStateKnown || !app.querySelector(".auth-loading")) return;
+    renderAuthStuckScreen(navigator.onLine === false ? "Pas de connexion internet." : "La connexion prend plus de temps que prévu.");
+  }, AUTH_WATCHDOG_MS);
+  try {
+    firebase.auth().onAuthStateChanged(handleAuthStateChanged);
+  } catch (err) {
+    console.error(err);
+    renderAuthStuckScreen("Impossible de démarrer la connexion.");
+  }
+}

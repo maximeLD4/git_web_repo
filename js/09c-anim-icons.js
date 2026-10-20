@@ -108,6 +108,11 @@ function rowerAttrs(p) {
 }
 
 /* ---- Vélo ---- */
+// Bonhomme bâton (d'après velo.gif) : tête pleine, buste, bras au guidon,
+// sur deux roues à trois rayons. Il pédale (le genou monte et descend, le
+// pied tourne autour du pédalier, le buste suit à peine) et les roues
+// tournent. (2.92.0 l'avait remplacé par une silhouette pleine ; retour au
+// bonhomme bâton en 2.93.0, plus sympathique et dans le style des autres.)
 const BIKE_WHEELS = [[5.5, 17.5], [18.5, 17.5]];
 const BIKE_CRANK = [12.4, 15.9]; // axe du pédalier
 const BIKE_HIP = [8.8, 10.8];
@@ -129,8 +134,8 @@ function bikeAttrs(p, wheelDeg) {
     torso: { points: animPts(s.hip, sh) },
     arms: { points: animPts(sh, [15, 10.3 + s.bob * 0.5], [17, 10.4]) },
     head: { cy: animFmt(5 + s.bob) },
-    spokesBack: { d: animSpokes(BIKE_WHEELS[0], 2, (wheelDeg || 0)) },
-    spokesFront: { d: animSpokes(BIKE_WHEELS[1], 2, (wheelDeg || 0)) },
+    spokesBack: { d: animSpokes(BIKE_WHEELS[0], 2, wheelDeg || 0) },
+    spokesFront: { d: animSpokes(BIKE_WHEELS[1], 2, wheelDeg || 0) },
   };
 }
 

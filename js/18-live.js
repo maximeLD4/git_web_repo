@@ -101,7 +101,7 @@ function liveStatusHeroHTML() {
   if (!liveSession) return "";
   const loop = liveSession.loop;
   if (liveSession.restStartedAt) {
-    const label = loop ? `${ICONS.stopwatch} Repos — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} Repos — ${liveDraftName || "Repos"}`;
+    const label = loop ? `${ICONS.stopwatch} Repos — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} <span id="live-rest-label-text">Repos</span> — ${liveDraftName || "Repos"}`;
     // (Le bonhomme du repos n'est plus dans ce bandeau depuis 2.87.0 : il est
     // au centre de l'écran, voir liveRestCenterHTML.)
     return `
@@ -386,8 +386,14 @@ function liveTimelineHTML() {
 // « Lancer <nom> » disant déjà de quoi il s'agit) et repos d'une boucle de
 // gainage. Jamais en Muscu : répétitions, poids, incrément, côté… l'écran est
 // déjà plein, le repos n'y change rien.
+// Grande icône animée d'une série en cours (rameur, vélo, course, planche),
+// ou rien si les animations sont désactivées (voir liveAnimationsOn).
+function liveActivityAnimHTML(kind) {
+  if (!kind || !liveAnimationsOn) return "";
+  return `<div class="live-activity-anim">${animIconHTML(kind, { anim: "loop", size: 112 })}</div>`;
+}
 function liveRestCenterHTML() {
-  if (!liveSession || !liveSession.restStartedAt) return "";
+  if (!liveSession || !liveSession.restStartedAt || !liveAnimationsOn) return "";
   return `<div class="live-activity-anim live-rest-center">${animIconHTML("rest", { anim: "loop", size: 112 })}</div>`;
 }
 
@@ -541,7 +547,7 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          ${workingNow ? `<div class="live-activity-anim">${animIconHTML("plank", { anim: "loop", size: 112 })}</div>` : liveRestCenterHTML()}
+          ${workingNow ? liveActivityAnimHTML("plank") : liveRestCenterHTML()}
           <div class="live-in-progress-banner live-hint">${workingNow ? "Travail" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span></div>
         </div>
         <div class="live-set-form-actions">
@@ -558,7 +564,7 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          ${LIVE_ANIM_ICONS[liveDraftCategory] ? `<div class="live-activity-anim">${animIconHTML(LIVE_ANIM_ICONS[liveDraftCategory], { anim: "loop", size: 112 })}</div>` : ""}
+          ${liveActivityAnimHTML(LIVE_ANIM_ICONS[liveDraftCategory])}
           <div class="live-in-progress-banner live-hint">Chrono en cours</div>
           ${inProgressSet && inProgressSet.restSec != null ? `<div class="live-prev-set live-hint">Repos avant cette série : ${formatLiveChrono(inProgressSet.restSec)}</div>` : ""}
           ${
@@ -607,7 +613,7 @@ function liveCardioSetFormHTML(activeExercise) {
     <div class="live-set-form">
       <div class="live-set-form-scroll">
         ${
-          liveSession.restStartedAt
+          liveSession.restStartedAt && liveAnimationsOn
             ? liveRestCenterHTML()
             : `<div class="live-exercise-name">${liveDraftName}</div>`
         }
@@ -922,6 +928,36 @@ function getCurrentCardioTargetSec() {
   return Math.round(parseFloat(target.weight) * 60);
 }
 
+// Repos PRÉVU par le plan attaché après la série qu'on vient de finir (voir
+// Créer > Plan à préparer), calculé une fois, au « Finir la série », et gardé
+// dans liveSession.plannedRestSec le temps de ce repos :
+//   - entre deux séries d'un exercice : le repos propre à cet écart s'il a
+//     été réglé (set.plannedRestSec, y compris 0 = pas de repos), sinon le
+//     repos par défaut de l'exercice (restSec) ;
+//   - après sa dernière série prévue : le repos avant l'exercice suivant
+//     (restAfterSec).
+// null = rien de prévu : le repos compte le temps écoulé, comme d'habitude.
+// Jamais pendant une boucle de gainage, qui a son propre repos.
+function computePlannedRestAfterSet() {
+  if (!liveSession || liveSession.loop || !liveDraftName) return null;
+  const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+  if (!planExercise) return null;
+  const exercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
+  const done = exercise ? exercise.sets.length : 0;
+  const planned = (planExercise.sets || []).length || 1;
+  const sec = (v) => {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  if (done >= planned) return sec(planExercise.restAfterSec);
+  const set = planExercise.sets[done - 1];
+  if (set && set.plannedRestSec !== undefined && set.plannedRestSec !== null && set.plannedRestSec !== "") return sec(set.plannedRestSec);
+  return sec(planExercise.restSec);
+}
+function getPlannedRestSec() {
+  return liveSession && liveSession.restStartedAt && !liveSession.loop ? liveSession.plannedRestSec || null : null;
+}
+
 function updateLiveRestChronoDisplay() {
   const el = document.getElementById("live-rest-chrono");
   const startedAt = liveSession ? liveSession.restStartedAt || liveSession.setInProgressStartedAt : null;
@@ -942,6 +978,25 @@ function updateLiveRestChronoDisplay() {
       el.textContent = formatLiveChrono(Math.max(0, targetSec - elapsedSec));
       return;
     }
+  }
+  // Repos prévu par le plan : DÉCOMPTE depuis la durée prévue, qui démarre
+  // tout seul dès « Finir la série » (le repos démarre déjà à ce moment-là).
+  // Arrivé à zéro, il s'arrête sur 00:00, le bandeau dit « Repos terminé » et
+  // le bouton « Lancer » de la série suivante est mis en avant — mais rien ne
+  // se lance tout seul. (Le repos réellement pris, lui, reste mesuré jusqu'au
+  // lancement, et c'est lui qui s'enregistre avec la série suivante.)
+  const plannedRest = getPlannedRestSec();
+  if (plannedRest != null) {
+    const remaining = Math.max(0, plannedRest - elapsedSec);
+    el.textContent = formatLiveChrono(remaining);
+    const done = remaining === 0;
+    const hero = document.getElementById("live-rest-hero");
+    if (hero) hero.classList.toggle("live-rest-hero-done", done);
+    const labelText = document.getElementById("live-rest-label-text");
+    if (labelText) labelText.textContent = done ? "Repos terminé" : "Repos";
+    const launch = document.querySelector("[data-live-start-set]");
+    if (launch) launch.classList.toggle("live-ready-pulse", done);
+    return;
   }
   el.textContent = formatLiveChrono(elapsedSec);
 }
@@ -1192,6 +1247,7 @@ function startLiveSet() {
   if (liveDraftType !== "cardio" && liveDraftBaseWeight === null) return;
   if (liveSetPhase() === "in-progress") return; // déjà démarrée, rien à refaire
   if (liveSession.restStartedAt) stopLiveRestManually();
+  liveSession.plannedRestSec = null; // le repos prévu ne vaut que pour le repos qui vient de finir
   let exercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
   if (!exercise) {
     exercise = {
@@ -1317,6 +1373,9 @@ function applyFinishLiveSet() {
     }
   }
   startLiveRestManually();
+  // Avant le retour éventuel au menu (qui oublie l'exercice actif) : le repos
+  // prévu après CETTE série.
+  liveSession.plannedRestSec = computePlannedRestAfterSet();
   if (preparedExerciseDone) {
     // Retour au menu de sélection (préparés + tous les autres) — le repos
     // qu'on vient de lancer continue de tourner, affiché sur cet écran

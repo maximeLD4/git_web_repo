@@ -30,12 +30,78 @@ function formatLastPerfSummary(last) {
 }
 // Ligne pleine largeur, plutôt fine, utilisée dans l'écran Créer — affichée juste au-dessus de la série à
 // laquelle ce repos est attaché (celle qui LE SUIT chronologiquement).
+// Plan à préparer : « Repos entre les séries » de cet exercice, réglé par
+// pas de 15 s (0 = aucun repos prévu). En Séance en direct, avec ce plan, le
+// repos qui suit chaque série de cet exercice se DÉCOMPTE depuis cette durée
+// (voir getPlannedRestSec dans 18-live.js) au lieu de compter le temps écoulé.
+function formatPlanRest(sec) {
+  if (!sec) return "Aucun";
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m ? `${m} min${s ? " " + String(s).padStart(2, "0") : ""}` : `${s} s`;
+}
+// Une ligne « libellé | valeur | − + » de repos prévu. kind sert aux
+// attributs (data-plan-<kind>…) et à la classe du champ caché qui garde la
+// valeur en secondes.
+function planRestControlHTML(kind, label, sec) {
+  const v = Math.max(0, parseInt(sec, 10) || 0);
+  return `
+    <div class="plan-rest-row" data-plan-${kind}>
+      <span class="plan-rest-label">${ICONS.stopwatch} ${label}</span>
+      <span class="plan-rest-value" data-plan-${kind}-value>${formatPlanRest(v)}</span>
+      <div class="rep-stepper" style="flex:none;">
+        <button type="button" class="rep-step-btn" data-plan-${kind}-minus aria-label="Moins de repos">−</button>
+        <button type="button" class="rep-step-btn" data-plan-${kind}-plus aria-label="Plus de repos">+</button>
+      </div>
+      <input type="hidden" class="plan-${kind}-sec" value="${v}">
+    </div>`;
+}
+// Repos par défaut entre les séries de l'exercice.
+function planRestRowHTML(restSec) {
+  return planRestControlHTML("rest", "Repos entre les séries", restSec);
+}
+// Repos entre CET exercice et le suivant du plan (après sa dernière série).
+function planRestAfterRowHTML(restAfterSec) {
+  return planRestControlHTML("rest-after", "Repos avant l'exercice suivant", restAfterSec);
+}
+// Entre deux séries d'un plan : le repos qui suit la série du dessus. Par
+// défaut celui de l'exercice (affiché en clair, « par défaut ») ; − / + le
+// rendent propre à cet endroit (affiché en gras), « ↺ » le remet par défaut.
+// Champ caché vide = par défaut.
+function planGapHTML(customSec, defaultSec) {
+  const custom = customSec !== undefined && customSec !== null && customSec !== "";
+  const shown = custom ? Math.max(0, parseInt(customSec, 10) || 0) : Math.max(0, parseInt(defaultSec, 10) || 0);
+  return `
+    <div class="plan-gap ${custom ? "custom" : ""}" data-plan-gap>
+      <span class="plan-gap-label">${ICONS.stopwatch} Repos <b data-plan-gap-value>${formatPlanRest(shown)}</b><span class="plan-gap-default" ${custom ? "hidden" : ""}>par défaut</span></span>
+      <button type="button" class="plan-gap-btn" data-plan-gap-reset aria-label="Remettre le repos par défaut" ${custom ? "" : "hidden"}>↺</button>
+      <button type="button" class="plan-gap-btn" data-plan-gap-minus aria-label="Moins de repos ici">−</button>
+      <button type="button" class="plan-gap-btn" data-plan-gap-plus aria-label="Plus de repos ici">+</button>
+      <input type="hidden" class="plan-gap-sec" value="${custom ? shown : ""}">
+    </div>`;
+}
+
 function setRestLineHTML(restSec) {
   if (restSec === undefined || restSec === null) return "";
   return `<div class="set-rest-line">${ICONS.stopwatch} Repos ${formatLiveChrono(restSec)}</div>`;
 }
 
 /* ---------- draft helpers ---------- */
+// Plan : repos par défaut entre les séries (restSec) et repos avant l'exercice
+// suivant (restAfterSec), seulement s'ils sont réglés (0 = rien
+// d'enregistré). Carte réduite (champs absents) : valeurs connues conservées
+// — sans quoi replier un exercice effaçait ses repos.
+function planRestFieldsFromCard(card, existing, withSetsRest) {
+  const out = {};
+  const read = (cls, key) => {
+    const el = card.querySelector(cls);
+    const v = el ? parseInt(el.value, 10) || 0 : existing ? parseInt(existing[key], 10) || 0 : 0;
+    if (v > 0) out[key] = v;
+  };
+  if (draft.kind !== "plan") return out;
+  if (withSetsRest) read(".plan-rest-sec", "restSec");
+  read(".plan-rest-after-sec", "restAfterSec");
+  return out;
+}
 function serializeExercisesFromDOM() {
   // Le nom et la date saisis font partie du brouillon DÈS la saisie : jusqu'ici ils n'y entraient
   // qu'après un délai de 350 ms, donc un nom tapé juste avant « Ajouter un bloc » (ou un
@@ -69,13 +135,13 @@ function serializeExercisesFromDOM() {
         workSec: parseInt(card.querySelector(".loop-work").value, 10) || 5,
         restSec: parseInt(card.querySelector(".loop-rest").value, 10) || 0,
       };
-      result.push({ id, name, exType, category, sets: [], loop });
+      result.push({ id, name, exType, category, sets: [], loop, ...planRestFieldsFromCard(card, existing, false) });
       return;
     } else if (existing && existing.loop) {
       // Carte de boucle (gainage en plan) réduite : les champs n'existent
       // pas dans le DOM — on conserve la configuration déjà connue plutôt
       // que de la perdre silencieusement.
-      result.push({ id, name, exType, category, sets: [], loop: existing.loop });
+      result.push({ id, name, exType, category, sets: [], loop: existing.loop, ...planRestFieldsFromCard(card, existing, false) });
       return;
     }
 
@@ -120,11 +186,19 @@ function serializeExercisesFromDOM() {
         // le DOM à chaque changement.
         const existingSet = existing ? existing.sets.find((s) => s.id === row.dataset.id) : null;
         if (existingSet && existingSet.restSec !== undefined) newSet.restSec = existingSet.restSec;
+        // Plan : repos propre à l'écart qui SUIT cette série (voir
+        // planGapHTML) ; absent = repos par défaut de l'exercice. Sans champ
+        // à l'écran (dernière série, ou pas en plan), la valeur connue est
+        // conservée.
+        const gapInput = row.nextElementSibling && row.nextElementSibling.matches("[data-plan-gap]") ? row.nextElementSibling.querySelector(".plan-gap-sec") : null;
+        if (gapInput) {
+          if (gapInput.value !== "") newSet.plannedRestSec = Math.max(0, parseInt(gapInput.value, 10) || 0);
+        } else if (existingSet && existingSet.plannedRestSec !== undefined) newSet.plannedRestSec = existingSet.plannedRestSec;
         if (existingSet && existingSet.timestamp !== undefined) newSet.timestamp = existingSet.timestamp;
         sets.push(newSet);
       });
     }
-    result.push({ id, name, exType, category, sets, ...(existing && existing.durationSec != null ? { durationSec: existing.durationSec } : {}) });
+    result.push({ id, name, exType, category, sets, ...(existing && existing.durationSec != null ? { durationSec: existing.durationSec } : {}), ...planRestFieldsFromCard(card, existing, true) });
   });
   return result;
 }
@@ -301,10 +375,12 @@ function convertSessionToPlan(session) {
 // Sens inverse : un plan préparé devient une séance à dater (aujourd'hui
 // par défaut) et à enregistrer comme faite.
 function convertPlanToSession(plan) {
-  const clonedExercises = JSON.parse(JSON.stringify(plan.exercises)).map((ex) => ({
+  // Le repos PRÉVU (ex.restSec, propre au plan) ne passe pas dans la séance :
+  // une séance ne garde que les repos réellement mesurés, série par série.
+  const clonedExercises = JSON.parse(JSON.stringify(plan.exercises)).map(({ restSec, restAfterSec, ...ex }) => ({
     ...ex,
     id: uid(),
-    sets: (ex.sets || []).map((s) => ({ ...s, id: uid() })),
+    sets: (ex.sets || []).map(({ plannedRestSec, ...s }) => ({ ...s, id: uid() })),
   }));
   editingSessionId = null;
   editingPlanId = null;
@@ -434,7 +510,12 @@ function switchGymTopMode(newMode) {
   const labelEl = document.getElementById("log-label");
   const currentExercises = serializeExercisesFromDOM();
   const transformedExercises = currentExercises.map((ex) => {
-    if (newMode !== "plan") return ex;
+    if (newMode !== "plan") {
+      // Vers une séance : le repos prévu du plan n'a pas de sens (voir
+      // convertPlanToSession).
+      const { restSec, restAfterSec, ...rest } = ex;
+      return { ...rest, sets: (rest.sets || []).map(({ plannedRestSec, ...st }) => st) };
+    }
     // En passant vers un plan : retire le repos mesuré et l'horodatage de
     // chaque série — propres à une exécution réelle, sans le moindre sens
     // comme cible à venir (même logique que la conversion).
@@ -538,7 +619,9 @@ function loopConfigFieldsHTML(loop) {
     </div>`;
 }
 
-function exerciseCardHTML(ex) {
+function exerciseCardHTML(ex, index, all) {
+  // Dernier exercice du plan : pas de « repos avant l'exercice suivant ».
+  const isLastExercise = !all || index === all.length - 1;
   const exType = ex.exType || ""; // "" tant qu'aucun type n'a été choisi
   const isCardio = exType === "cardio";
   const isMuscu = exType === "muscu";
@@ -599,6 +682,7 @@ function exerciseCardHTML(ex) {
     <div class="cardio-config-area">
     ${last ? `<div class="last-perf" data-hint>Dernière fois (${formatDateFR(last.date)}) : <b>${formatLastPerfSummary(last)}</b></div>` : `<div class="last-perf" data-hint style="display:none"></div>`}
     ${loopConfigFieldsHTML(loop)}
+    ${draft.kind === "plan" && !isLastExercise ? planRestAfterRowHTML(ex.restAfterSec) : ""}
     </div>`;
     } else {
     // Rameur/Vélo/Course : un temps et un kilométrage à remplir par défaut,
@@ -656,6 +740,8 @@ function exerciseCardHTML(ex) {
         }
         const isFirst = i === 0;
         const isLast = i === setsForRender.length - 1;
+        // Plan : sous chaque série sauf la dernière, le repos qui la suit.
+        const gapHTML = draft.kind === "plan" && !isLast ? planGapHTML(s.plannedRestSec, ex.restSec) : "";
         return `
     ${setRestLineHTML(s.restSec)}
     <div class="set-row" data-id="${s.id}">
@@ -668,7 +754,7 @@ function exerciseCardHTML(ex) {
         <button type="button" class="set-action-btn" data-move-set-down="${s.id}" aria-label="Descendre" ${isLast ? "disabled" : ""}>${ICONS.miniDown}</button>
         <button type="button" class="set-action-btn danger" data-remove-set="${s.id}" aria-label="Supprimer" ${setsForRender.length === 1 ? "disabled" : ""}>${ICONS.trash}</button>
       </div>
-    </div>`;
+    </div>${gapHTML}`;
       })
       .join("");
 
@@ -679,6 +765,8 @@ function exerciseCardHTML(ex) {
     <div class="sets-header"><span class="spacer"></span>${isCardio ? (isGainage ? "<span>Min</span>" : "<span>Min</span><span>Km</span>") : "<span>Reps</span><span>Kg</span>"}</div>
     <div class="sets-list">${setsHTML}</div>
     <button class="add-set-btn" data-add-set="${ex.id}">${ICONS.plus} ${isCardio ? "Ajouter un passage" : "Ajouter une série"}</button>
+    ${draft.kind === "plan" ? planRestRowHTML(ex.restSec) : ""}
+    ${draft.kind === "plan" && !isLastExercise ? planRestAfterRowHTML(ex.restAfterSec) : ""}
     </div>`;
     }
   }
@@ -971,6 +1059,49 @@ function attachLogListeners() {
 
     card.querySelectorAll(".set-weight").forEach((select) => {
       select.addEventListener("change", scheduleDraftSave);
+    });
+
+    // Plan : − / + des repos prévus (pas de 15 s, de 0 à 10 min) — repos par
+    // défaut, repos avant l'exercice suivant, et repos propres à un écart.
+    const bindStepper = (minus, plus, read, write) => {
+      const bump = (delta) => {
+        write(Math.min(600, Math.max(0, read() + delta)));
+        scheduleDraftSave();
+      };
+      minus.addEventListener("click", () => bump(-15));
+      plus.addEventListener("click", () => bump(15));
+      attachHoldToRepeat(minus, () => bump(-15));
+      attachHoldToRepeat(plus, () => bump(15));
+    };
+    ["rest", "rest-after"].forEach((kind) => {
+      const row = card.querySelector(`[data-plan-${kind}]`);
+      if (!row) return;
+      const input = row.querySelector(`.plan-${kind}-sec`);
+      const value = row.querySelector(`[data-plan-${kind}-value]`);
+      bindStepper(row.querySelector(`[data-plan-${kind}-minus]`), row.querySelector(`[data-plan-${kind}-plus]`), () => parseInt(input.value, 10) || 0, (v) => {
+        input.value = v;
+        value.textContent = formatPlanRest(v);
+        // Le repos par défaut s'affiche dans les écarts restés « par défaut ».
+        if (kind === "rest") card.querySelectorAll("[data-plan-gap]:not(.custom) [data-plan-gap-value]").forEach((el) => (el.textContent = formatPlanRest(v)));
+      });
+    });
+    card.querySelectorAll("[data-plan-gap]").forEach((gap) => {
+      const input = gap.querySelector(".plan-gap-sec");
+      const value = gap.querySelector("[data-plan-gap-value]");
+      const defaultSec = () => parseInt((card.querySelector(".plan-rest-sec") || {}).value, 10) || 0;
+      const setCustom = (v) => {
+        const on = v !== null;
+        input.value = on ? v : "";
+        gap.classList.toggle("custom", on);
+        value.textContent = formatPlanRest(on ? v : defaultSec());
+        gap.querySelector(".plan-gap-default").hidden = on;
+        gap.querySelector("[data-plan-gap-reset]").hidden = !on;
+      };
+      bindStepper(gap.querySelector("[data-plan-gap-minus]"), gap.querySelector("[data-plan-gap-plus]"), () => (input.value === "" ? defaultSec() : parseInt(input.value, 10) || 0), setCustom);
+      gap.querySelector("[data-plan-gap-reset]").addEventListener("click", () => {
+        setCustom(null);
+        scheduleDraftSave();
+      });
     });
 
     card.querySelectorAll(".set-row").forEach((row) => {

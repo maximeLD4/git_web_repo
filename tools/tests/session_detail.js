@@ -88,6 +88,11 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
   check('…la liste l\'affiche', /Machine/.test(await p.evaluate(() => document.querySelector('[data-edit-config="c3"] .history-label').textContent)));
   await p.evaluate(() => { document.getElementById('add-config-btn').click(); }); await p.waitForTimeout(350);
   check('Nouvel exercice, nom vide : un type est quand même sélectionné (Machine)', JSON.stringify(await sel()) === '["Machine"]', JSON.stringify(await sel()));
+  check('Nouvel exercice : AUCUNE catégorie par défaut (« Choisir… »), pas encore de suggestions', await p.evaluate(() => document.getElementById('config-category-select').value === '' && !document.getElementById('config-suggest-select')));
+  await p.fill('#config-name-input', 'Test'); await p.fill('#config-new-base-weight', '20'); await p.click('#config-add-base-weight-btn'); await p.waitForTimeout(150); await p.click('#save-config-btn'); await p.waitForTimeout(200);
+  check('Enregistrer sans catégorie : refusé, « Choisis une catégorie. »', /Choisis une catégorie/.test(await p.textContent('#config-form-error')) && await p.evaluate(() => !gymExerciseConfigs.some((c) => c.name === 'Test')));
+  await p.fill('#config-name-input', ''); await p.selectOption('#config-category-select', 'pecs'); await p.waitForTimeout(250);
+  check('Catégorie choisie : les suggestions de la catégorie apparaissent', await p.evaluate(() => !!document.getElementById('config-suggest-select')));
   await p.selectOption('#config-suggest-select', 'Développé haltères'); await p.waitForTimeout(150); check('Suggestion « Développé haltères » : Haltères sélectionné', JSON.stringify(await sel()) === '["Haltères"]', JSON.stringify(await sel()));
   check('    aucune erreur JS', p.errs.length === 0, p.errs.join(' | ') || 'aucune');
   console.log(`\n${ok} réussis, ${ko} échoués`); await b.close(); process.exit(ko ? 1 : 0); })();

@@ -28,6 +28,14 @@ function applyShowHints(on) {
 }
 applyShowHints(showHints);
 
+// Animations de la Séance en direct (le rameur qui rame, le vélo qui pédale,
+// la planche, le bonhomme du repos… voir 09c-anim-icons.js) : AFFICHÉES par
+// défaut, masquables dans Réglages > Apparence. Désactivées, elles
+// disparaissent de la Séance en direct (rien à leur place, l'écran garde son
+// contenu habituel) ; les petites icônes et la micro-animation de 2 s quand on
+// consulte une séance ne sont pas concernées. Réglage local à l'appareil.
+let liveAnimationsOn = loadJSON(KEYS.liveAnimations, true) !== false;
+
 // Sélection de texte par appui long : bloquée PARTOUT, en dur (voir la fin de
 // styles.css) — ce n'est pas un réglage. Une version intermédiaire en avait fait
 // une option ; on supprime ici la valeur qu'elle a pu laisser dans le stockage.

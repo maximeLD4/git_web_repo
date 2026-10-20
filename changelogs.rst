@@ -7,6 +7,264 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+2.99.1 - 2026-10-16
+====================
+
+- **Guide de démarrage : « Précédent » et « Suivant » dans chaque bulle.**
+  - « Précédent » (sauf à la toute première étape) revient à l'étape d'avant, pour relire
+    une explication ou revoir une option ; ce qui a déjà été saisi est conservé (nom,
+    réglages…), et l'écran ne change pas tout seul.
+  - « Suivant » est toujours là. Sur une étape qui présente une option, il est actif (ou
+    grisé tant que le choix obligatoire n'est pas fait : nom, catégorie, un poids, le
+    repos) ; sur une étape qui demande d'agir (« Touche Réglages », « Enregistrer »…), il
+    est grisé : c'est l'action qui fait avancer — sauf sur une étape revisitée avec
+    « Précédent », où l'action a déjà été faite : « Suivant » y est actif.
+  - Le garde-fou (élément introuvable) active simplement ce même « Suivant ».
+- Vérifié : ``tools/tests/onboarding.js`` (45 contrôles), dont : pas de « Précédent » au
+  début, « Précédent » + « Suivant » grisé sur une étape d'action, retour à l'étape
+  d'avant puis retour, revisite d'une action déjà faite avec saisie conservée, garde-fou.
+
+2.99.0 - 2026-10-16
+====================
+
+- **Réglages > Exercices : la catégorie d'un nouvel exercice doit être choisie.** Plus de
+  catégorie par défaut (c'était « Pecs », ou le filtre actif de la liste) : le menu affiche
+  « Choisir… », et « Enregistrer » refuse avec « Choisis une catégorie. » tant qu'elle ne
+  l'est pas. La ligne « Catégorie » passe juste sous le nom, avant « Suggestions » : les
+  suggestions de noms dépendent de la catégorie, elles apparaissent une fois celle-ci
+  choisie.
+- **Le guide de démarrage va jusqu'au bout** : après la première série lancée, il fait
+  toucher « Finir la série », présente le repos prévu qui se décompte, fait « Terminer »
+  la séance puis « Enregistrer la séance » — seul bouton touchable dans « Terminer
+  l'entraînement ? » (ni « Supprimer », ni « Continuer ») —, et montre la séance enregistrée,
+  ouverte dans les séances (« La voici… »). « Terminer » clôt le guide. La partie 3
+  s'appelle « Lancer et enregistrer ».
+  - Dans le guide, l'étape « Catégorie » exige un choix (« Suivant » grisé sinon).
+  - Le guide passe désormais au-dessus des fenêtres de l'app (pour guider dans « Terminer
+    l'entraînement ? ») ; « Quitter le guide » se confirme donc dans la bulle elle-même
+    (« Rester » / « Quitter »).
+- Vérifié : ``tools/tests/onboarding.js`` (40 contrôles, parcours complet jusqu'à la séance
+  enregistrée et affichée), ``tools/tests/session_detail.js`` (38 : catégorie vide par
+  défaut, enregistrement refusé sans catégorie, suggestions après le choix). Les autres
+  batteries passent toujours.
+
+2.98.1 - 2026-10-16
+====================
+
+- **Correctif : le guide de démarrage ne se lançait pas pour un compte neuf** sur un
+  appareil où un autre compte s'était déjà connecté. L'état du guide (« déjà fait ») était
+  gardé pour l'appareil, pas pour le compte : un compte existant le marquait comme fait en
+  se connectant (il a des données, voir 2.98.0), et un compte neuf qui se connectait ensuite
+  sur le même appareil n'avait jamais son guide. L'état du guide est maintenant propre à
+  chaque compte : changer de compte le remet à zéro (le compte existant reste dispensé,
+  puisqu'il a des données ; le compte neuf a son guide). L'ancien format (sans compte noté)
+  est traité comme un autre compte.
+- Vérifié : ``tools/tests/onboarding.js`` (32 contrôles), dont deux nouveaux — appareil où un
+  autre compte a fait le guide, et ancien format « déjà fait » : le compte neuf a bien son
+  guide. Les autres batteries passent toujours.
+
+2.98.0 - 2026-10-16
+====================
+
+- **Guide de première utilisation.** Au tout premier lancement d'un compte neuf, l'écran
+  est grisé sauf l'élément à utiliser, et une bulle dit quoi faire ; on ne peut toucher
+  que cet élément. Trois parties, une seule fois :
+  1. *Ton premier exercice* (Réglages > Exercices > Ajouter) : le nom (« Suivant » grisé
+     tant qu'il est vide), puis chaque option présentée — suggestions, catégorie, type de
+     poids, poids possibles (au moins un palier exigé), incrément automatique et possible,
+     travail unilatéral, alterner avec — et « Enregistrer ».
+  2. *Ton premier plan* (Salle de sport > Plan à préparer) : nom du plan, « Ajouter un
+     exercice », Muscu, catégorie puis l'exercice qu'on vient de créer, les séries, une
+     deuxième série, le repos entre les séries (réglage exigé), le repos propre à un écart
+     (et le repos avant l'exercice suivant, évoqué), « Enregistrer le plan ».
+  3. *Lancer le plan* (Séance en direct) : choisir le plan, l'exercice, « Lancer » — la
+     première série démarre, le guide se termine, tout est libre.
+  - Ne se lance pas pour un compte qui a déjà des données (exercices, séances ou plans) :
+    marqué comme fait sans rien afficher. Réglage propre à l'appareil.
+  - « Quitter le guide » (avec confirmation) reste possible pour ne jamais enfermer
+    personne ; il se relance depuis Réglages > Apparence > Aide > « Guide de démarrage ».
+  - Garde-fou : si l'élément d'une étape reste introuvable (situation inattendue), la bulle
+    propose « Continuer » au bout de 2,5 s — le guide ne peut pas bloquer l'app.
+  - App rechargée en plein milieu : le guide reprend au début de la partie en cours.
+  - Le guide vit hors de l'app (au-dessus) et se recale à chaque image : les nouveaux
+    rendus, le défilement et le clavier ne le perdent pas ; la zone éclairée défile au
+    centre à chaque étape.
+- Démarrage (complète 2.97.1) : l'écoute de Firebase se branche au ``DOMContentLoaded``,
+  c'est-à-dire après le dernier ``<script>`` de la page quel que soit l'ordre des fichiers.
+- Vérifié : nouvelle batterie ``tools/tests/onboarding.js`` (29 contrôles) — parcours complet
+  par le vrai démarrage (connexion simulée), en ne touchant que les éléments éclairés ;
+  éléments hors zone bloqués ; boutons « Suivant » exigeant le nom / un palier / un repos ;
+  plan enregistré avec son repos ; première série lancée ; plus jamais ensuite ; relance
+  depuis Réglages ; « Quitter » ; garde-fou « Continuer » ; compte avec données : pas de
+  guide. Les autres batteries passent toujours.
+
+2.97.1 - 2026-10-16
+====================
+
+- **Correctif : chargement infini avant l'écran de connexion.** Firebase peut répondre
+  « personne n'est connecté » pendant que le navigateur télécharge encore les derniers
+  fichiers de l'app (fréquent juste après une mise à jour, quand ils viennent du réseau) :
+  l'écran de connexion s'affichait, puis le tout dernier fichier (``17-main.js``) le
+  recouvrait de « Chargement... », qui ne partait plus jamais. Le problème existait avant
+  la 2.80.0 (reproduit sur la version d'origine), il dépendait seulement du moment où
+  Firebase répond. On n'écoute plus Firebase qu'une fois TOUS les fichiers chargés
+  (``startAuthStateListener``, appelée par ``17-main.js``) : l'écran de connexion — ou
+  l'app, si l'on est déjà connecté — s'affiche quel que soit ce moment.
+- **Filet de sécurité** : si Firebase ne répond pas du tout au bout de 12 s (pas de réseau
+  au premier lancement, service injoignable), « Chargement... » est remplacé par un message
+  (« La connexion prend plus de temps que prévu » / « Pas de connexion internet ») et un
+  bouton « Réessayer ». Si le script Firebase n'a pas pu être chargé, le message s'affiche
+  tout de suite au lieu de planter. Rien n'est remplacé si un autre écran s'est affiché
+  entre-temps.
+- Vérifié : nouvelle batterie ``tools/tests/boot.js`` (9 contrôles) — Firebase qui répond
+  à l'instant où on l'écoute, avant la fin du chargement (fichier ralenti), plus tard,
+  utilisateur déjà connecté, Firebase absent, Firebase muet — ; la version d'origine échoue
+  bien aux deux premiers cas. Les autres batteries passent toujours.
+
+2.97.0 - 2026-10-16
+====================
+
+- **Écran de connexion : « Mot de passe oublié ? »**, sous « Se connecter ». Avec l'e-mail
+  saisi au-dessus, Firebase envoie un e-mail (en français) contenant un lien pour choisir
+  un nouveau mot de passe ; on se reconnecte ensuite normalement.
+  - **L'e-mail n'arrive que si un compte existe pour cette adresse — mais l'écran ne le dit
+    jamais.** Le message est le même dans tous les cas (« Si un compte existe pour …, un
+    e-mail … vient d'y être envoyé ») : sinon n'importe qui pourrait s'en servir pour tester
+    quelles adresses ont un compte. Firebase fait de même de son côté (protection contre
+    l'énumération des e-mails, active par défaut).
+  - Sans e-mail, ou mal formé : rien n'est envoyé, on demande de le saisir.
+  - Erreurs utiles affichées : trop de demandes, pas de connexion internet, adresse
+    invalide, envoi impossible.
+  - Le bouton reste grisé 30 s après une demande, pour éviter les envois en rafale.
+  - L'adresse citée dans le message est affichée comme du texte (jamais interprétée).
+- Vérifié : nouvelle batterie ``tools/tests/password_reset.js`` (14 contrôles, Firebase
+  simulé) : bouton présent, rien d'envoyé sans e-mail valide, envoi à l'adresse nettoyée en
+  français, message neutre — identique pour un compte inexistant —, bouton grisé, quatre
+  erreurs, adresse piégée affichée en texte, connexion normale intacte, aucune erreur JS.
+  Les autres batteries (dont sécurité) passent toujours.
+
+2.96.0 - 2026-10-16
+====================
+
+- **Réglages > Exercices : un « ? » sur « Incrément automatique » et « Incrément possible »**,
+  comme sur « Travail unilatéral » et « Alterner avec ». Un appui déplie l'explication sous
+  la ligne, un second la replie ; elle s'affiche même quand les textes d'aide sont masqués
+  (c'est une aide à la demande).
+  - *Incrément automatique* : en Séance en direct, après chaque série, le poids proposé pour
+    la suivante monte d'un palier, jusqu'au plus lourd ; désactivé, on reste au même poids ;
+    sans effet quand un plan prévoit le poids.
+  - *Incrément possible* : le petit poids fixe qu'on ajoute à la main sur la machine ; sur
+    chaque palier, choix « Standard » ou « +X kg » (la valeur citée suit le réglage) ; 0 =
+    pas d'incrément.
+- **Libellé et « ? » passent ensemble à la ligne** quand la place manque : le « ? » reste
+  collé au dernier mot (« Incrément possible ? » sur deux lignes) au lieu de glisser sous la
+  valeur en kg — où il ne pouvait plus être touché.
+- Vérifié : ``tools/tests/settings_layout.js`` (46 contrôles), dont : les quatre « ? »,
+  ouverture sous la bonne ligne aides masquées, valeur citée qui suit le − / +, fermeture au
+  second appui, « ? » touchable. Les autres batteries passent toujours.
+
+2.95.0 - 2026-10-16
+====================
+
+- **Plan à préparer : des repos plus précis.**
+  - *Entre deux séries précises* : sous chaque série d'un exercice (sauf la dernière), une
+    ligne « Repos » donne le repos qui suit cette série. Par défaut, c'est le « Repos entre
+    les séries » de l'exercice (affiché en clair, « par défaut », et qui suit ses
+    changements) ; − / + le rendent propre à cet endroit (en gras) — par exemple plus
+    court après une série légère —, « ↺ » le remet par défaut. Enregistré sur la série
+    concernée (``plannedRestSec``), seulement s'il est réglé ; 0 = pas de repos à cet
+    endroit.
+  - *Entre deux exercices* : sous le repos par défaut, « Repos avant l'exercice suivant »
+    (``restAfterSec``), sur chaque exercice sauf le dernier du plan — gainage compris.
+  - Même pas de 15 s, jusqu'à 10 min, maintien du doigt pour aller vite.
+- **Séance en direct** : le repos décompté après une série est désormais celui de l'écart
+  qui suit cette série s'il a été réglé, sinon le repos par défaut de l'exercice ; après sa
+  dernière série prévue, c'est le repos avant l'exercice suivant (décompté sur le menu de
+  sélection, où l'on choisit l'exercice suivant). Toujours : arrêt sur 00:00, « Repos
+  terminé », rien de lancé automatiquement. Calculé une fois, au « Finir la série ».
+- **Correctif** : replier un exercice dans Créer effaçait son repos prévu (2.94.0) — les
+  repos d'un exercice replié sont maintenant conservés, comme ses séries.
+- Convertir un plan en séance (ou basculer vers « Séance effectuée ») ne reporte aucun de
+  ces repos prévus.
+- Vérifié : ``tools/tests/plan_rest.js`` (27 contrôles), dont : un écart sous chaque série
+  sauf la dernière, réglage propre à un écart enregistré sur la bonne série, écarts « par
+  défaut » qui suivent le défaut, ↺, repos avant l'exercice suivant absent du dernier,
+  exercice replié sans perte ; en direct : écart réglé (2 s) plutôt que le défaut, puis
+  repos avant l'exercice suivant (3 s) après la dernière série, avec retour au menu. Les
+  autres batteries passent toujours.
+
+2.94.0 - 2026-10-16
+====================
+
+- **Plan à préparer : un temps de repos prévu par exercice.** Sous les séries de chaque
+  exercice (Muscu, Rameur, Vélo, Course), une ligne « Repos entre les séries » avec − / +
+  (par pas de 15 s, jusqu'à 10 min ; « Aucun » par défaut). Enregistré avec le plan
+  (``restSec`` sur l'exercice, seulement s'il est réglé). Le gainage garde le repos de sa
+  boucle. Une séance effectuée n'a pas cette ligne, et convertir un plan en séance (ou
+  basculer l'écran Créer vers « Séance effectuée ») ne reporte pas ce repos prévu : une
+  séance ne garde que les repos réellement mesurés.
+- **Séance en direct avec ce plan : le repos se décompte tout seul.** Dès « Finir la
+  série » (toujours à la main), le bandeau Repos part de la durée prévue et défile vers le
+  bas. Arrivé à zéro, il s'arrête sur 00:00 et dit « Repos terminé » ; la série suivante
+  est proposée « à lancer », bouton « Lancer <nom> » mis en avant (un léger halo, sans
+  animation si l'appareil réduit les animations) — **rien ne se lance automatiquement.**
+  - Le repos réellement pris (jusqu'au « Lancer ») reste mesuré et s'enregistre avec la
+    série suivante, comme avant.
+  - Sans plan, ou pour un exercice dont le repos n'est pas réglé : le repos compte le
+    temps écoulé, comme avant. La boucle de gainage garde son propre décompte.
+- Vérifié : nouvelle batterie ``tools/tests/plan_rest.js`` (16 contrôles) — dans Créer :
+  ligne présente en plan seulement, − / + par 15 s, « Aucun » à 0 et rien d'enregistré, pas
+  de report vers une séance ; en direct : décompte dès la fin de série, arrêt à 00:00 avec
+  « Repos terminé » et bouton mis en avant, rien de lancé même après, « Lancer » démarre la
+  série et enregistre le repos réel, sans repos prévu le chrono compte comme avant. Les
+  autres batteries passent toujours.
+
+2.93.0 - 2026-10-16
+====================
+
+- **Retour au vélo en bonhomme bâton.** La silhouette pleine de la 2.92.0 est retirée : le
+  vélo redevient le cycliste en traits de la 2.83.0 (tête pleine, buste, bras au guidon,
+  roues à trois rayons), qui pédale et dont les roues tournent — plus sympathique, et dans
+  le même style que le rameur, le gainage et le bonhomme du repos. Icône fixe et animations
+  (Séance en direct, micro-animation de 2 s quand on consulte une séance) comme avant.
+- **Nouveau réglage : Réglages > Apparence > Séance en direct > « Animations »**, activé par
+  défaut. Désactivé, les grandes icônes animées disparaissent de la Séance en direct : le
+  rameur, le vélo et le chronomètre pendant une série, la planche pendant la boucle de
+  gainage, le bonhomme qui reprend son souffle pendant le repos. L'écran garde alors son
+  contenu habituel (en repos Cardio, le nom de l'exercice revient à sa place). Les petites
+  icônes et la micro-animation de 2 s quand on consulte une séance ne sont pas concernées.
+  Réglage propre à l'appareil, comme le mode de couleur et les textes d'aide, retenu au
+  redémarrage.
+- Vérifié : ``tools/tests/activity_icons.js`` (56 contrôles), dont : vélo en bonhomme bâton ;
+  réglage activé par défaut, désactivé et retenu ; désactivé, plus aucune animation en
+  repos Cardio (le nom revient), pendant une série de vélo, ni dans la boucle de gainage
+  (travail et repos) ; l'Historique garde sa micro-animation. Les autres batteries passent
+  toujours.
+
+2.92.0 - 2026-10-16
+====================
+
+- **Nouvelle icône Vélo : la silhouette de cycliste de route fournie**
+  (``icone-velo-silhouette.svg``), animée comme ``velo-silhouette.gif``. Elle remplace le
+  vélo en traits partout (Accueil, listes, Calendrier, « Quelle activité ? », détail d'une
+  séance, Séance en direct).
+  - Le fichier fourni est un « pantin » : buste, tête, bras, vélo et pédalier fixes, et
+    chaque jambe en pièces (cuisse, mollet, chaussure, genou, cheville, manivelle, pédale).
+    L'animation les replace à chaque image : le pédalier tourne, la pédale reste à
+    l'horizontale, le pied suit la pédale en s'inclinant un peu selon sa position, le
+    genou se place là où cuisse et mollet se rejoignent (longueurs mesurées sur le
+    dessin), chaque pièce tourne autour de son articulation ; les deux jambes en
+    opposition.
+  - Au repos, la pose est exactement celle du dessin fourni (au dixième de point près) :
+    c'est aussi l'icône fixe, et la pose sur laquelle l'animation se fige.
+  - Mêmes règles qu'avant : en boucle pendant une série de vélo en direct, une fois (2 s)
+    quand on ouvre une séance, fixe ailleurs ; un tour de pédalier toutes les 1,08 s comme
+    dans le GIF ; « réduire les animations » respecté. Prend la couleur du thème, comme les
+    autres icônes (le GIF, noir en dur, n'est pas utilisé tel quel).
+- Vérifié : ``tools/tests/activity_icons.js`` (51 contrôles), dont : pose fixe = dessin fourni,
+  deux roues, jambes en opposition (pédales à 180°), micro-animation puis figée en
+  Historique et Calendrier, boucle en direct. Les autres batteries passent toujours.
+
 2.91.0 - 2026-10-14
 ====================
 

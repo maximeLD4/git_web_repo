@@ -3,6 +3,7 @@ const KEYS = {
   lastUid: "gymlog:last-uid",
   colorMode: "gymlog:color-mode",
   showHints: "gymlog:show-hints",
+  liveAnimations: "gymlog:live-animations",
   soundVolume: "gymlog:sound-volume",
   sessions: "gymlog:sessions",
   library: "gymlog:library",

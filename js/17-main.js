@@ -24,6 +24,12 @@ function goHome() {
 }
 
 // Le premier écran affiché (connexion ou app) est décidé par
-// firebase.auth().onAuthStateChanged(...), enregistré dans 04-auth.js.
+// firebase.auth().onAuthStateChanged(...), branché juste en dessous.
 // On affiche un état de chargement le temps que Firebase réponde.
 renderAuthLoadingScreen("Chargement...");
+// On n'écoute la réponse de Firebase qu'une fois TOUS les fichiers de l'app
+// exécutés, quel que soit leur ordre dans index.html : DOMContentLoaded
+// n'arrive qu'après le dernier <script> de la page. Voir
+// startAuthStateListener (04-auth.js).
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startAuthStateListener);
+else startAuthStateListener();

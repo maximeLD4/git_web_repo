@@ -130,9 +130,29 @@ function renderSettingsAppearanceApp() {
             <span class="toggle-switch-knob"></span>
           </button>
         </div>
+        <div class="field-list-row">
+          <span style="flex:1;">Guide de démarrage</span>
+          <button type="button" class="secondary-btn secondary-btn-inline" id="restart-onboarding-btn">Revoir</button>
+        </div>
+      </div>
+      <div class="home-section-label" style="margin-top:22px;">Séance en direct</div>
+      <div class="field-list-card">
+        <div class="field-list-row">
+          <span style="flex:1;">Animations</span>
+          <button type="button" class="toggle-switch ${liveAnimationsOn ? "on" : ""}" id="live-animations-toggle" role="switch" aria-checked="${liveAnimationsOn ? "true" : "false"}" aria-label="Afficher les animations en Séance en direct">
+            <span class="toggle-switch-knob"></span>
+          </button>
+        </div>
       </div>
     </div>
   `;
+  // Relance le guide de première utilisation (20-onboarding.js).
+  document.getElementById("restart-onboarding-btn").addEventListener("click", () => onboardingRestart());
+  document.getElementById("live-animations-toggle").addEventListener("click", () => {
+    liveAnimationsOn = !liveAnimationsOn;
+    saveJSON(KEYS.liveAnimations, liveAnimationsOn);
+    renderSettingsAppearanceApp();
+  });
   document.getElementById("show-hints-toggle").addEventListener("click", () => {
     applyShowHints(!showHints);
     saveJSON(KEYS.showHints, showHints);
@@ -383,13 +403,13 @@ function gymSettingsFormHTML() {
           <span>Nom</span>
           <input type="text" id="config-name-input" placeholder="Ex. Leg press, Développé couché…" value="${(gymSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
         </label>
-        ${suggestionRowHTML}
         <label class="field-list-row" for="config-category-select">
           <span style="flex:1;">Catégorie</span>
           <select class="field-select app-select app-select-row" id="config-category-select">
-            ${GYM_EXERCISE_CATEGORIES.map((t) => opt(t.key, t.label, gymSettingsFormDraft.category === t.key)).join("")}
+            ${gymSettingsFormDraft.category ? "" : opt("", "Choisir…", true)}${GYM_EXERCISE_CATEGORIES.map((t) => opt(t.key, t.label, gymSettingsFormDraft.category === t.key)).join("")}
           </select>
         </label>
+        ${suggestionRowHTML}
         <label class="field-list-row" for="config-equipment-select">
           <span style="flex:1;">Type de poids</span>
           <select class="field-select app-select app-select-row" id="config-equipment-select">
@@ -417,13 +437,20 @@ function gymSettingsFormHTML() {
       <div class="home-section-label">Incrément</div>
       <div class="field-list-card">
         <div class="field-list-row">
-          <span style="flex:1;">Incrément automatique</span>
+          <div class="field-label-row" style="flex:1; margin-bottom:0;">
+            <span>Incrément automatique</span>
+            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.autoIncrement ? "active" : ""}" data-field-help="autoIncrement" aria-label="Aide : incrément automatique">?</button>
+          </div>
           <button type="button" class="toggle-switch ${gymSettingsFormDraft.autoIncrement ? "on" : ""}" id="config-auto-increment-toggle" role="switch" aria-checked="${gymSettingsFormDraft.autoIncrement ? "true" : "false"}">
             <span class="toggle-switch-knob"></span>
           </button>
         </div>
+        ${gymSettingsHelpOpen.autoIncrement ? `<div class="field-help-text">En Séance en direct, après chaque série, le poids proposé pour la suivante monte d'un palier (ex. 40&nbsp;→&nbsp;45&nbsp;kg), jusqu'au palier le plus lourd. Désactivé, on reste au même poids. Sans effet quand un plan prévoit le poids de la série.</div>` : ""}
         <div class="field-list-row">
-          <span style="flex:1;">Incrément possible</span>
+          <div class="field-label-row" style="flex:1; margin-bottom:0;">
+            <span>Incrément possible</span>
+            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.maxIncrement ? "active" : ""}" data-field-help="maxIncrement" aria-label="Aide : incrément possible">?</button>
+          </div>
           <input type="text" inputmode="decimal" id="config-max-increment" value="${gymSettingsFormDraft.maxIncrement || 0}" aria-label="Incrément possible, en kg" style="flex:0 0 auto; width:56px; text-align:right; color:var(--text-dim); font-weight:600;">
           <span style="color:var(--text-dim); margin:0 10px 0 4px;">kg</span>
           <div class="rep-stepper" style="flex:none;">
@@ -431,6 +458,7 @@ function gymSettingsFormHTML() {
             <button type="button" class="rep-step-btn" id="config-max-increment-plus" aria-label="Plus">+</button>
           </div>
         </div>
+        ${gymSettingsHelpOpen.maxIncrement ? `<div class="field-help-text">Petit poids fixe qu'on peut ajouter à la main sur la machine (ex. une plaque de 2,5&nbsp;kg posée sur la pile). Sur chaque palier, on choisit alors «&nbsp;Standard&nbsp;» ou «&nbsp;+<span id="config-increment-help-value">${gymSettingsFormDraft.maxIncrement || 0}</span>&nbsp;kg&nbsp;», en Séance en direct comme dans Créer. 0 = pas d'incrément.</div>` : ""}
       </div>
       <div class="field-hint" id="config-increment-hint">Poids fixe qu'on peut ajouter à la main sur la machine. Sur chaque palier, le choix sera +0 ou +${gymSettingsFormDraft.maxIncrement || 0}kg.</div>
 
@@ -439,7 +467,7 @@ function gymSettingsFormHTML() {
         <div class="field-list-row">
           <div class="field-label-row" style="flex:1; margin-bottom:0;">
             <span>Travail unilatéral</span>
-            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.unilateral ? "active" : ""}" data-field-help="unilateral">?</button>
+            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.unilateral ? "active" : ""}" data-field-help="unilateral" aria-label="Aide : travail unilatéral">?</button>
           </div>
           <button type="button" class="toggle-switch ${gymSettingsFormDraft.unilateral ? "on" : ""}" id="config-unilateral-toggle" role="switch" aria-checked="${gymSettingsFormDraft.unilateral ? "true" : "false"}">
             <span class="toggle-switch-knob"></span>
@@ -449,7 +477,7 @@ function gymSettingsFormHTML() {
         <label class="field-list-row" for="config-paired-exercise-select">
           <div class="field-label-row" style="flex:1; margin-bottom:0;">
             <span>Alterner avec</span>
-            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.paired ? "active" : ""}" data-field-help="paired">?</button>
+            <button type="button" class="field-help-btn ${gymSettingsHelpOpen.paired ? "active" : ""}" data-field-help="paired" aria-label="Aide : alterner avec">?</button>
           </div>
           <select class="field-select app-select app-select-row" id="config-paired-exercise-select">
             <option value="">Aucun</option>
@@ -712,8 +740,9 @@ function attachGymSettingsListeners() {
     addBtn.addEventListener("click", () => {
       gymSettingsFormOpen = true;
       gymSettingsEditingConfigId = null;
-      const defaultCategory = gymSettingsActiveCategory === "other" || gymSettingsActiveCategory === "all" ? "pecs" : gymSettingsActiveCategory;
-      gymSettingsFormDraft = { name: "", category: defaultCategory, equipment: "", baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
+      // Pas de catégorie par défaut : elle doit être choisie (voir la
+      // vérification à l'enregistrement).
+      gymSettingsFormDraft = { name: "", category: "", equipment: "", baseWeights: [], maxIncrement: 0, autoIncrement: false, unilateral: false, pairedExerciseId: null };
       gymSettingsHelpOpen = {};
       gymSettingsFocusTarget = "name";
       renderGymSettingsContent();
@@ -845,6 +874,9 @@ function attachGymSettingsListeners() {
   maxIncEl.addEventListener("input", () => {
     syncFormFromInputs();
     document.getElementById("config-increment-hint").textContent = `Poids fixe qu'on peut ajouter à la main sur la machine. Sur chaque palier, le choix sera +0 ou +${gymSettingsFormDraft.maxIncrement}kg.`;
+    // L'aide « ? » ouverte cite la valeur : elle suit aussi.
+    const incValue = document.getElementById("config-increment-help-value");
+    if (incValue) incValue.textContent = gymSettingsFormDraft.maxIncrement;
   });
   // Une fois la saisie terminée, on affiche la valeur réellement retenue (« 2,50 » → 2.5, « abc » → 0).
   maxIncEl.addEventListener("change", () => {
@@ -934,6 +966,10 @@ function attachGymSettingsListeners() {
     const name = capitalizeFirst(gymSettingsFormDraft.name.trim());
     if (!name) {
       fail("Donne un nom à cet exercice.");
+      return;
+    }
+    if (!GYM_EXERCISE_CATEGORIES.some((c) => c.key === gymSettingsFormDraft.category)) {
+      fail("Choisis une catégorie.");
       return;
     }
     if (gymSettingsFormDraft.baseWeights.length === 0) {

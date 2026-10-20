@@ -9,11 +9,15 @@ const firebaseConfig = {
   appId: "1:899160712021:web:ad9b3c3bfd89d183ea05dc",
   measurementId: "G-TPWZZ1JLXC",
 };
-firebase.initializeApp(firebaseConfig);
-// Persiste la session de connexion sur cet appareil/navigateur : on ne
-// redemande pas les identifiants à chaque ouverture, seulement la première
-// fois sur un nouvel appareil (ou après déconnexion explicite).
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+// Si le script Firebase n'a pas pu être chargé (réseau, bloqueur…), on ne
+// plante pas ici : startAuthStateListener (04-auth.js) l'affichera clairement.
+if (typeof firebase !== "undefined") {
+  firebase.initializeApp(firebaseConfig);
+  // Persiste la session de connexion sur cet appareil/navigateur : on ne
+  // redemande pas les identifiants à chaque ouverture, seulement la première
+  // fois sur un nouvel appareil (ou après déconnexion explicite).
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+}
 
 /* ---------- Numéro de version : seule source de vérité = le fichier VERSION ---------- */
 // Pas de constante dupliquée dans le JS : on lit directement le fichier à la

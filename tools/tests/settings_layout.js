@@ -32,6 +32,20 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
       check(`${label} : chaque section = un titre puis des lignes « libellé | réglage » (plus de rangées de puces de choix)`, await p.evaluate(() => !document.querySelector('.exercise-form .ex-type-toggle, .exercise-form .suggest-chip')));
       if (kind === 'muscu') check(`${label} : les poids saisis, seules puces restantes, à la même hauteur`, g.chipH.length === 1, JSON.stringify(g.chipH));
     }
+    // Les « ? » des réglages d'un exercice Muscu : un par réglage d'Incrément et d'Options avancées.
+    await p.evaluate(() => { gymSettingsFormOpen = false; gainageSettingsFormOpen = false; gymSettingsMode = 'muscu'; renderGymSettingsContent(); document.querySelector('[data-edit-config="c3"]').click(); }); await p.waitForTimeout(250);
+    const helps = await p.evaluate(() => [...document.querySelectorAll('.exercise-form [data-field-help]')].map((b) => b.dataset.fieldHelp + ':' + b.closest('.field-list-row').textContent.replace(/\s+/g, ' ').trim().split(' ?')[0]));
+    check('« ? » sur Incrément automatique, Incrément possible, Travail unilatéral et Alterner avec', JSON.stringify(helps) === JSON.stringify(['autoIncrement:Incrément automatique', 'maxIncrement:Incrément possible', 'unilateral:Travail unilatéral', 'paired:Alterner avec']), JSON.stringify(helps));
+    for (const key of ['autoIncrement', 'maxIncrement']) {
+      await p.click(`[data-field-help="${key}"]`); await p.waitForTimeout(150);
+      const h = await p.evaluate((key) => { const b = document.querySelector(`[data-field-help="${key}"]`), t = b.closest('.field-list-row').nextElementSibling; return { active: b.classList.contains('active'), text: t && t.classList.contains('field-help-text') ? t.textContent.trim() : '', shown: !!t && t.offsetParent !== null }; }, key);
+      check(`« ? » de ${key === 'autoIncrement' ? 'l\'incrément automatique' : 'l\'incrément possible'} : l'explication s'ouvre sous la ligne, même aides masquées`, h.active && h.shown && h.text.length > 60, h.text.slice(0, 60));
+    }
+    await p.click('#config-max-increment-plus'); await p.waitForTimeout(150);
+    check('…l\'explication de l\'incrément cite la valeur réglée (2,5 → 3,5 kg)', /\+3\.5\s?kg/.test(await p.evaluate(() => document.querySelector('[data-field-help="maxIncrement"]').closest('.field-list-row').nextElementSibling.textContent)));
+    await p.click('[data-field-help="autoIncrement"]'); await p.waitForTimeout(150);
+    check('Un 2e appui sur « ? » referme l\'explication', await p.evaluate(() => { const b = document.querySelector('[data-field-help="autoIncrement"]'); const n = b.closest('.field-list-row').nextElementSibling; return !b.classList.contains('active') && !(n && n.classList.contains('field-help-text') && /palier/.test(n.textContent) && /Désactivé/.test(n.textContent)); }));
+    await p.evaluate(() => { gymSettingsFormOpen = false; gymSettingsMode = 'gainage'; renderGymSettingsContent(); document.querySelector('[data-edit-gainage-config="g"]').click(); }); await p.waitForTimeout(250);
     await p.click('[data-gainage-loop-work-plus]'); await p.waitForTimeout(150);
     check('Gainage : les − / + de la boucle marchent toujours (40 → 45 s)', await p.evaluate(() => gainageSettingsFormDraft.workSec === 45 && /45 s/.test(document.querySelector('.exercise-form').textContent)));
     check('Gainage : la planche remplace le chronomètre (bascule et liste)', await p.evaluate(() => { gainageSettingsFormOpen = false; renderGymSettingsContent(); return !!document.querySelector('[data-gym-settings-mode="gainage"] svg[data-anim-icon="plank"]') && !!document.querySelector('.history-row-icon svg[data-anim-icon="plank"]'); }));

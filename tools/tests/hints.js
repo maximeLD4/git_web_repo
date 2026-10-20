@@ -27,7 +27,7 @@ const SCREENS = {
   console.log('=== Par défaut : masqués ===');
   for (const [name, fn] of Object.entries(SCREENS)) { const r = await count(fn); await p.waitForTimeout(150); check(`${name.padEnd(36)} ${r.n} texte(s), 0 visible`, r.n > 0 && r.visible === 0, `${r.visible} visible(s)`); }
   check('Le réglage est désactivé', await p.evaluate(() => { currentApp = 'settings-appearance'; render(); const t = document.getElementById('show-hints-toggle'); return !t.classList.contains('on') && t.getAttribute('aria-checked') === 'false'; }));
-  check('Le nouveau réglage n\'a pas de texte d\'aide à lui', await p.evaluate(() => { const card = document.getElementById('show-hints-toggle').closest('.field-list-card'); return !card.nextElementSibling; }));
+  check('Le nouveau réglage n\'a pas de texte d\'aide à lui', await p.evaluate(() => { const card = document.getElementById('show-hints-toggle').closest('.field-list-card'); const nx = card.nextElementSibling; return !nx || !nx.classList.contains('field-hint'); }));
   console.log('\n=== Activé : tous visibles ===');
   await p.click('#show-hints-toggle'); await p.waitForTimeout(250);
   check('Interrupteur activé', await p.evaluate(() => document.getElementById('show-hints-toggle').classList.contains('on')));
