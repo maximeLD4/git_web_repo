@@ -2351,3 +2351,29 @@ select.app-select.app-select-row {
    écran à l'autre (3.1.2). */
 .live-set-form-actions > .live-post-btn { box-sizing: border-box; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; }
 @media (max-height: 740px) { .live-set-form-actions > .live-post-btn { min-height: 42px; } }
+
+/* Nom + suggestions en un seul champ (3.2.0) : la liste se déplie sous le
+   nom quand on le touche — un encart grisé, distinct des lignes de réglage,
+   une suggestion par ligne (sa catégorie à droite tant que la catégorie de
+   l'exercice n'est pas choisie). */
+.name-suggest { display: flex; flex-direction: column; margin: 0 0 10px; padding: 2px 12px; border-radius: 12px; background: var(--surface-2); }
+.name-suggest[hidden] { display: none; }
+.name-suggest-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 0; background: none; border: none; border-bottom: 0.5px solid var(--rule); color: var(--text); font-family: var(--font); font-size: 14.5px; font-weight: 600; text-align: left; cursor: pointer; }
+.name-suggest-item::before { content: "↳"; color: var(--text-dim); font-weight: 700; }
+.name-suggest-item:last-child { border-bottom: none; }
+.name-suggest-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name-suggest-cat { flex: none; font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.exercise-form .field-list-row:has(+ .name-suggest:not([hidden])) { padding-bottom: 8px; }
+/* Nom grisé tant que la catégorie n'est pas choisie (3.2.1). */
+.field-list-row-locked { opacity: 0.5; }
+.field-list-row-locked input:disabled { background: transparent; color: var(--text-dim); -webkit-text-fill-color: var(--text-dim); }
+
+/* Accueil : état de la synchro (3.3.0) — seulement quand il y a quelque
+   chose à dire (hors ligne, envoi en attente). */
+.cloud-sync-badge { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 8px 12px; border-radius: var(--radius); background: var(--surface); color: var(--text-dim); font-family: var(--font); font-size: 12.5px; font-weight: 600; line-height: 1.35; }
+.cloud-sync-badge[hidden] { display: none; }
+.cloud-sync-badge::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+.cloud-sync-badge.offline::before { background: var(--yellow); }
+.cloud-sync-badge.pending::before { background: var(--accent); animation: cloudPulse 1.2s ease-in-out infinite; }
+@keyframes cloudPulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .cloud-sync-badge.pending::before { animation: none; } }

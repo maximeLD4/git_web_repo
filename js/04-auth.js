@@ -52,6 +52,7 @@ function scheduleFirebaseSync(key) {
     firebaseKeyVersions[key] = (firebaseKeyVersions[key] || 0) + 1;
     persistFirebaseDirtyKeys();
   }
+  refreshCloudSyncBadge();
   clearTimeout(firebaseSyncTimer);
   firebaseSyncTimer = setTimeout(requestFirebasePush, 1500);
 }
@@ -117,6 +118,7 @@ function pushToFirebase() {
             firebaseDirtyKeys.delete(key);
             persistFirebaseDirtyKeys();
           }
+          refreshCloudSyncBadge();
         })
         .catch((err) => {
           console.error("Synchronisation cloud impossible pour " + mapping.path + " (les données restent sauvegardées localement, on retentera plus tard) :", err);
@@ -169,88 +171,119 @@ function withTimeout(promise, ms, onTimeout) {
   });
 }
 
-function pullFromFirebase() {
-  if (!currentUser) return Promise.resolve();
-  const base = firebase.database().ref("users/" + currentUser.uid);
-  return Promise.all([
-    base.child("sessions/gym").once("value"),
-    base.child("sessions/run").once("value"),
-    base.child("sessions/swim").once("value"),
-    base.child("sessions/bike").once("value"),
-    base.child("library/gym").once("value"),
-    base.child("library/run").once("value"),
-    base.child("library/swim").once("value"),
-    base.child("library/bike").once("value"),
-    base.child("gymExerciseConfigs").once("value"),
-    base.child("gainageExerciseConfigs").once("value"),
-    base.child("sessionPlans").once("value"),
-    base.child("weights").once("value"),
-    base.child("backup").once("value"), // ancien format "tout en un bloc", pour migration ponctuelle
-  ])
-    .then(([gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, plansSnap, weightsSnap, oldBackupSnap]) => {
-      const newSnaps = [gymSnap, runSnap, swimSnap, bikeSnap, gymLibSnap, runLibSnap, swimLibSnap, bikeLibSnap, configsSnap, gainageConfigsSnap, plansSnap, weightsSnap];
-      const hasAnyNewData = newSnaps.some((s) => s.val() !== null);
-      const oldBackup = oldBackupSnap.val();
+// Domaines rapatriés depuis le cloud : chemin, normalisation, affectation.
+const FIREBASE_PULL_DOMAINS = [
+  { key: KEYS.sessions, path: "sessions/gym", apply: (v) => (sessions = shapeGymSessions(v)), get: () => sessions },
+  { key: KEYS.runSessions, path: "sessions/run", apply: (v) => (runSessions = shapeBlockSessions(v)), get: () => runSessions },
+  { key: KEYS.swimSessions, path: "sessions/swim", apply: (v) => (swimSessions = shapeBlockSessions(v)), get: () => swimSessions },
+  { key: KEYS.bikeSessions, path: "sessions/bike", apply: (v) => (bikeSessions = shapeBlockSessions(v)), get: () => bikeSessions },
+  { key: KEYS.library, path: "library/gym", apply: (v) => (library = shapeNameList(v)), get: () => library },
+  { key: KEYS.runLibrary, path: "library/run", apply: (v) => (runLibrary = shapeNameList(v)), get: () => runLibrary },
+  { key: KEYS.swimLibrary, path: "library/swim", apply: (v) => (swimLibrary = shapeNameList(v)), get: () => swimLibrary },
+  { key: KEYS.bikeLibrary, path: "library/bike", apply: (v) => (bikeLibrary = shapeNameList(v)), get: () => bikeLibrary },
+  { key: KEYS.gymExerciseConfigs, path: "gymExerciseConfigs", apply: (v) => (gymExerciseConfigs = shapeConfigs(v)), get: () => gymExerciseConfigs },
+  { key: KEYS.gainageExerciseConfigs, path: "gainageExerciseConfigs", apply: (v) => (gainageExerciseConfigs = shapeNamedObjects(v)), get: () => gainageExerciseConfigs },
+  { key: KEYS.sessionPlans, path: "sessionPlans", apply: (v) => (sessionPlans = shapeGymPlans(v)), get: () => sessionPlans },
+  { key: KEYS.weights, path: "weights", apply: (v) => (weights = shapeWeights(v)), get: () => weights },
+];
 
+/* Rapatriement depuis le cloud — SANS JAMAIS écraser une modification locale
+   (3.3.0). Une lecture du cloud peut arriver très tard : hors ligne, elle
+   reste en attente et n'aboutit qu'au retour du réseau ; sur une connexion
+   lente, plusieurs secondes après l'ouverture. Avant, elle remplaçait alors
+   tout ce qu'on avait fait entre-temps : une séance enregistrée hors ligne (ou
+   pendant une synchro lente) disparaissait de l'appareil quand la lecture
+   arrivait — puis du cloud au prochain envoi. Désormais, un domaine n'est
+   repris du cloud QUE s'il n'a ni modification locale en attente d'envoi
+   (firebaseDirtyKeys), ni modification faite pendant cette lecture
+   (firebaseKeyVersions). Sinon on garde le local, qui part vers le cloud.
+   Renvoie la liste des domaines effectivement repris. */
+function pullFromFirebase() {
+  if (!currentUser) return Promise.resolve([]);
+  const uid = currentUser.uid;
+  const base = firebase.database().ref("users/" + uid);
+  const versionsAtStart = {};
+  FIREBASE_PULL_DOMAINS.forEach((d) => (versionsAtStart[d.key] = firebaseKeyVersions[d.key] || 0));
+  return Promise.all([...FIREBASE_PULL_DOMAINS.map((d) => base.child(d.path).once("value")), base.child("backup").once("value")])
+    .then((snaps) => {
+      // Réponse d'un autre compte (déconnexion / changement entre-temps) : ignorée.
+      if (!currentUser || currentUser.uid !== uid) return [];
+      const oldBackupSnap = snaps[snaps.length - 1];
+      const domainSnaps = snaps.slice(0, -1);
+      const hasAnyNewData = domainSnaps.some((s) => s.val() !== null);
+      const oldBackup = oldBackupSnap.val();
       if (!hasAnyNewData && oldBackup) {
         // Ce profil a des données dans l'ancien format (avant ce découpage)
         // mais rien encore dans la nouvelle structure : on migre une bonne
-        // fois pour toutes. restoreFromBackupData() appelle saveJSON() pour
-        // chaque domaine, ce qui les marque automatiquement "à synchroniser"
-        // — la synchro normale (debounced) les réécrira ensuite dans la
-        // nouvelle structure séparée, sans action supplémentaire ici.
+        // fois pour toutes (restoreFromBackupData marque chaque domaine « à
+        // synchroniser », la synchro normale le réécrira au nouveau format).
         restoreFromBackupData(oldBackup);
         migrateGymExerciseConfigNames();
-        return;
+        return FIREBASE_PULL_DOMAINS.map((d) => d.key);
       }
-
-      // Tout ce qui vient du cloud est normalisé avant d'être utilisé (voir
-      // sanitizeExternalValue, 02-utils.js) : un champ piégé ou une forme
-      // inattendue (objet à la place d'un tableau...) ne doit ni s'exécuter
-      // ni faire planter l'affichage.
-      sessions = shapeGymSessions(sanitizeExternalValue(gymSnap.val()));
-      runSessions = shapeBlockSessions(sanitizeExternalValue(runSnap.val()));
-      swimSessions = shapeBlockSessions(sanitizeExternalValue(swimSnap.val()));
-      bikeSessions = shapeBlockSessions(sanitizeExternalValue(bikeSnap.val()));
-      library = shapeNameList(sanitizeExternalValue(gymLibSnap.val()));
-      runLibrary = shapeNameList(sanitizeExternalValue(runLibSnap.val()));
-      swimLibrary = shapeNameList(sanitizeExternalValue(swimLibSnap.val()));
-      bikeLibrary = shapeNameList(sanitizeExternalValue(bikeLibSnap.val()));
-      gymExerciseConfigs = shapeConfigs(sanitizeExternalValue(configsSnap.val()));
-      gainageExerciseConfigs = shapeNamedObjects(sanitizeExternalValue(gainageConfigsSnap.val()));
-      sessionPlans = shapeGymPlans(sanitizeExternalValue(plansSnap.val()));
-      weights = shapeWeights(sanitizeExternalValue(weightsSnap.val()));
-      // Essentiel pour l'usage hors-ligne : jusqu'ici, ce qui venait d'être
-      // récupéré n'était mis à jour qu'en mémoire, jamais réellement écrit
-      // dans le stockage local de l'appareil. Résultat observé en pratique :
-      // tout fonctionnait tant qu'on restait en ligne (les données vivaient
-      // en mémoire), mais au prochain lancement hors-ligne (ou si Firebase
-      // ne répondait pas à temps), l'app repartait sur d'anciennes données
-      // locales potentiellement vides — par exemple des exercices de Salle
-      // de sport à reconfigurer entièrement. On sauvegarde donc explicitement
-      // chaque domaine dès qu'il vient d'être récupéré, pour qu'il soit
-      // disponible localement dès la prochaine ouverture, réseau ou pas.
-      saveJSONLocalOnly(KEYS.sessions, sessions);
-      saveJSONLocalOnly(KEYS.runSessions, runSessions);
-      saveJSONLocalOnly(KEYS.swimSessions, swimSessions);
-      saveJSONLocalOnly(KEYS.bikeSessions, bikeSessions);
-      saveJSONLocalOnly(KEYS.library, library);
-      saveJSONLocalOnly(KEYS.runLibrary, runLibrary);
-      saveJSONLocalOnly(KEYS.swimLibrary, swimLibrary);
-      saveJSONLocalOnly(KEYS.bikeLibrary, bikeLibrary);
-      saveJSONLocalOnly(KEYS.gymExerciseConfigs, gymExerciseConfigs);
-      saveJSONLocalOnly(KEYS.gainageExerciseConfigs, gainageExerciseConfigs);
-      saveJSONLocalOnly(KEYS.sessionPlans, sessionPlans);
-      saveJSONLocalOnly(KEYS.weights, weights);
-      // On réapplique la correction de casse des noms d'exercice ici : sans
-      // ça, une éventuelle ancienne valeur non capitalisée encore présente
-      // dans le cloud (pas encore synchronisée avec la correction locale)
-      // écraserait silencieusement la correction, comme observé en pratique.
-      migrateGymExerciseConfigNames();
+      const applied = [];
+      FIREBASE_PULL_DOMAINS.forEach((d, i) => {
+        const touchedLocally = firebaseDirtyKeys.has(d.key) || (firebaseKeyVersions[d.key] || 0) !== versionsAtStart[d.key];
+        if (touchedLocally) return; // le local est plus récent : on le garde (il part vers le cloud)
+        // Tout ce qui vient du cloud est normalisé avant usage (voir
+        // sanitizeExternalValue) : un champ piégé ou une forme inattendue ne
+        // doit ni s'exécuter ni faire planter l'affichage.
+        d.apply(sanitizeExternalValue(domainSnaps[i].val()));
+        // Écrit aussi sur l'appareil : disponible dès la prochaine ouverture,
+        // réseau ou pas.
+        saveJSONLocalOnly(d.key, d.get());
+        applied.push(d.key);
+      });
+      // Correction de casse des noms d'exercice, réappliquée après un
+      // rapatriement (une ancienne valeur du cloud ne doit pas l'annuler).
+      if (applied.includes(KEYS.gymExerciseConfigs)) migrateGymExerciseConfigNames();
+      return applied;
     })
     .catch((err) => {
       console.error("Impossible de récupérer les données du profil, on continue avec les données locales de cet appareil :", err);
+      return [];
     });
+}
+
+/* État de la connexion au cloud, pour l'accueil (3.3.0) : « Hors ligne » ou
+   « Envoi en attente » — pour voir que rien n'est perdu. */
+let firebaseConnected = null; // null = pas encore su
+function cloudSyncStatus() {
+  if (!currentUser) return null;
+  const offline = navigator.onLine === false || firebaseConnected === false;
+  if (offline) return { kind: "offline", text: firebaseDirtyKeys.size ? "Hors ligne · tes données sont gardées sur ce téléphone et partiront au retour du réseau" : "Hors ligne · tout est sur ce téléphone" };
+  if (firebaseDirtyKeys.size) return { kind: "pending", text: "Envoi en cours vers le cloud…" };
+  return null;
+}
+function refreshCloudSyncBadge() {
+  const el = document.getElementById("cloud-sync-badge");
+  if (!el) return;
+  const st = cloudSyncStatus();
+  el.hidden = !st;
+  el.className = "cloud-sync-badge" + (st ? " " + st.kind : "");
+  el.textContent = st ? st.text : "";
+}
+window.addEventListener("offline", refreshCloudSyncBadge);
+window.addEventListener("online", refreshCloudSyncBadge);
+// Firebase dit lui-même quand il est (re)connecté : on renvoie alors aussitôt
+// ce qui attend, sans dépendre de l'événement « online » du navigateur (qui
+// ne voit pas une 4G « connectée » mais inutilisable).
+let firebaseConnectionWatched = false;
+function watchFirebaseConnection() {
+  if (firebaseConnectionWatched) return;
+  firebaseConnectionWatched = true;
+  try {
+    firebase
+      .database()
+      .ref(".info/connected")
+      .on("value", (snap) => {
+        firebaseConnected = !!snap.val();
+        if (firebaseConnected && currentUser && firebaseDirtyKeys.size > 0) requestFirebasePush();
+        refreshCloudSyncBadge();
+      });
+  } catch (e) {
+    /* sans conséquence : l'événement « online » reste là */
+  }
 }
 
 // Reconstruire tout le markup à chaque appel recréerait l'icône à chaque
@@ -442,6 +475,9 @@ function resetLocalDomainDataForNewAccount() {
 // utilisateur connecté pouvait de même tomber sur des fonctions pas encore
 // chargées.
 let authStateKnown = false;
+// Premier lancement sur un appareil (rien en local) : attente maximale du
+// cloud avant d'ouvrir quand même (les données arrivent ensuite).
+const FIRST_PULL_WAIT_MS = 5000;
 function handleAuthStateChanged(user) {
   authStateKnown = true;
   if (user) {
@@ -459,32 +495,54 @@ function handleAuthStateChanged(user) {
       resetLocalDomainDataForNewAccount();
       saveJSONLocalOnly(KEYS.lastUid, user.uid);
     }
-    renderAuthLoadingScreen("Récupération de tes données...");
-    // Ordre volontaire et important : on pousse D'ABORD tout ce qui serait
-    // resté en attente d'une session précédente (voir persistFirebaseDirtyKeys
-    // — par exemple une séance enregistrée hors-ligne puis l'app fermée
-    // avant le retour du réseau), et seulement ENSUITE on rapatrie depuis le
-    // cloud. Dans l'autre sens, le rapatriement aurait écrasé localement
-    // cette séance pas encore renvoyée avec une version plus ancienne du
-    // cloud — elle aurait alors disparu, comme observé en pratique.
-    const flushPending = firebaseDirtyKeys.size > 0
-      ? withTimeout(requestFirebasePush(), 3000, () => {
-          console.warn("Envoi des données en attente trop long (probablement hors-ligne) — le rapatriement se fait quand même, on retentera l'envoi plus tard.");
-        })
-      : Promise.resolve();
-    flushPending
-      .then(() =>
-        withTimeout(pullFromFirebase(), 3000, () => {
-          console.warn("Récupération des données Firebase trop longue (probablement hors-ligne) — on continue avec les données locales de cet appareil.");
-        })
-      )
-      .finally(() => {
-        currentApp = "home";
-        render();
-        // Guide de première utilisation (20-onboarding.js) : une seule fois,
-        // pour un compte neuf, une fois ses données récupérées.
-        onboardingMaybeStart();
+    watchFirebaseConnection();
+    // Ouverture SANS attendre le réseau (3.3.0) : si cet appareil a déjà les
+    // données de ce compte, on affiche tout de suite l'accueil avec elles, et
+    // la synchro se fait en arrière-plan — envoi de ce qui attend, PUIS
+    // lecture du cloud, qui ne reprend que les domaines sans modification
+    // locale (voir pullFromFirebase). Hors ligne ou sur une connexion lente,
+    // l'app s'ouvre donc aussi vite qu'en ligne. Seul un tout premier
+    // lancement sur un appareil (rien en local) attend le cloud, au plus
+    // FIRST_PULL_WAIT_MS (et pas du tout si l'appareil se sait hors ligne).
+    const hasLocalCache = lastUid === user.uid;
+    const flushPending = () => (firebaseDirtyKeys.size > 0 ? withTimeout(requestFirebasePush(), 4000) : Promise.resolve());
+    const backgroundSync = () =>
+      flushPending()
+        .then(() => pullFromFirebase())
+        .then((applied) => {
+          // Données arrivées après l'ouverture : on rafraîchit l'accueil s'il
+          // est affiché (ailleurs, elles s'afficheront au prochain écran —
+          // on ne redessine pas sous les doigts de quelqu'un qui saisit).
+          if (applied && applied.length && currentApp === "home") render();
+          refreshCloudSyncBadge();
+        });
+    const openHome = () => {
+      currentApp = "home";
+      render();
+      // Guide de première utilisation (20-onboarding.js) : une seule fois,
+      // pour un compte neuf.
+      onboardingMaybeStart();
+    };
+    if (hasLocalCache) {
+      openHome();
+      backgroundSync();
+    } else if (navigator.onLine === false) {
+      openHome();
+      backgroundSync();
+    } else {
+      renderAuthLoadingScreen("Récupération de tes données...");
+      let opened = false;
+      const openOnce = () => {
+        if (opened) return;
+        opened = true;
+        openHome();
+      };
+      setTimeout(openOnce, FIRST_PULL_WAIT_MS);
+      backgroundSync().then(() => {
+        if (!opened) openOnce();
+        else if (currentApp === "home") render();
       });
+    }
   } else {
     currentUser = null;
     renderLoginScreen();

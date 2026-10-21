@@ -33,19 +33,20 @@ const touchable = (p, sel) => p.evaluate((sel) => { const e = document.querySele
     await p.click('[data-open-app="settings"]'); await p.waitForTimeout(300);
     await p.click('[data-open-settings="gym"]'); await p.waitForTimeout(300);
     await p.click('#add-config-btn'); await p.waitForTimeout(400);
-    s = await bubble(p); check('Formulaire : le nom d\'abord, « Suivant » grisé tant qu\'il est vide', /nom/.test(s.text) && s.disabled, JSON.stringify(s));
+    s = await bubble(p); check('Formulaire : la catégorie d\'abord, « Suivant » grisé tant qu\'elle n\'est pas choisie, nom grisé', /catégorie/.test(s.text) && s.disabled && await p.evaluate(() => document.getElementById('config-name-input').disabled), JSON.stringify(s));
+    await p.selectOption('#config-category-select', 'jambes'); await p.waitForTimeout(250); await next(p);
+    s = await bubble(p); check('Puis le nom (suggestions de la catégorie), « Suivant » grisé tant qu\'il est vide', /nom/.test(s.text) && s.disabled, JSON.stringify(s));
     check('…pendant ce temps, « Enregistrer » est bloqué', (await touchable(p, '#save-config-btn')) !== 'oui');
     await p.fill('#config-name-input', 'Leg extension'); await p.waitForTimeout(150);
     await p.click('.onb-prev'); await p.waitForTimeout(250); s = await bubble(p);
-    check('« Précédent » depuis le nom : étape « Ajouter un exercice » revisitée, « Suivant » actif (action déjà faite), formulaire intact', /Ajouter un exercice/.test(s.text) && !s.disabled && await p.evaluate(() => document.getElementById('config-name-input').value === 'Leg extension'), JSON.stringify(s));
+    check('« Précédent » depuis le nom : retour à la catégorie, « Suivant » actif (déjà choisie), formulaire intact', /catégorie/.test(s.text) && !s.disabled && await p.evaluate(() => document.getElementById('config-name-input').value === 'Leg extension'), JSON.stringify(s));
     await next(p); s = await bubble(p); check('« Suivant » : de retour au nom, saisie conservée', /nom/.test(s.text) && !s.disabled, JSON.stringify(s));
     await next(p);
     const seen = [];
     for (let i = 0; i < 8; i++) { s = await bubble(p); if (!s || !s.next || /Enregistrer/.test(s.text)) break; seen.push(s.text.slice(0, 22));
-      if (/catégorie \(obligatoire\)/.test(s.text)) { check('Catégorie : rien par défaut (« Choisir… »), « Suivant » grisé tant qu\'elle n\'est pas choisie', s.disabled && await p.evaluate(() => document.getElementById('config-category-select').value === ''), JSON.stringify(s)); await p.selectOption('#config-category-select', 'jambes'); await p.waitForTimeout(250); }
       if (/poids possibles/i.test(s.text)) { check('Poids possibles : « Suivant » grisé sans palier', s.disabled); await p.fill('#config-new-base-weight', '40'); await p.click('#config-add-base-weight-btn'); await p.waitForTimeout(200); await p.fill('#config-new-base-weight', '45'); await p.click('#config-add-base-weight-btn'); await p.waitForTimeout(200); }
       await next(p); }
-    check('Chaque option présentée : catégorie, suggestions, type de poids, poids, incréments, options avancées', seen.length >= 6 && /Astuce/.test(seen.join('|')) && /catégorie/.test(seen.join('|')) && /type de poids/i.test(seen.join('|')) && /Incrément auto/.test(seen.join('|')) && /Travail unilatéral/.test(seen.join('|')), JSON.stringify(seen));
+    check('Chaque option présentée : type de poids, poids, incréments, options avancées', seen.length >= 4 && /type de poids/i.test(seen.join('|')) && /Incrément auto/.test(seen.join('|')) && /Travail unilatéral/.test(seen.join('|')), JSON.stringify(seen));
     check('« Enregistrer » maintenant touchable', (await touchable(p, '#save-config-btn')) === 'oui');
     await p.click('#save-config-btn'); await p.waitForTimeout(500);
     s = await bubble(p); check('Exercice enregistré → partie 2/3', /2\/3/.test(s.part) && /Leg extension/.test(s.text) && await p.evaluate(() => gymExerciseConfigs.length === 1), JSON.stringify(s));
@@ -87,6 +88,7 @@ const touchable = (p, sel) => p.evaluate((sel) => { const e = document.querySele
     s = await bubble(p); check('Dans « Terminer l\'entraînement ? » : seul « Enregistrer la séance » est touchable', /Enregistre ta séance/.test(s.text) && (await touchable(p, '[data-end-save]')) === 'oui' && (await touchable(p, '[data-end-discard]')) !== 'oui' && (await touchable(p, '[data-end-continue]')) !== 'oui', JSON.stringify(s));
     await p.click('[data-end-save]'); await p.waitForTimeout(2200);
     s = await bubble(p); check('Séance enregistrée et affichée : la carte ouverte dans les séances, bouton « Terminer »', s && s.next === 'Terminer' && /La voici/.test(s.text) && await p.evaluate(() => sessions.length === 1 && currentApp === 'gym' && tab === 'history' && !!document.querySelector('.history-card .history-body')), JSON.stringify(s));
+    await p.waitForTimeout(400); // la lumière glisse jusqu'à la carte (transition)
     check('…la carte est éclairée (exercice et séries visibles)', await p.evaluate(() => { const c = document.querySelector('.history-card'); const sp = document.querySelector('.onb-spot').getBoundingClientRect(), r = c.getBoundingClientRect(); return sp.top <= r.top + 8 && /Leg extension/.test(c.textContent); }));
     await next(p);
     check('Guide terminé : plus de voile, tout est libre', await p.evaluate(() => !document.getElementById('onb-root') && JSON.parse(localStorage.getItem('gymlog:onboarding')).done === true) && (await touchable(p, '[data-new-entry], .back-btn-text')) === 'oui');

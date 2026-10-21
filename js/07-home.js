@@ -34,6 +34,7 @@ function renderHome() {
       </div>`
           : ""
       }
+      <div id="cloud-sync-badge" class="cloud-sync-badge" hidden></div>
       <div class="home-fluid-block">
         <div class="home-tile home-tile-wide ${liveSession ? "live-recording" : ""} ${needsGymOnboarding ? "home-tile-needs-setup" : ""}" data-open-app="live">
           ${liveSession ? `<div class="live-rec-dot"></div>` : ""}
@@ -99,6 +100,8 @@ function renderHome() {
     </div>
     ${bottomNavHTML("home")}
   `;
+  // Hors ligne / envoi en attente (voir cloudSyncStatus, 04-auth.js).
+  refreshCloudSyncBadge();
   document.querySelectorAll("[data-open-app]").forEach((el) => {
     el.addEventListener("click", () => {
       currentApp = el.dataset.openApp;

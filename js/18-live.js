@@ -37,7 +37,13 @@ function renderLiveApp(freshEntry) {
   `;
   document.querySelector("[data-live-back]").addEventListener("click", () => {
     if (liveStep === "category") {
-      goHome();
+      // Quitter une séance VIDE (aucune série faite ni en cours, pas de
+      // boucle) l'arrête, exactement comme « Terminer » sur une séance vide
+      // (voir endLiveSession) : pas de « Séance en cours... » fantôme sur
+      // l'accueil. Une séance avec au moins une série reste en cours en
+      // arrière-plan, comme avant.
+      if (liveSessionIsEmpty()) discardLiveSession();
+      else goHome();
       return;
     }
     if (liveStep === "log-set") {
@@ -1483,6 +1489,12 @@ function autoFinishLiveSetIfInProgress() {
 // déjà savoir ce qu'on voulait faire du résultat avant même d'agir) : on
 // tape "Terminer", puis seulement ensuite on choisit quoi faire de ce qui
 // a été fait cette fois-ci — enregistrer, supprimer, ou reprendre.
+function liveSessionIsEmpty() {
+  if (!liveSession) return true;
+  const hasSets = (liveSession.exercises || []).some((e) => e.sets.length > 0);
+  return !hasSets && !liveSession.setInProgressStartedAt && !liveSession.loop;
+}
+
 function endLiveSession() {
   // On ne touche à rien tant que le choix n'est pas fait — ni la série en
   // cours, ni une éventuelle boucle Gainage active : les finaliser dès ici

@@ -36,7 +36,7 @@ async function once(p, label, sel, kind, openFn) {
     await p.evaluate(() => { currentApp = 'gym'; gymTopMode = 'session'; tab = 'history'; openHistoryIds = { s1: true }; render(); }); await p.waitForTimeout(450);
     const kinds = await p.evaluate(() => [...document.querySelectorAll('.gx-lane-icon svg')].map((s) => s.getAttribute('data-anim-icon') + ':' + s.getAttribute('data-anim')).join(' '));
     check('Chaque couloir (et la frise de gainage) a l\'icône de son activité, animée une fois', kinds === 'rower:once bike:once stopwatch:once plank:once', kinds);
-    const before = await pose(p, '.gx-lane-icon svg[data-anim-icon="bike"]'); await p.waitForTimeout(2400); // marge : le départ de l'animation suit la 1re image affichée
+    const before = await pose(p, '.gx-lane-icon svg[data-anim-icon="bike"]'); await p.waitForTimeout(2800); // marge : le départ de l'animation suit la 1re image affichée
     check('…toutes figées après 2 s', await p.evaluate(() => !document.querySelector('svg[data-anim]')) && before !== (await pose(p, '.gx-lane-icon svg[data-anim-icon="bike"]')));
     await p.waitForTimeout(150); check('…la boucle d\'animation s\'est arrêtée (rien ne tourne en fond)', await p.evaluate(() => animIconsTicking === false));
     console.log('\n=== Historiques Course, Natation, Vélo ===');

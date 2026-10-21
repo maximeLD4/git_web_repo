@@ -1,0 +1,33 @@
+// Quitter la Séance en direct (‹ en haut à gauche) : une séance VIDE s'arrête comme avec « Terminer » ; une séance
+// avec au moins une série reste en cours. Usage : node tools/tests/live_leave.js <dossier> [port]
+const { chromium } = require('playwright');
+const DIR = process.argv[2] || 'gymlog', PORT = process.argv[3] || '8831'; let ok = 0, ko = 0;
+const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undefined ? '  → ' + d : ''}`); c ? ok++ : ko++; };
+(async () => { const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })).newPage(); await p.route('**/gstatic.com/**', (r) => r.abort());
+  await p.addInitScript(() => { const noop = () => {}; const a = () => ({ onAuthStateChanged: noop, signOut: noop, setPersistence: () => Promise.resolve() }); a.Auth = { Persistence: { LOCAL: 'local' } }; window.firebase = { initializeApp: noop, auth: a, database: () => ({ ref: () => ({ once: () => Promise.resolve({ val: () => null }), set: () => Promise.resolve() }) }) }; });
+  p.errs = []; p.on('pageerror', (e) => p.errs.push(e.message)); await p.goto(`http://localhost:${PORT}/${DIR}/index.html`, { waitUntil: 'load' }); await p.waitForFunction(() => { try { currentUser; return typeof render === 'function'; } catch (e) { return false; } });
+  const home = () => p.evaluate(() => ({ app: currentApp, session: !!liveSession, stored: localStorage.getItem('gymlog:live-session'), eyebrow: (document.querySelector('.home-tile-eyebrow') || {}).textContent }));
+  const enter = () => p.evaluate(() => { currentUser = { uid: 'u' }; gymExerciseConfigs = [{ id: 'c', name: 'Squat', category: 'jambes', baseWeights: [60, 70] }]; sessionPlans = [{ id: 'P', label: 'Jambes', exercises: [{ id: 'p1', name: 'Squat', exType: 'muscu', category: 'jambes', sets: [{ id: 'a', weight: 60, reps: 10 }] }] }]; currentApp = 'home'; render(); document.querySelector('[data-open-app="live"]').click(); });
+  await enter(); await p.waitForTimeout(250); await p.click('[data-live-back]'); await p.waitForTimeout(250); let h = await home();
+  check('Choix du plan puis ‹ : séance arrêtée, accueil « Prêt quand tu l\'es »', h.app === 'home' && !h.session && (h.stored === 'null' || !h.stored) && /Prêt/.test(h.eyebrow), JSON.stringify(h));
+  await enter(); await p.waitForTimeout(250); await p.click('[data-live-pick-plan="P"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => [...document.querySelectorAll('.live-plan-row')][0].click()); await p.waitForTimeout(250);
+  await p.click('[data-live-back]'); await p.waitForTimeout(200);
+  check('Exercice ouvert sans rien lancer puis ‹ : retour au menu de la séance (comme avant)', await p.evaluate(() => currentApp === 'live' && liveStep === 'category' && !!liveSession));
+  await p.click('[data-live-back]'); await p.waitForTimeout(250); h = await home();
+  check('…puis ‹ encore : séance vide → arrêtée', h.app === 'home' && !h.session && /Prêt/.test(h.eyebrow), JSON.stringify(h));
+  await enter(); await p.waitForTimeout(250); await p.click('[data-live-pick-plan="P"]'); await p.waitForTimeout(250);
+  await p.evaluate(() => [...document.querySelectorAll('.live-plan-row')][0].click()); await p.waitForTimeout(200);
+  await p.click('[data-live-start-set]'); await p.waitForTimeout(200); await p.click('[data-live-back]'); await p.waitForTimeout(200);
+  check('Série en cours puis ‹ : la série est finie (comme avant), la séance N\'EST PAS vide', await p.evaluate(() => !!liveSession && liveSession.exercises.some((e) => e.sets.length === 1)));
+  await p.click('[data-live-back]'); await p.waitForTimeout(250); h = await home();
+  check('…‹ encore : la séance reste en cours en arrière-plan (« Séance en cours... »)', h.app === 'home' && h.session && /Séance en cours/.test(h.eyebrow), JSON.stringify(h));
+  await p.click('[data-open-app="live"]'); await p.waitForTimeout(250);
+  check('…et on la retrouve en revenant', await p.evaluate(() => currentApp === 'live' && liveSession.exercises.some((e) => e.sets.length === 1)));
+  await p.evaluate(() => { discardLiveSession(); }); await p.waitForTimeout(150);
+  await enter(); await p.waitForTimeout(250); await p.click('[data-live-pick-plan=""]'); await p.waitForTimeout(200);
+  await p.evaluate(() => { liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="rameur"]').click(); startLiveSet(); liveActiveExerciseId = null; liveStep = 'category'; renderLiveStep(); }); await p.waitForTimeout(200);
+  await p.click('[data-live-back]'); await p.waitForTimeout(250); h = await home();
+  check('Chrono de série encore en cours au menu puis ‹ : PAS arrêtée (rien n\'est perdu)', h.session && /Séance en cours/.test(h.eyebrow), JSON.stringify(h));
+  check('    aucune erreur JS', p.errs.length === 0, p.errs.join(' | ') || 'aucune');
+  console.log(`\n${ok} réussis, ${ko} échoués`); await b.close(); process.exit(ko ? 1 : 0); })();

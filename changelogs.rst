@@ -7,6 +7,101 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.3.0 - 2026-10-21
+====================
+
+- **Correctif important : une séance enregistrée hors ligne (ou pendant une connexion
+  lente) pouvait disparaître au retour du réseau.** À l'ouverture, l'app lit le cloud ;
+  hors ligne ou sur une mauvaise 4G, cette lecture restait en attente et arrivait plus
+  tard — et remplaçait alors, sur l'appareil, tout ce qui avait été fait entre-temps,
+  séance comprise ; au prochain envoi, le cloud la perdait à son tour. Reproduit : une
+  séance enregistrée pendant une synchro lente disparaissait de l'appareil.
+  - Désormais, une lecture du cloud **ne reprend un domaine** (séances, plans,
+    exercices, poids…) **que s'il n'a aucune modification locale en attente d'envoi, ni
+    de modification faite pendant cette lecture**. Sinon le local est gardé, et c'est lui
+    qui part vers le cloud.
+  - Quand Firebase se reconnecte (même si le téléphone se croyait déjà « en ligne »), ce
+    qui attend est renvoyé aussitôt.
+- **L'app s'ouvre sans attendre le réseau.** Si ce téléphone a déjà les données du compte,
+  l'accueil s'affiche tout de suite avec elles (environ 0,5 s, au lieu de 3 à 6 s d'attente
+  du cloud, et plus jamais bloqué sur une mauvaise connexion) ; la synchro se fait en
+  arrière-plan : envoi de ce qui attend, puis lecture du cloud, qui rafraîchit l'accueil
+  s'il est affiché (sans jamais redessiner un écran où l'on est en train de saisir).
+  Seul un tout premier lancement sur un téléphone (rien en local) attend le cloud, au plus
+  5 s.
+  - Service worker : la page d'entrée attend le réseau 1,5 s au lieu de 3 avant de
+    prendre la version en cache ; sur une connexion lente, une nouvelle version de l'app
+    s'installe en arrière-plan et sert à l'ouverture suivante.
+- **Accueil : un bandeau quand il y a quelque chose à savoir** — « Hors ligne · tes données
+  sont gardées sur ce téléphone et partiront au retour du réseau », ou « Envoi en cours vers
+  le cloud… ». Rien quand tout est synchronisé.
+- Vérifié : nouvelle batterie ``tools/tests/offline_sync.js`` (18 contrôles, Firebase simulé
+  hors ligne / très lent, dans l'ordre le pire au retour du réseau) : ouverture hors ligne
+  en moins de 2 s, séance hors ligne gardée puis envoyée, séance enregistrée pendant une
+  synchro de 8 s non écrasée, données d'un autre appareil bien reçues, bandeau affiché puis
+  retiré ; l'ancienne version échouait (séance perdue, ouverture en 3,4 s). Les autres
+  batteries, sécurité comprise, passent toujours.
+
+3.2.1 - 2026-10-21
+====================
+
+- **Réglages > Exercices : d'abord la catégorie, PUIS le nom.** La ligne « Catégorie » passe
+  en tête de la section « Exercice », avant « Nom ».
+  - Tant qu'aucune catégorie n'est choisie, le champ « Nom » est grisé (« Choisis d'abord la
+    catégorie ») et aucune suggestion n'est proposée.
+  - Dès qu'elle est choisie, le curseur passe dans « Nom » et les suggestions **de cette
+    catégorie** se déplient dessous ; plus de suggestions des autres catégories.
+  - À l'enregistrement, la catégorie manquante est signalée avant le nom (dans l'ordre du
+    formulaire).
+- Guide de démarrage : l'étape « catégorie » vient avant l'étape « nom ».
+- Vérifié : ``session_detail.js`` (45 contrôles, dont : catégorie en premier, nom grisé sans
+  catégorie et sans suggestion, curseur et suggestions dès la catégorie choisie),
+  ``onboarding.js`` (46, nouvel ordre et « Précédent » du nom vers la catégorie). Les autres
+  batteries passent toujours.
+
+3.2.0 - 2026-10-21
+====================
+
+- **Réglages > Exercices : le nom et les suggestions ne font plus qu'un.** Fini le champ
+  « Nom » d'un côté et, plus bas, un menu « Suggestions » qui remplissait le nom puis restait
+  affiché sur « Choisir… » (on ne voyait pas ce qui avait été choisi). Désormais, quand on
+  touche le champ « Nom », les suggestions se déplient juste dessous, dans un encart grisé :
+  - elles se filtrent au fur et à mesure de la frappe (sans tenir compte des accents ni des
+    majuscules : « halt » trouve « Développé haltères »), 6 au plus ;
+  - catégorie déjà choisie : seulement les siennes ; sinon, toutes, chacune avec sa
+    catégorie à droite — et la choisir **remplit aussi la catégorie** ;
+  - en toucher une remplit le nom (le type de poids suit, comme quand on le tape) ;
+  - rien ne s'affiche quand le champ n'est pas touché, ni quand le nom tapé est déjà
+    exactement une suggestion ; les noms déjà utilisés par un autre exercice ne sont pas
+    proposés.
+  - Même chose pour le formulaire Gainage.
+- Guide de démarrage : l'étape du nom éclaire le champ et ses suggestions (« tape-le, ou
+  touche une suggestion sous le champ — elle remplit aussi la catégorie ») ; l'ancienne étape
+  « Suggestions » disparaît.
+- Vérifié : ``session_detail.js`` (44 contrôles : suggestions de la catégorie, filtre sans
+  accents, nom rempli, catégorie remplie depuis une suggestion d'une autre catégorie, liste
+  absente quand le nom est déjà une suggestion, repliée quand on quitte le champ, type de
+  poids qui suit), ``settings_layout.js`` (50, dont le Gainage), ``dropdowns.js`` (27 : trois
+  menus dans le formulaire, plus de menu « Suggestions »), ``onboarding.js`` (46). Les autres
+  batteries passent toujours.
+
+3.1.3 - 2026-10-21
+====================
+
+- **Quitter une Séance en direct vide l'arrête**, exactement comme « Terminer » sur une
+  séance vide. Avant, revenir à l'accueil avec « ‹ » sans avoir fait la moindre série
+  laissait une séance « en cours » fantôme (« Séance en cours... » sur l'accueil).
+  - « Vide » = aucune série faite, aucune série au chrono en cours, pas de boucle de
+    gainage en cours. Le plan éventuellement choisi est simplement oublié.
+  - Une séance avec au moins une série (ou un chrono / une boucle qui tourne) reste en
+    cours en arrière-plan, comme avant : rien n'est jamais perdu.
+  - Depuis l'écran d'un exercice, « ‹ » ramène toujours d'abord au menu de la séance ;
+    c'est en quittant ce menu que la séance vide s'arrête.
+- Vérifié : nouvelle batterie ``tools/tests/live_leave.js`` (8 contrôles) : quitter après le
+  choix du plan, après avoir ouvert un exercice sans le lancer (deux « ‹ ») → séance
+  arrêtée ; avec une série faite → séance gardée, retrouvée en revenant ; avec un chrono qui
+  tourne → gardée. Les autres batteries passent toujours.
+
 3.1.2 - 2026-10-21
 ====================
 

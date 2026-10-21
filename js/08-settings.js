@@ -363,6 +363,79 @@ function gymEquipmentHint(d) {
   return `Choisi d'après le nom : dans l'historique, ${what}. Touche un autre type pour le changer.`;
 }
 
+/* ---------- Nom + suggestions, en un seul champ (3.2.0) ----------
+   Avant : un champ « Nom » et, plus bas, un menu « Suggestions » qui
+   remplissait le nom puis revenait sur « Choisir… ». Maintenant les
+   suggestions se déplient SOUS le champ quand on le touche, filtrées au fur
+   et à mesure de la frappe (sans tenir compte des accents ni des
+   majuscules) ; en toucher une remplit le nom. Rien ne s'affiche quand le
+   champ n'a pas le focus, ni quand le nom tapé est déjà exactement une
+   suggestion. Au plus 6 propositions. */
+const NAME_SUGGEST_MAX = 6;
+const nameSuggestNorm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+function gymNameSuggestionCandidates() {
+  const used = new Set(gymExerciseConfigs.filter((c) => c.id !== gymSettingsEditingConfigId).map((c) => nameSuggestNorm(c.name)));
+  // D'abord la catégorie, PUIS le nom (3.2.1) : sans catégorie, pas de
+  // suggestion (et le champ est grisé).
+  const cat = gymSettingsFormDraft.category;
+  if (!cat) return [];
+  const cats = GYM_EXERCISE_CATEGORIES.filter((c) => c.key === cat);
+  const out = [];
+  const seen = new Set();
+  cats.forEach((c) =>
+    (EXERCISE_SUGGESTIONS[c.key] || []).forEach((n) => {
+      const k = nameSuggestNorm(n);
+      if (used.has(k) || seen.has(k)) return;
+      seen.add(k);
+      out.push({ name: n, cat: c.key, catLabel: cat ? "" : c.label });
+    })
+  );
+  return out;
+}
+function gainageNameSuggestionCandidates() {
+  const used = new Set(gainageExerciseConfigs.filter((c) => c.id !== gainageSettingsEditingConfigId).map((c) => nameSuggestNorm(c.name)));
+  return (EXERCISE_SUGGESTIONS.gainage || []).filter((n) => !used.has(nameSuggestNorm(n))).map((n) => ({ name: n, cat: "", catLabel: "" }));
+}
+function attachNameSuggestions(input, panel, getCandidates, onPick) {
+  if (!input || !panel) return;
+  let hideTimer = null;
+  const renderPanel = () => {
+    const q = nameSuggestNorm(input.value);
+    const all = getCandidates();
+    const exact = all.some((c) => nameSuggestNorm(c.name) === q);
+    const list = exact ? [] : all.filter((c) => !q || nameSuggestNorm(c.name).includes(q)).slice(0, NAME_SUGGEST_MAX);
+    if (!list.length || document.activeElement !== input) {
+      panel.hidden = true;
+      panel.innerHTML = "";
+      return;
+    }
+    panel.innerHTML = list
+      .map((c, i) => `<button type="button" class="name-suggest-item" data-i="${i}"><span class="name-suggest-name">${escapeHTML(c.name)}</span>${c.catLabel ? `<span class="name-suggest-cat">${escapeHTML(c.catLabel)}</span>` : ""}</button>`)
+      .join("");
+    panel.hidden = false;
+    panel.querySelectorAll(".name-suggest-item").forEach((btn) => {
+      // pointerdown + preventDefault : le champ garde le focus jusqu'au choix.
+      btn.addEventListener("pointerdown", (e) => e.preventDefault());
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+      btn.addEventListener("click", () => {
+        const c = list[Number(btn.dataset.i)];
+        panel.hidden = true;
+        onPick(c.name, c.cat);
+      });
+    });
+  };
+  input.addEventListener("focus", () => {
+    clearTimeout(hideTimer);
+    renderPanel();
+  });
+  input.addEventListener("input", renderPanel);
+  input.addEventListener("blur", () => {
+    hideTimer = setTimeout(() => {
+      panel.hidden = true;
+    }, 150);
+  });
+}
+
 function gymSettingsFormHTML() {
   const chips = gymSettingsFormDraft.baseWeights.length
     ? [...gymSettingsFormDraft.baseWeights]
@@ -377,39 +450,26 @@ function gymSettingsFormHTML() {
   const usedNamesLower = new Set(
     gymExerciseConfigs.filter((c) => c.id !== gymSettingsEditingConfigId).map((c) => c.name.trim().toLowerCase())
   );
-  const suggestions = (EXERCISE_SUGGESTIONS[gymSettingsFormDraft.category] || []).filter(
-    (n) => !usedNamesLower.has(n.trim().toLowerCase())
-  );
-  // Tout le formulaire est bâti sur le modèle des sections « Incrément » et
-  // « Options avancées » : un titre de section, puis des lignes « libellé à
-  // gauche, réglage à droite » séparées par un filet. Catégorie, type de poids
-  // et suggestions sont donc des menus en bout de ligne (comme « Alterner
-  // avec ») plutôt que des rangées de puces. Voir « RÉGLAGES > EXERCICES »
-  // dans styles.css.
+  // Suggestions de noms : intégrées au champ « Nom » (3.2.0) — une liste qui
+  // se déplie sous le nom quand on le touche, filtrée par ce qu'on tape (voir
+  // attachNameSuggestions). Si la catégorie est déjà choisie, seulement les
+  // siennes ; sinon toutes, avec leur catégorie, qui sera reprise.
   const opt = (v, label, sel) => `<option value="${String(v).replace(/"/g, "&quot;")}" ${sel ? "selected" : ""}>${label}</option>`;
-  const suggestionRowHTML = suggestions.length
-    ? `<label class="field-list-row" for="config-suggest-select">
-          <span style="flex:1;">Suggestions</span>
-          <select class="field-select app-select app-select-row" id="config-suggest-select">
-            ${opt("", "Choisir…", true)}${suggestions.map((n) => opt(n, n, false)).join("")}
-          </select>
-        </label>`
-    : "";
   return `
     <div class="exercise-card exercise-form">
       <div class="home-section-label">Exercice</div>
       <div class="field-list-card">
-        <label class="field-list-row" for="config-name-input">
-          <span>Nom</span>
-          <input type="text" id="config-name-input" placeholder="Ex. Leg press, Développé couché…" value="${(gymSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
-        </label>
         <label class="field-list-row" for="config-category-select">
           <span style="flex:1;">Catégorie</span>
           <select class="field-select app-select app-select-row" id="config-category-select">
             ${gymSettingsFormDraft.category ? "" : opt("", "Choisir…", true)}${GYM_EXERCISE_CATEGORIES.map((t) => opt(t.key, t.label, gymSettingsFormDraft.category === t.key)).join("")}
           </select>
         </label>
-        ${suggestionRowHTML}
+        <label class="field-list-row ${gymSettingsFormDraft.category ? "" : "field-list-row-locked"}" for="config-name-input">
+          <span>Nom</span>
+          <input type="text" id="config-name-input" placeholder="${gymSettingsFormDraft.category ? "Tape un nom ou choisis…" : "Choisis d'abord la catégorie"}" autocomplete="off" ${gymSettingsFormDraft.category ? "" : "disabled"} value="${(gymSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
+        </label>
+        <div class="name-suggest" id="config-name-suggest" hidden></div>
         <label class="field-list-row" for="config-equipment-select">
           <span style="flex:1;">Type de poids</span>
           <select class="field-select app-select app-select-row" id="config-equipment-select">
@@ -662,18 +722,9 @@ function gainageSettingsFormHTML() {
       <div class="field-list-card">
         <label class="field-list-row" for="gainage-config-name-input">
           <span>Nom</span>
-          <input type="text" id="gainage-config-name-input" placeholder="Ex. Planche, Gainage latéral…" value="${(gainageSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
+          <input type="text" id="gainage-config-name-input" placeholder="Tape un nom ou choisis…" autocomplete="off" value="${(gainageSettingsFormDraft.name || "").replace(/"/g, "&quot;")}">
         </label>
-        ${
-          suggestions.length
-            ? `<label class="field-list-row" for="gainage-suggest-select">
-          <span style="flex:1;">Suggestions</span>
-          <select class="field-select app-select app-select-row" id="gainage-suggest-select">
-            ${opt("", "Choisir…", true)}${suggestions.map((n) => opt(n, n, false)).join("")}
-          </select>
-        </label>`
-            : ""
-        }
+        <div class="name-suggest" id="gainage-name-suggest" hidden></div>
       </div>
       <div class="home-section-label">Boucle par défaut</div>
       <div class="field-list-card">
@@ -813,7 +864,8 @@ function attachGymSettingsListeners() {
   categorySelect.addEventListener("change", () => {
     syncFormFromInputs();
     gymSettingsFormDraft.category = categorySelect.value;
-    gymSettingsFocusTarget = null;
+    // Catégorie choisie : on passe au nom (ses suggestions se déplient).
+    gymSettingsFocusTarget = gymSettingsFormDraft.name ? null : "name";
     renderGymSettingsContent();
   });
   // Tant qu'aucun type n'a été touché, le type sélectionné suit le nom tapé
@@ -834,16 +886,20 @@ function attachGymSettingsListeners() {
     gymSettingsFocusTarget = null;
     renderGymSettingsContent();
   });
-  // Choisir une suggestion remplit le nom, puis le menu revient sur
-  // « Choisir… » : c'est une aide à la saisie, pas un réglage.
-  const suggestSelect = document.getElementById("config-suggest-select");
-  if (suggestSelect)
-    suggestSelect.addEventListener("change", () => {
-      if (!suggestSelect.value) return;
-      nameInput.value = suggestSelect.value;
-      suggestSelect.value = "";
-      updateEquipmentFromName();
-    });
+  // Suggestions sous le nom : en choisir une remplit le nom ET, si la
+  // catégorie n'est pas encore choisie, prend celle de la suggestion.
+  attachNameSuggestions(
+    nameInput,
+    document.getElementById("config-name-suggest"),
+    () => gymNameSuggestionCandidates(),
+    (name, cat) => {
+      syncFormFromInputs();
+      gymSettingsFormDraft.name = name;
+      if (!gymSettingsFormDraft.category && cat) gymSettingsFormDraft.category = cat;
+      gymSettingsFocusTarget = null;
+      renderGymSettingsContent();
+    }
+  );
   // Poids en cours de saisie dans "Ajouter un poids (kg)" : null si le champ est
   // vide, NaN si ce qui est tapé n'est pas un poids valide, sinon le nombre.
   // Partagé par le bouton "Ajouter" ET par "Enregistrer" (voir plus bas) : les
@@ -964,12 +1020,13 @@ function attachGymSettingsListeners() {
       if (slot.scrollIntoView) slot.scrollIntoView({ block: "nearest" });
     };
     const name = capitalizeFirst(gymSettingsFormDraft.name.trim());
-    if (!name) {
-      fail("Donne un nom à cet exercice.");
-      return;
-    }
+    // Dans l'ordre du formulaire : la catégorie d'abord, puis le nom.
     if (!GYM_EXERCISE_CATEGORIES.some((c) => c.key === gymSettingsFormDraft.category)) {
       fail("Choisis une catégorie.");
+      return;
+    }
+    if (!name) {
+      fail("Donne un nom à cet exercice.");
       return;
     }
     if (gymSettingsFormDraft.baseWeights.length === 0) {
@@ -1093,20 +1150,18 @@ function attachGainageSettingsListeners() {
   nameInput.addEventListener("input", () => {
     gainageSettingsFormDraft.name = nameInput.value;
   });
-  const gainageSuggest = document.getElementById("gainage-suggest-select");
-  [gainageSuggest].filter(Boolean).forEach((sel) => {
-    sel.addEventListener("change", () => {
-      if (!sel.value) return;
-      nameInput.value = sel.value;
-      sel.value = "";
-      // Ce clic ne passe jamais par l'événement "input" du champ (voir
-      // juste au-dessus) — sans cette ligne, le nom réapparaît correct à
-      // l'écran mais reste vide dans l'état, et le premier stepper touché
-      // (qui redessine tout depuis l'état) l'efface aussitôt.
-      gainageSettingsFormDraft.name = nameInput.value;
-      nameInput.focus();
-    });
-  });
+  attachNameSuggestions(
+    nameInput,
+    document.getElementById("gainage-name-suggest"),
+    () => gainageNameSuggestionCandidates(),
+    (name) => {
+      nameInput.value = name;
+      // Sans passer par l'événement « input » : on reporte le nom dans
+      // l'état, sinon le premier − / + (qui redessine depuis l'état)
+      // l'effacerait.
+      gainageSettingsFormDraft.name = name;
+    }
+  );
   // Mêmes bornes que la boucle en Séance en direct (voir attachLiveSetFormListeners).
   const loopRoundsMinus = document.querySelector("[data-gainage-loop-rounds-minus]");
   const loopRoundsPlus = document.querySelector("[data-gainage-loop-rounds-plus]");

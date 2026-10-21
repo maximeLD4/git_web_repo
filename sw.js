@@ -16,13 +16,16 @@
 // BUILD_VERSION est posée par tools/release.py : les octets de ce fichier
 // changent à chaque publication, ce qui déclenche l'installation d'un nouveau
 // Service Worker (donc d'un nouveau cache complet) et la suppression des anciens.
-const BUILD_VERSION = "3.1.2";
+const BUILD_VERSION = "3.3.0";
 const CACHE_PREFIX = "gymlog-shell-";
 const CACHE_NAME = CACHE_PREFIX + BUILD_VERSION;
 
 // Réseau trop lent ou "connecté au wifi sans internet" : on ne bloque pas l'app,
 // on retombe sur le cache après ce délai (portes d'entrée seulement).
-const ENTRY_TIMEOUT_MS = 3000;
+// 1,5 s (3 s avant 3.3.0) : sur une connexion lente, on ouvre vite avec la
+// version en cache plutôt que d'attendre le réseau ; la nouvelle version
+// (s'il y en a une) s'installe en arrière-plan et sert à l'ouverture suivante.
+const ENTRY_TIMEOUT_MS = 1500;
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(() => resolve(null), ms));
