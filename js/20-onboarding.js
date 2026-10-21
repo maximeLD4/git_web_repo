@@ -76,7 +76,8 @@ const ONB_STEPS = [
   /* ---- Partie 2 : le premier plan ---- */
   { part: 2, start: true, target: null, text: () => `Bravo, « ${onb.exerciseName || "ton exercice"} » est prêt ! Maintenant, prépare ton premier plan avec.`, next: "Suivant", enter: onbGoHome },
   { part: 2, target: '[data-open-app="gym"]', text: "Ouvre « Salle de sport ».", done: () => currentApp === "gym" },
-  { part: 2, target: '[data-gym-top-mode="plan"]', text: "Choisis « Plan à préparer ».", done: () => draft && draft.kind === "plan" && !!document.getElementById("log-label") },
+  { part: 2, target: '[data-gym-top-mode="plan"]', text: "En haut, choisis « Plan à préparer » : la liste de tes plans s'affiche.", done: () => gymTopMode === "plan" && (tab !== "log" ? !!document.querySelector("[data-new-entry]") : !!document.getElementById("log-label")) },
+  { part: 2, target: "[data-new-entry]", skip: () => tab === "log" && !!document.getElementById("log-label"), text: "Touche « Ajouter un plan ».", done: () => !!document.getElementById("log-label") },
   { part: 2, target: () => onbRow("#log-label"), text: "Donne un nom à ton plan (par exemple « Jambes »).", next: "Suivant", ready: () => !!(document.getElementById("log-label") || {}).value?.trim() },
   { part: 2, target: "#add-exercise-btn", text: "Touche « Ajouter un exercice ».", done: () => !!onbPlanCard() },
   { part: 2, target: () => { const c = onbPlanCard(); return c ? c.querySelector('[data-set-type="muscu"]') : null; }, skip: () => { const c = onbPlanCard(); return !!c && !!c.querySelector("[data-category-toggle]"); }, text: "C'est un exercice de musculation : choisis « Muscu ».", done: () => { const c = onbPlanCard(); return !!c && !!c.querySelector("[data-category-toggle]"); } },

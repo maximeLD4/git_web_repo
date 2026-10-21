@@ -102,6 +102,9 @@ function renderHome() {
   document.querySelectorAll("[data-open-app]").forEach((el) => {
     el.addEventListener("click", () => {
       currentApp = el.dataset.openApp;
+      // Salle de sport : on arrive toujours sur la liste ; le formulaire
+      // s'ouvre avec « Ajouter » (voir gymAddCardHTML).
+      if (currentApp === "gym") tab = "history";
       render();
     });
   });

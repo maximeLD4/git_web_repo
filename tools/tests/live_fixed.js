@@ -24,10 +24,10 @@ const STATES = {
   'Gainage, boucle : travail': () => { document.querySelector('[data-live-start-loop]').click(); },
   'Gainage, boucle : repos': () => { document.querySelector('[data-live-skip-loop-phase]').click(); },
 };
-(async () => { const b = await chromium.launch();
+(async () => { const b = await chromium.launch(); const primPos = {};
   for (const hints of [false, true]) {
     console.log(`\n=== Textes d'aide ${hints ? 'ACTIVÉS' : 'masqués (par défaut)'} ===`);
-    for (const h of HEIGHTS) {
+    for (const h of HEIGHTS) { primPos[h] = [];
       const ctx = await b.newContext({ viewport: { width: 375, height: h }, serviceWorkers: 'block' }); const p = await ctx.newPage(); await p.route('**/gstatic.com/**', (r) => r.abort());
       await p.addInitScript(() => { const noop = () => {}; const a = () => ({ onAuthStateChanged: noop, signOut: noop, setPersistence: () => Promise.resolve() }); a.Auth = { Persistence: { LOCAL: 'local' } }; window.firebase = { initializeApp: noop, auth: a, database: () => ({ ref: () => ({ once: () => Promise.resolve({ val: () => null }), set: () => Promise.resolve() }) }) }; });
       p.errs = []; p.on('pageerror', (e) => p.errs.push(e.message)); await p.goto(`http://localhost:${PORT}/${DIR}/index.html`, { waitUntil: 'load' }); await p.waitForFunction(() => { try { currentUser; return typeof render === 'function'; } catch (e) { return false; } });
@@ -38,7 +38,12 @@ const STATES = {
           const over = (el) => el ? el.scrollHeight - el.clientHeight : 0; const last = acts ? acts.lastElementChild.getBoundingClientRect().bottom : 0;
           return { form: !!sc, scrollable: sc ? getComputedStyle(sc).overflowY : '', hidden: Math.max(over(sc), over(body)), btnsIn: !acts || last <= innerHeight + 0.5 }; });
         check(`${String(h).padEnd(4)} px — ${name}`, r.form && r.scrollable === 'hidden' && r.hidden <= 1 && r.btnsIn, r.hidden > 1 ? `${r.hidden}px de trop` : r.btnsIn ? undefined : 'boutons hors écran');
+        // Bouton principal (Lancer / Finir / Arrêter / Démarrer) : où est-il ?
+        const prim = await p.evaluate(() => { const b = document.querySelector('[data-live-start-set], [data-live-finish-set], [data-live-stop-loop], [data-live-start-loop]'); if (!b) return null; const r = b.getBoundingClientRect(); return Math.round(r.top) + '/' + Math.round(r.bottom); });
+        if (prim) (primPos[h] = primPos[h] || []).push(name + ' @ ' + prim);
       }
+      { const pos = new Set((primPos[h] || []).map((x) => x.split(' @ ')[1]));
+        check(`${String(h).padEnd(4)} px — bouton principal (Lancer / Finir / Arrêter / Démarrer) TOUJOURS au même endroit, exercice jumelé ou non`, pos.size === 1 && (primPos[h] || []).length >= 8, JSON.stringify(primPos[h])); }
       if (p.errs.length) check('    aucune erreur JS', false, p.errs.join(' | ')); await ctx.close();
     }
   }

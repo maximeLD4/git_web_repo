@@ -7,6 +7,90 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.1.2 - 2026-10-21
+====================
+
+- **Séance en direct : le bouton principal ne bouge plus.** « Lancer … », « Finir la
+  série », « Arrêter la boucle » et « Démarrer la boucle » sont désormais TOUJOURS au même
+  endroit, juste au-dessus du bouton du bas (« Changer d'exercice » / « Annuler »).
+  - Le bouton de bascule vers l'exercice jumelé (« ⇄ … », quand un exercice a « Alterner
+    avec ») passe **au-dessus** de « Lancer » — avant, il s'intercalait dessous et faisait
+    remonter « Lancer » seulement pour ces exercices. Même chose pour « Lancer en boucle »
+    (gainage).
+  - Le bouton du bas a la même hauteur partout (avec ou sans icône) : « Démarrer la
+    boucle » tombe pile au même endroit que les autres.
+- Vérifié : ``tools/tests/live_fixed.js`` (80 contrôles), dont quatre nouveaux — à chacune
+  des 4 hauteurs d'écran, la position du bouton principal est identique sur les 9 écrans
+  du direct (Muscu prêt avec exercice jumelé, série en cours, repos ; Rameur ; Gainage prêt,
+  réglage de la boucle, travail, repos). Les autres batteries passent toujours.
+
+3.1.1 - 2026-10-21
+====================
+
+- **Correctif : « + Exercice hors plan » hors d'atteinte.** L'écran de la Séance en direct
+  ne défile pas (voulu, 2.88.0) : avec un plan un peu long, le bouton passait sous le bas
+  de l'écran. Désormais **seule la liste des exercices du plan défile**, entre « À suivre »
+  et le bouton, et **« + Exercice hors plan » reste en pied d'écran**, toujours visible. Le
+  reste (bandeau du chrono, « Ton plan », « À suivre ») ne bouge pas.
+- Vérifié : ``tools/tests/live_plan.js`` (16 contrôles), dont trois nouveaux sur un iPhone SE
+  (667 px) avec un plan de 12 exercices et un repos en cours : bouton visible et touchable,
+  seule la liste défile, le 12e exercice atteignable en la faisant défiler.
+
+3.1.0 - 2026-10-21
+====================
+
+- **Séance en direct avec un plan : le plan seul à l'écran, dans son ordre.** Avant, le
+  menu montrait à la fois les exercices du plan (en grille à deux colonnes) ET tout le
+  choix libre (Muscu / Cardio, catégories, tous les exercices) : beaucoup trop. Désormais :
+  - **« À suivre »** en grand : le premier exercice du plan pas encore fait, dans l'ordre
+    du plan, avec son rang (« 2/7 ») et son résumé (« 3 séries · 10/8 × 40–50 kg ») ; un
+    appui l'ouvre, prêt à lancer.
+  - Dessous, **la liste numérotée de tous les exercices, dans l'ordre du plan** (une seule
+    colonne) : coché et barré quand c'est fait, « 1 série faite sur 3 » quand c'est
+    commencé, le suivant mis en avant. On peut toujours en toucher un autre pour changer
+    d'ordre.
+  - **Le choix libre reste accessible, mais replié** derrière « + Exercice hors plan ». Ouvert,
+    il remplace la liste du plan (avec « ‹ Revenir au plan « … » ») : jamais les deux à la
+    fois. Après un exercice hors plan, le menu remontre le plan.
+  - Plan fini : « Plan terminé ! Touche « Terminer » en haut pour enregistrer ta séance. »
+  - Sans plan : le menu ne change pas.
+- Vérifié : nouvelle batterie ``tools/tests/live_plan.js`` (13 contrôles : plan seul à
+  l'écran, ordre du plan conservé — volontairement non alphabétique —, « À suivre » qui avance,
+  exercice fait dans le désordre, choix libre replié / déplié / refermé, exercice hors plan
+  puis retour au plan, plan terminé, sans plan inchangé) ; ``plan_rest.js`` adapté. Les autres
+  batteries passent toujours.
+
+3.0.0 - 2026-10-21
+====================
+
+- **Salle de sport : une seule bascule au lieu de deux.** La barre du bas « Créer /
+  Séances » (ou « Créer / Plans ») disparaît ; il ne reste que « Séance effectuée / Plan à
+  préparer » en haut, qui affiche directement la liste correspondante.
+  - En tête de chaque liste, **« Ajouter une séance » / « Ajouter un plan »**, de la taille
+    d'un élément de la liste (« + » dans une pastille), ouvre le formulaire.
+  - Le formulaire a un lien de retour (« ‹ Séances » / « ‹ Plans ») vers la liste. Ce qui
+    était saisi est gardé : la carte d'ajout propose alors « Reprendre la séance / le plan
+    en cours « … » ». Ajouter l'autre type alors qu'une saisie n'est pas enregistrée
+    demande confirmation (« Le remplacer ? ») ; une modification d'une séance ou d'un plan
+    existant quittée par le retour est simplement abandonnée.
+  - Sur la liste, passer de Séance à Plan ne fait que changer de liste (le brouillon n'est
+    plus converti en passant) ; dans le formulaire, la bascule convertit la saisie comme
+    avant.
+  - En arrivant depuis l'accueil, toujours la liste. Enregistrer ramène à la liste, comme
+    avant. Modifier / Dupliquer / Convertir ouvrent le formulaire, comme avant.
+  - La barre « Ajouter un exercice / Enregistrer » se pose tout en bas de l'écran.
+  - Messages des listes vides : « Touche « Ajouter une séance / un plan »… ».
+- **Correctif : « 1 plan enregistré » au-dessus d'une liste vide.** Supprimer une séance ou
+  un plan ne redessinait que la liste ; le nombre en en-tête restait l'ancien. Il suit
+  désormais la liste. « 0 plan / 0 séance » au singulier.
+- Guide de démarrage : après « Plan à préparer », une étape « Touche « Ajouter un plan » ».
+- Course, Natation et Vélo gardent pour l'instant leur barre « Créer / Séances ».
+- Vérifié : nouvelle batterie ``tools/tests/gym_list.js`` (16 contrôles : liste d'abord,
+  pas de barre du bas, carte d'ajout en tête et à la taille d'un élément, retour, reprise du
+  brouillon, bascule de liste sans conversion, confirmation avant remplacement, bascule dans
+  le formulaire qui convertit, barre d'enregistrement en bas, en-tête après suppression) ;
+  ``onboarding.js`` (46). Les autres batteries passent toujours.
+
 2.99.1 - 2026-10-16
 ====================
 

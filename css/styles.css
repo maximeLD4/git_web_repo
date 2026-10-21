@@ -2291,3 +2291,63 @@ select.app-select.app-select-row {
 .onb-nav { display: inline-flex; gap: 8px; align-items: center; }
 .onb-prev { background: transparent; color: var(--text); border: 1px solid var(--rule); border-radius: var(--radius); padding: 9px 14px; font-family: var(--font); font-size: 14px; font-weight: 700; cursor: pointer; }
 .onb-prev[hidden] { display: none; }
+
+/* Salle de sport (3.0.0) : plus de barre « Créer / Liste » en bas. En tête
+   de liste, « Ajouter une séance / un plan », de la taille d'un élément de la
+   liste ; dans le formulaire, un lien de retour vers la liste. */
+.gym-content-no-tabbar { padding-bottom: calc(40px + var(--safe-bottom, 0px)); }
+#app.theme-gym .log-actions-bar ~ .tabbar { display: none; }
+.gym-add-card { box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin: 0 0 10px; min-height: 68px; background: transparent; border: 1.5px dashed rgba(var(--ink-rgb), 0.28); border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; font-family: var(--font); }
+.gym-add-card:active { transform: scale(0.99); }
+.gym-add-card-icon { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--on-ink); display: flex; align-items: center; justify-content: center; }
+.gym-add-card-icon svg { width: 20px; height: 20px; }
+.gym-add-card-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gym-add-card-title { font-size: 16px; font-weight: 800; }
+.gym-add-card-sub { font-size: 13px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gym-form-back { margin: 0 0 10px; }
+.gym-content-no-tabbar ~ .log-actions-bar { padding-bottom: calc(12px + var(--safe-bottom, 0px)); }
+
+/* ==========================================================================
+   SÉANCE EN DIRECT AVEC UN PLAN (3.1.0) : le plan seul — « À suivre » en
+   grand, la liste numérotée dans l'ordre du plan — et le choix libre replié
+   derrière « + Exercice hors plan ».
+   ========================================================================== */
+.live-plan-next { box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; padding: 16px 16px 16px 18px; margin-bottom: 12px; border: none; border-radius: var(--radius); background: var(--action); color: var(--on-ink); text-align: left; cursor: pointer; font-family: var(--font); }
+.live-plan-next:active { transform: scale(0.99); }
+.live-plan-next-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.live-plan-next-kicker { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.75; }
+.live-plan-next-name { font-family: var(--font-display); font-size: 24px; font-weight: 800; letter-spacing: -0.6px; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-plan-next-sum { font-size: 13.5px; opacity: 0.8; }
+.live-plan-next-go { flex: none; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); display: flex; align-items: center; justify-content: center; }
+.live-plan-next-go svg { width: 18px; height: 18px; }
+.live-plan-finished { display: flex; align-items: center; gap: 8px; padding: 14px 16px; margin-bottom: 12px; border-radius: var(--radius); background: var(--surface); font-size: 14px; font-weight: 700; }
+.live-plan-finished svg { width: 18px; height: 18px; flex: none; }
+.live-plan-list { list-style: none; margin: 0; padding: 0; border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.live-plan-list li + li { border-top: 0.5px solid var(--rule); }
+.live-plan-row { box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: transparent; border: none; color: var(--text); text-align: left; cursor: pointer; font-family: var(--font); min-height: 48px; }
+.live-plan-row-num { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--surface-2); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.live-plan-row-num svg { width: 13px; height: 13px; }
+.live-plan-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.live-plan-row-name { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-plan-row-sum { font-size: 12px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-plan-row.next .live-plan-row-num { background: var(--action); color: var(--on-ink); }
+.live-plan-row.done { opacity: 0.45; }
+.live-plan-row.done .live-plan-row-name { text-decoration: line-through; }
+.live-free-open { box-sizing: border-box; width: 100%; margin-top: 14px; padding: 13px 16px; display: flex; align-items: center; justify-content: center; gap: 6px; background: transparent; border: 1.5px dashed rgba(var(--ink-rgb), 0.28); border-radius: var(--radius); color: var(--text); font-family: var(--font); font-size: 14.5px; font-weight: 700; cursor: pointer; }
+.live-free-open svg { width: 15px; height: 15px; }
+.live-plan-back { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; padding: 4px 0; background: none; border: none; color: var(--text); font-family: var(--font); font-size: 14.5px; font-weight: 800; cursor: pointer; }
+.live-plan-back svg { width: 16px; height: 16px; }
+
+/* Plan en direct (3.1.1) : l'écran ne défile pas — seule la liste des
+   exercices du plan défile, et « + Exercice hors plan » reste en pied
+   d'écran, toujours atteignable. */
+.live-plan-section { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin-bottom: 10px; }
+.live-plan-section > .live-plan-section-title, .live-plan-section > .live-plan-next, .live-plan-section > .live-plan-finished { flex: none; }
+.live-plan-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.live-plan-list::-webkit-scrollbar { width: 0; height: 0; }
+.live-free-open { flex: none; margin-top: 0; margin-bottom: calc(6px + var(--safe-bottom, 0px)); }
+/* Le bouton du bas (« Changer d'exercice » / « Annuler ») a la même hauteur,
+   avec ou sans icône : le bouton principal juste au-dessus ne bouge pas d'un
+   écran à l'autre (3.1.2). */
+.live-set-form-actions > .live-post-btn { box-sizing: border-box; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+@media (max-height: 740px) { .live-set-form-actions > .live-post-btn { min-height: 42px; } }

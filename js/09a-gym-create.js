@@ -217,6 +217,24 @@ function moveSet(card, setId, direction) {
   renderContent();
 }
 
+// Enregistre le brouillon tout de suite (sans le délai de scheduleDraftSave),
+// ex. juste avant de quitter le formulaire pour la liste.
+function flushDraftSave() {
+  clearTimeout(draftSaveTimer);
+  const dateEl = document.getElementById("log-date");
+  const labelEl = document.getElementById("log-label");
+  if (!dateEl && !labelEl && !document.querySelector(".exercise-card")) return;
+  draft = {
+    kind: draft.kind || "session",
+    date: dateEl ? dateEl.value : draft.date,
+    label: labelEl ? labelEl.value : draft.label,
+    exercises: serializeExercisesFromDOM(),
+    editingSessionId,
+    editingPlanId,
+  };
+  saveJSON(KEYS.draft, draft);
+}
+
 function scheduleDraftSave() {
   clearTimeout(draftSaveTimer);
   draftSaveTimer = setTimeout(() => {
@@ -436,10 +454,11 @@ function getLastPerformance(name) {
 }
 
 function gymHeaderSubText() {
+  // Pluriel à partir de 2 (« 0 plan enregistré », comme « 1 plan »).
   if (gymTopMode === "plan") {
-    return `${sessionPlans.length} plan${sessionPlans.length !== 1 ? "s" : ""} enregistré${sessionPlans.length !== 1 ? "s" : ""}`;
+    return `${sessionPlans.length} plan${sessionPlans.length > 1 ? "s" : ""} enregistré${sessionPlans.length > 1 ? "s" : ""}`;
   }
-  return `${sessions.length} séance${sessions.length !== 1 ? "s" : ""} enregistrée${sessions.length !== 1 ? "s" : ""}`;
+  return `${sessions.length} séance${sessions.length > 1 ? "s" : ""} enregistrée${sessions.length > 1 ? "s" : ""}`;
 }
 
 function renderGymApp() {
@@ -464,25 +483,18 @@ function renderGymApp() {
       <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-gym-top-mode="session">Séance effectuée</button>
       <button type="button" class="ex-type-btn ${isPlanMode ? "active" : ""}" data-gym-top-mode="plan">Plan à préparer</button>
     </div>
-    <div class="content" id="content"></div>
+    <div class="content gym-content-no-tabbar" id="content"></div>
     <div class="log-actions-bar" id="log-actions-bar" style="display:none;"></div>
-    <div class="tabbar">
-      <button class="tab-btn ${tab === "log" ? "active" : ""}" data-tab="log">${ICONS.dumbbell}Créer</button>
-      <button class="tab-btn ${tab === "history" ? "active" : ""}" data-tab="history">${ICONS.history}${isPlanMode ? "Plans" : "Séances"}</button>
-    </div>
   `;
+  // Plus de barre « Créer / Séances|Plans » en bas (3.0.0) : un seul choix,
+  // Séance effectuée / Plan à préparer, qui affiche sa liste ; en tête de
+  // liste, « Ajouter » ouvre le formulaire, qui a son lien de retour.
   document.querySelector("[data-go-home]").addEventListener("click", () => {
     if (calendarReturnTarget) {
       returnToCalendar();
     } else {
       goHome();
     }
-  });
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      tab = btn.dataset.tab;
-      renderGymApp();
-    });
   });
   document.querySelectorAll("[data-gym-top-mode]").forEach((btn) => {
     btn.addEventListener("click", () => switchGymTopMode(btn.dataset.gymTopMode));
@@ -501,6 +513,13 @@ function renderGymApp() {
 function switchGymTopMode(newMode) {
   if (gymTopMode === newMode) return;
   gymTopMode = newMode;
+  // Sur la LISTE, le choix Séance / Plan ne fait que changer de liste : le
+  // brouillon éventuel n'est pas touché (il n'est converti que si l'on bascule
+  // depuis le formulaire, ci-dessous).
+  if (tab !== "log") {
+    renderGymApp();
+    return;
+  }
   // On relit l'état actuel du DOM directement (comme scheduleDraftSave),
   // plutôt que de se fier à `draft` qui peut être jusqu'à 350ms en retard
   // sur la toute dernière frappe (voir son délai) — pas question de perdre
@@ -544,10 +563,70 @@ function switchGymTopMode(newMode) {
   renderGymApp();
 }
 
+// En tête de la liste : « Ajouter une séance / un plan », de la taille d'un
+// élément de la liste. S'il y a un brouillon NON enregistré du même type
+// (nouvelle saisie commencée puis quittée), il le propose de le reprendre.
+function gymDraftResumable() {
+  const hasContent = (draft.exercises || []).length > 0 || !!(draft.label || "").trim();
+  return hasContent && draft.kind === gymTopMode && !editingSessionId && !editingPlanId;
+}
+function gymAddCardHTML() {
+  const isPlan = gymTopMode === "plan";
+  const resume = gymDraftResumable();
+  return `
+    <button type="button" class="gym-add-card" data-new-entry>
+      <span class="gym-add-card-icon">${ICONS.plus}</span>
+      <span class="gym-add-card-text">
+        <span class="gym-add-card-title">${isPlan ? "Ajouter un plan" : "Ajouter une séance"}</span>
+        ${resume ? `<span class="gym-add-card-sub">Reprendre ${isPlan ? "le plan" : "la séance"} en cours${draft.label ? ` « ${escapeHTML(draft.label)} »` : ""}</span>` : ""}
+      </span>
+    </button>`;
+}
+function startNewGymEntry() {
+  const kind = gymTopMode;
+  const open = () => {
+    tab = "log";
+    renderGymApp();
+  };
+  if (gymDraftResumable()) return open();
+  // Un brouillon d'une NOUVELLE saisie de l'autre type, pas encore enregistré :
+  // on demande avant de le remplacer. (Une modification d'une séance ou d'un
+  // plan existant, quittée par le retour, est simplement abandonnée.)
+  const otherNewDraft = !editingSessionId && !editingPlanId && draft.kind !== kind && ((draft.exercises || []).length > 0 || !!(draft.label || "").trim());
+  const fresh = () => {
+    clearDraft();
+    draft.kind = kind;
+    saveJSON(KEYS.draft, draft);
+    open();
+  };
+  if (otherNewDraft) {
+    showConfirm(`${draft.kind === "plan" ? "Un plan" : "Une séance"} en cours n'a pas été enregistré${draft.kind === "plan" ? "" : "e"}. Le remplacer ?`, fresh, { confirmLabel: "Remplacer", danger: true });
+    return;
+  }
+  fresh();
+}
+
 function renderContent() {
   const content = document.getElementById("content");
-  if (tab === "log") content.innerHTML = logTabHTML();
-  else content.innerHTML = historyTabHTML();
+  // Le nombre en en-tête suit la liste (une suppression ne redessinait que
+  // la liste : l'en-tête annonçait « 1 plan enregistré » au-dessus d'une liste
+  // vide).
+  const sub = document.getElementById("gym-header-sub");
+  if (sub) sub.textContent = gymHeaderSubText();
+  if (tab === "log") {
+    const isPlan = gymTopMode === "plan";
+    content.innerHTML = `<button type="button" class="back-btn-text gym-form-back" data-gym-back-to-list>${ICONS.back} ${isPlan ? "Plans" : "Séances"}</button>` + logTabHTML();
+  } else content.innerHTML = gymAddCardHTML() + historyTabHTML();
+  const backToList = content.querySelector("[data-gym-back-to-list]");
+  if (backToList)
+    backToList.addEventListener("click", () => {
+      // Le brouillon reste enregistré : « Ajouter » le proposera à la reprise.
+      flushDraftSave();
+      tab = "history";
+      renderGymApp();
+    });
+  const addCard = content.querySelector("[data-new-entry]");
+  if (addCard) addCard.addEventListener("click", startNewGymEntry);
   attachContentListeners();
 
   const actionsBar = document.getElementById("log-actions-bar");

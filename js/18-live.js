@@ -181,28 +181,90 @@ function isPlanExercisePreparedDone(ex) {
   return liveEx.sets.length >= targetCount;
 }
 
+// Séance en direct AVEC un plan (3.1.0) : l'écran ne montre que le plan —
+// l'exercice « À suivre » en grand (le premier pas encore fait, dans l'ordre
+// du plan), puis la liste numérotée de tous ses exercices, dans l'ordre du
+// plan. Le choix libre (Muscu / Cardio, catégories, tous les exercices)
+// reste accessible, mais replié derrière « + Exercice hors plan ».
+let liveFreePickerOpen = false;
+function livePlanForSession() {
+  return liveSession && liveSession.planId ? sessionPlans.find((p) => p.id === liveSession.planId) || null : null;
+}
+function livePlanExerciseSummary(ex) {
+  if (ex.loop) return `${ex.loop.rounds} tours · ${ex.loop.workSec}s / ${ex.loop.restSec}s`;
+  const sets = ex.sets || [];
+  if (!sets.length) return "";
+  const n = sets.length;
+  if (ex.exType === "cardio") return `${n} passage${n > 1 ? "s" : ""} · ${formatCardioDuration(parseFloat(sets[0].weight) || 0)}`;
+  const reps = [...new Set(sets.map((x) => x.reps))];
+  const ws = sets.map((x) => parseFloat(x.weight) || 0);
+  const lo = Math.min(...ws), hi = Math.max(...ws);
+  const fmt = (v) => String(v).replace(".", ",");
+  return `${n} série${n > 1 ? "s" : ""} · ${reps.join("/")} × ${lo === hi ? fmt(lo) : `${fmt(lo)}–${fmt(hi)}`} kg`;
+}
+function livePlanSetsDone(ex) {
+  const liveEx = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === ex.name.trim().toLowerCase());
+  return liveEx ? liveEx.sets.length : 0;
+}
 function livePlanSectionHTML() {
-  if (!liveSession.planId) return "";
-  const plan = sessionPlans.find((p) => p.id === liveSession.planId);
+  const plan = livePlanForSession();
   if (!plan) return "";
-  let doneCount = 0;
-  const buttons = plan.exercises
-    .map((ex) => {
-      const done = isPlanExercisePreparedDone(ex);
-      if (done) doneCount += 1;
-      return `<button type="button" class="live-btn ${done ? "plan-done" : ""}" data-live-plan-exercise="${ex.id}"><span class="live-exercise-btn-name">${ex.name}</span></button>`;
+  const total = plan.exercises.length;
+  const doneFlags = plan.exercises.map(isPlanExercisePreparedDone);
+  const doneCount = doneFlags.filter(Boolean).length;
+  const nextIdx = doneFlags.findIndex((d) => !d);
+  const next = nextIdx >= 0 ? plan.exercises[nextIdx] : null;
+  const nextHTML = next
+    ? `<button type="button" class="live-plan-next" data-live-plan-exercise="${next.id}">
+        <span class="live-plan-next-text">
+          <span class="live-plan-next-kicker">À suivre · ${nextIdx + 1}/${total}</span>
+          <span class="live-plan-next-name">${next.name}</span>
+          <span class="live-plan-next-sum">${livePlanExerciseSummary(next)}</span>
+        </span>
+        <span class="live-plan-next-go">${ICONS.play}</span>
+      </button>`
+    : `<div class="live-plan-finished">${ICONS.check} Plan terminé ! Touche « Terminer » en haut pour enregistrer ta séance.</div>`;
+  const rows = plan.exercises
+    .map((ex, i) => {
+      const done = doneFlags[i];
+      const partial = !done ? livePlanSetsDone(ex) : 0;
+      const planned = ex.sets && ex.sets.length ? ex.sets.length : 1;
+      const sum = done ? "Fait" : partial ? `${partial} série${partial > 1 ? "s" : ""} faite${partial > 1 ? "s" : ""} sur ${planned}` : livePlanExerciseSummary(ex);
+      return `<li><button type="button" class="live-plan-row ${done ? "done" : ""} ${i === nextIdx ? "next" : ""}" data-live-plan-exercise="${ex.id}">
+          <span class="live-plan-row-num">${done ? ICONS.check : i + 1}</span>
+          <span class="live-plan-row-text">
+            <span class="live-plan-row-name">${ex.name}</span>
+            <span class="live-plan-row-sum">${sum}</span>
+          </span>
+        </button></li>`;
     })
     .join("");
   return `
     <div class="live-plan-section">
-      <div class="live-plan-section-title">${ICONS.stopwatch} Ton plan : ${plan.label} <span class="live-plan-progress">${doneCount}/${plan.exercises.length}</span></div>
-      <div class="live-grid" style="grid-template-columns:1fr 1fr;">${buttons}</div>
+      <div class="live-plan-section-title">${ICONS.stopwatch} Ton plan : ${plan.label} <span class="live-plan-progress">${doneCount}/${total}</span></div>
+      ${nextHTML}
+      <ol class="live-plan-list">${rows}</ol>
     </div>`;
+}
+// Plan attaché mais choix libre déplié : juste un rappel du plan et le
+// retour vers lui, pour que l'écran ne montre jamais les deux listes à la fois.
+function livePlanBackBarHTML() {
+  const plan = livePlanForSession();
+  if (!plan) return "";
+  return `<button type="button" class="live-plan-back" data-live-free-close>${ICONS.back} Revenir au plan « ${plan.label} »</button>`;
 }
 
 function liveCategoryStepHTML() {
+  // Avec un plan : le plan seul, et le choix libre replié.
+  if (livePlanForSession() && !liveFreePickerOpen) {
+    return (
+      liveTimelineHTML() +
+      livePlanSectionHTML() +
+      `<button type="button" class="live-free-open" data-live-free-open>${ICONS.plus} Exercice hors plan</button>`
+    );
+  }
   const isCardio = liveDraftType === "cardio";
-  const planSectionHTML = livePlanSectionHTML();
+  const planSectionHTML = livePlanBackBarHTML();
   const switchHTML = `
     <div class="live-type-switch">
       <div class="live-type-thumb" id="live-type-thumb" style="transform: translateX(${isCardio ? "100%" : "0%"});"></div>
@@ -402,6 +464,12 @@ function liveRestCenterHTML() {
 // boucle de gainage pendant le travail (fixe pendant le repos).
 const LIVE_ANIM_ICONS = { rameur: "rower", velo: "bike", course: "stopwatch", gainage: "plank" };
 
+// Barre d'actions de TOUS les écrans du direct (3.1.2) : le bouton principal
+// — « Lancer … », « Finir la série », « Arrêter la boucle », « Démarrer la
+// boucle » — est TOUJOURS juste au-dessus du dernier bouton (« Changer
+// d'exercice » / « Annuler »), donc toujours au même endroit ; un bouton en
+// plus (exercice jumelé, « Lancer en boucle », « Passer au repos ») se place
+// AU-DESSUS du bouton principal, jamais entre lui et le bas.
 function liveLogSetStepHTML() {
   const activeExercise = liveSession.exercises.find((e) => e.id === liveActiveExerciseId);
   const form = liveDraftType === "cardio" ? liveCardioSetFormHTML(activeExercise) : liveMuscuSetFormHTML(activeExercise);
@@ -511,8 +579,8 @@ function liveMuscuSetFormHTML(activeExercise) {
         ${sideSelectorHTML}
       </div>
       <div class="live-set-form-actions">
-        <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} <span class="live-btn-label">Lancer ${liveDraftName}</span></button>
         ${switchPairHTML}
+        <button type="button" class="live-validate-btn" data-live-start-set ${finalWeight === null ? "disabled" : ""}>${ICONS.play} <span class="live-btn-label">Lancer ${liveDraftName}</span></button>
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
     </div>`;
@@ -620,8 +688,8 @@ function liveCardioSetFormHTML(activeExercise) {
         <div class="live-prev-set live-hint">Le temps est chronométré automatiquement dès que tu lances.</div>
       </div>
       <div class="live-set-form-actions">
-        <button type="button" class="live-validate-btn" data-live-start-set>${ICONS.play} <span class="live-btn-label">Lancer ${liveDraftName}</span></button>
         ${isGainage ? `<button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-open-loop-form>${ICONS.stopwatch} Lancer en boucle</button>` : ""}
+        <button type="button" class="live-validate-btn" data-live-start-set>${ICONS.play} <span class="live-btn-label">Lancer ${liveDraftName}</span></button>
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
     </div>`;
@@ -1141,6 +1209,9 @@ function toggleLiveSide(side) {
 }
 
 function startOrResumeLiveExercise() {
+  // Une fois un exercice choisi (du plan ou hors plan), le retour au menu
+  // remontre le plan, choix libre replié.
+  liveFreePickerOpen = false;
   closeCurrentLiveSegment();
   openLiveSegment(liveDraftName, liveDraftType);
   // Repart toujours d'un état propre : sans ça, un formulaire de boucle
@@ -1720,6 +1791,18 @@ function attachLivePlanListeners(content) {
     });
   });
 
+  const freeOpen = content.querySelector("[data-live-free-open]");
+  if (freeOpen)
+    freeOpen.addEventListener("click", () => {
+      liveFreePickerOpen = true;
+      renderLiveStep();
+    });
+  const freeClose = content.querySelector("[data-live-free-close]");
+  if (freeClose)
+    freeClose.addEventListener("click", () => {
+      liveFreePickerOpen = false;
+      renderLiveStep();
+    });
   content.querySelectorAll("[data-live-plan-exercise]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const plan = sessionPlans.find((p) => p.id === liveSession.planId);

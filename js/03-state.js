@@ -101,7 +101,7 @@ let draft = loadJSON(KEYS.draft, null) || { date: todayISO(), label: "", exercis
 if (!Array.isArray(draft.exercises)) draft.exercises = [];
 if (!draft.kind) draft.kind = "session"; // séances déjà sauvegardées avant l'ajout des plans
 
-let tab = "log";
+let tab = "history"; // Salle de sport : "history" = la liste (séances ou plans), "log" = le formulaire
 let openHistoryIds = {};
 let openExerciseIds = {}; // réduit/développé des exercices dans l'onglet Créer (par défaut : développé, sauf réduction explicite)
 let draftSaveTimer = null;

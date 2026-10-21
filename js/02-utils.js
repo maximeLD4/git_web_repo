@@ -242,11 +242,13 @@ function positionLogActionsBar() {
   const actionsBar = document.getElementById("log-actions-bar");
   const tabbarEl = document.querySelector(".tabbar");
   const spacer = document.getElementById("log-bottom-spacer");
-  if (!actionsBar || !tabbarEl) return;
+  // Sans barre d'onglets (Salle de sport depuis 3.0.0), la barre d'actions
+  // se pose tout en bas de l'écran.
+  if (!actionsBar) return;
   if (actionsBar.style.display === "none") {
     if (spacer) spacer.style.height = "0";
   } else {
-    actionsBar.style.bottom = tabbarEl.offsetHeight + "px";
+    actionsBar.style.bottom = (tabbarEl ? tabbarEl.offsetHeight : 0) + "px";
     if (spacer) spacer.style.height = actionsBar.offsetHeight + 16 + "px";
   }
   reserveSpaceForFixedBar(document.getElementById("content"), actionsBar);

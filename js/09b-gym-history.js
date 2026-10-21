@@ -308,7 +308,7 @@ function planCardHTML(plan) {
 
 function plansListHTML() {
   if (sessionPlans.length === 0) {
-    return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucun plan préparé pour l'instant.<br>Va dans l'onglet "Créer" pour en préparer un.</div>`;
+    return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucun plan préparé pour l'instant.<br>Touche « Ajouter un plan » pour en préparer un.</div>`;
   }
   return sessionPlans.map(planCardHTML).join("");
 }
@@ -323,7 +323,7 @@ function historyTabHTML() {
   }
 
   if (sorted.length === 0) {
-    return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Va dans l'onglet "Créer" pour ajouter la première.</div>`;
+    return `<div class="empty-state"><div class="bar-icon">${ICONS.history}</div>Aucune séance enregistrée pour l'instant.<br>Touche « Ajouter une séance » pour la première.</div>`;
   }
   // Toutes les séances sont traitées pareil, qu'elles soient datées dans le
   // passé ou le futur — plus de distinction "à venir" séparée, dépassée

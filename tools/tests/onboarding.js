@@ -52,6 +52,8 @@ const touchable = (p, sel) => p.evaluate((sel) => { const e = document.querySele
     console.log('\n=== Partie 2 : le plan ===');
     await next(p); await p.click('[data-open-app="gym"]'); await p.waitForTimeout(400);
     await p.click('[data-gym-top-mode="plan"]'); await p.waitForTimeout(400);
+    s = await bubble(p); check('Liste des plans affichée : « Ajouter un plan » demandé, seul touchable', /Ajouter un plan/.test(s.text) && (await touchable(p, '[data-new-entry]')) === 'oui', JSON.stringify(s));
+    await p.click('[data-new-entry]'); await p.waitForTimeout(400);
     s = await bubble(p); check('Nom du plan demandé', /nom à ton plan/.test(s.text) && s.disabled);
     await p.fill('#log-label', 'Jambes'); await p.waitForTimeout(150); await next(p);
     await p.click('#add-exercise-btn'); await p.waitForTimeout(400);
@@ -87,7 +89,7 @@ const touchable = (p, sel) => p.evaluate((sel) => { const e = document.querySele
     s = await bubble(p); check('Séance enregistrée et affichée : la carte ouverte dans les séances, bouton « Terminer »', s && s.next === 'Terminer' && /La voici/.test(s.text) && await p.evaluate(() => sessions.length === 1 && currentApp === 'gym' && tab === 'history' && !!document.querySelector('.history-card .history-body')), JSON.stringify(s));
     check('…la carte est éclairée (exercice et séries visibles)', await p.evaluate(() => { const c = document.querySelector('.history-card'); const sp = document.querySelector('.onb-spot').getBoundingClientRect(), r = c.getBoundingClientRect(); return sp.top <= r.top + 8 && /Leg extension/.test(c.textContent); }));
     await next(p);
-    check('Guide terminé : plus de voile, tout est libre', await p.evaluate(() => !document.getElementById('onb-root') && JSON.parse(localStorage.getItem('gymlog:onboarding')).done === true) && (await touchable(p, '[data-open-app="home"], .back-btn-text, [data-tab="log"]')) === 'oui');
+    check('Guide terminé : plus de voile, tout est libre', await p.evaluate(() => !document.getElementById('onb-root') && JSON.parse(localStorage.getItem('gymlog:onboarding')).done === true) && (await touchable(p, '[data-new-entry], .back-btn-text')) === 'oui');
     check('    aucune erreur JS', p.errs.length === 0, p.errs.join(' | ') || 'aucune');
     console.log('\n=== Une seule fois ===');
     await p.reload(); await p.waitForTimeout(3800);
