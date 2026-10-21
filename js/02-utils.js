@@ -292,7 +292,8 @@ const VIEWPORT_FIX_KEY = "gymlog.viewportFix";
 // suit la fenêtre (height: 100%, ou position: fixed + inset: 0 comme ici)
 // s'arrête donc ~48pt (iPhone 11) à ~59pt (Dynamic Island) avant le bas.
 // height: 100vh, lui, vaut la hauteur réelle de l'écran : la page va jusqu'en
-// bas, plus de bande à masquer. C'est le mode par défaut de l'app installée.
+// bas, plus de bande à masquer. (Essayé par défaut en 3.3.3 : sur iPhone, la
+// page restait rognée sous la fenêtre — mode de secours manuel depuis 3.3.4.)
 const VIEWPORT_MODES = ["auto", "vh", "flux", "bande", "off"];
 function isStandaloneApp() {
   try {
@@ -358,7 +359,11 @@ function applyViewportFix() {
   // main ; indépendant de la détection de l'écart (qui ne reconnaît pas tous
   // les iPhone).
   const stored = getViewportMode();
-  const vhMode = stored === "vh" || (stored === "auto" && isStandaloneApp());
+  // Plus d'office pour l'app installée (3.3.4) : sur iPhone, la page ne peut
+  // de toute façon pas peindre sous la fenêtre avec black-translucent (le bas
+  // de la barre du bas était rogné) — la vraie correction a été de retirer
+  // black-translucent (index.html). « vh » reste un mode de secours manuel.
+  const vhMode = stored === "vh";
   root.classList.toggle("vfix-vh", vhMode);
   if (vhMode) {
     viewportResolvedMode = "vh";

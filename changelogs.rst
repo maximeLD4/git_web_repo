@@ -7,6 +7,28 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.3.4 - 2026-10-21
+====================
+
+- **Barre du bas sur iPhone : on retire la cause au lieu de la contourner.** La capture de
+  3.3.3 le prouve : la page ne peut PAS peindre dans les ~48 points du bas tant que la
+  barre d'état est en ``black-translucent`` — avec ``100vh``, la barre du bas descendait
+  bien jusqu'en bas, mais tout ce qui dépassait la fenêtre annoncée par iOS était rogné
+  (les libellés « Accueil / Calendrier / Réglages » coupés), et la bande restait vide
+  (blanche, à la couleur posée en 3.3.1/3.3.2). C'est la recommandation de l'enquête
+  r/PWA : « n'ajoutez pas black-translucent ».
+  - ``apple-mobile-web-app-status-bar-style`` passe à ``default`` : la page commence sous la
+    barre d'état et va jusqu'au vrai bas de l'écran ; la barre du bas reprend sa place,
+    libellés compris, avec sa marge au-dessus de l'indicateur d'accueil.
+  - La zone de la barre d'état prend la couleur du fond de page du thème (``theme-color``,
+    mis à jour par Jour / Nuit / Anne).
+  - Le mode « vh » n'est plus appliqué d'office (il rognait le bas) ; il reste, comme
+    « flux » et « bande », un mode de secours manuel (5 touchers sur la version).
+  - iOS peut ne relire ce réglage qu'en réinstallant l'icône sur l'écran d'accueil.
+- Vérifié : ``tools/tests/ios_vh.js`` (10 contrôles : plus de black-translucent, page ancrée à
+  la fenêtre dans l'app installée, theme-color par thème, modes de secours). À vérifier sur
+  le téléphone.
+
 3.3.3 - 2026-10-21
 ====================
 

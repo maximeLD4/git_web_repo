@@ -12,6 +12,9 @@ function applyColorMode(mode) {
   document.documentElement.classList.remove("mode-day", "mode-night", "mode-anne");
   document.documentElement.classList.add("mode-" + mode);
   applyActivityMetaColors(mode);
+  // Zone de la barre d'état (iOS, Android) : couleur du fond de page du thème.
+  const meta = document.getElementById("theme-color-meta");
+  if (meta) meta.setAttribute("content", { night: "#1E1A17", anne: "#FCE3EC" }[mode] || "#F3ECE4");
 }
 applyColorMode(colorMode);
 
