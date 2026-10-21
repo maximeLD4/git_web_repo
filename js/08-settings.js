@@ -7,7 +7,8 @@ function categoryLabel(key) {
 function viewportFixLabel() {
   const stored = getViewportMode();
   if (stored === "off") return "correctif désactivé";
-  const names = { auto: "auto", flux: "flux", bande: "bande" };
+  if (viewportResolvedMode === "vh") return "mode " + (stored === "auto" ? "auto → vh" : "vh") + " (hauteur réelle de l'écran)";
+  const names = { auto: "auto", vh: "vh", flux: "flux", bande: "bande" };
   if (viewportFixExtra > 0) return "mode " + names[stored] + (stored === "auto" ? " → " + viewportResolvedMode : "") + " (+" + viewportFixExtra + ")";
   return "mode " + names[stored] + " (sans effet : cet appareil n'en a pas besoin)";
 }
@@ -27,8 +28,8 @@ function renderSettingsApp() {
   `;
   attachBottomNavListeners();
   // Geste discret de secours : 5 touchers rapprochés sur le numéro de version
-  // changent le mode du correctif d'affichage iPhone (auto → flux → bande →
-  // off), au cas où un appareil afficherait mal la barre du bas. Invisible
+  // changent le mode du correctif d'affichage iPhone (auto → vh → flux →
+  // bande → off), au cas où un appareil afficherait mal la barre du bas. Invisible
   // pour un usage normal.
   let versionTaps = 0;
   let versionTapTimer = null;
@@ -39,7 +40,13 @@ function renderSettingsApp() {
     if (versionTaps >= 5) {
       versionTaps = 0;
       cycleViewportMode();
-      showAlert("Affichage : " + viewportFixLabel() + ".");
+      // Mesures jointes (3.3.2) : de quoi diagnostiquer à distance un écran
+      // qui affiche mal la barre du bas.
+      const vv = window.visualViewport;
+      let safeTop = 0;
+      try { safeTop = readSafeAreaTop(); } catch (e) {}
+      const standalone = (window.navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches)) ? "app installée" : "navigateur";
+      showAlert("Affichage : " + viewportFixLabel() + ". [" + standalone + " · écran " + window.screen.width + "×" + window.screen.height + " · fenêtre " + window.innerWidth + "×" + window.innerHeight + " · visible " + (vv ? Math.round(vv.height) : "?") + " · haut " + Math.round(safeTop) + " · v" + appVersion + "]");
     }
   });
   document.getElementById("logout-btn").addEventListener("click", () => {

@@ -7,6 +7,47 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.3.3 - 2026-10-21
+====================
+
+- **La vraie correction de la bande sous la barre du bas (iPhone, app installée)**, d'après
+  l'enquête r/PWA « PWA sur iOS… combattre l'écart en bas de l'écran » : avec
+  ``viewport-fit=cover`` + la barre d'état ``black-translucent`` (ce que fait l'app), iOS
+  décale toute la vue sous la barre d'état SANS agrandir la fenêtre annoncée à la page ;
+  une page dont la hauteur suit cette fenêtre (``height: 100%``, ou ici ``position: fixed``
+  + ``inset: 0``) s'arrête donc 48 points (iPhone 11) à 59 points (Dynamic Island) avant le
+  bas — d'où la bande beige. ``height: 100vh``, lui, vaut la hauteur réelle de l'écran.
+  - Nouveau mode « vh » du correctif d'affichage, **appliqué d'office à l'app installée**
+    (mode « auto ») : racine et body font ``100vh`` et ne sont plus ancrés au bas de la
+    fenêtre. La barre du bas descend jusqu'en bas de l'écran, sa marge au-dessus de
+    l'indicateur d'accueil (``env(safe-area-inset-bottom)``) reste. Indépendant de la
+    détection de l'écart, qui ne reconnaissait pas tous les iPhone.
+  - Dans le navigateur (app non installée), rien ne change.
+  - Un mode choisi à la main avant cette version (5 touchers sur le numéro de version) est
+    oublié une fois, pour profiter de la correction ; les 5 touchers passent ensuite par
+    auto → vh → flux → bande → désactivé, en secours.
+  - Les colorations de 3.3.1 / 3.3.2 (bande à la couleur de la barre) restent, en filet.
+- Vérifié : nouvelle batterie ``tools/tests/ios_vh.js`` (9 contrôles : app installée → mode
+  « vh », règle 100vh / bottom auto, barre tout en bas, libellé du diagnostic, navigateur
+  inchangé, ancien mode manuel oublié une fois, mode manuel postérieur respecté, « vh » à
+  la main dans le navigateur). Le défaut iOS lui-même ne se reproduit pas sur ordinateur.
+
+3.3.2 - 2026-10-21
+====================
+
+- **Barre du bas sur iPhone, suite.** Capture reçue : iPhone à 896 points de haut, bande
+  beige de 48 points sous la barre (= la hauteur de la barre d'état, la signature exacte du
+  défaut iOS que l'app connaît). La bande a la couleur du fond de page.
+  - En plus de la racine (3.3.1), le BODY prend aussi la couleur de la barre quand une barre
+    du bas est affichée, sur téléphone (selon la version d'iOS, la bande est peinte avec
+    l'un ou l'autre) ; #app prend le fond de page à sa place, rien ne change à l'écran.
+  - Diagnostic : les 5 touchers sur le numéro de version (Réglages), qui font passer d'un
+    mode de correctif à l'autre (auto → flux → bande → désactivé), affichent maintenant
+    aussi les mesures de l'écran (app installée ou navigateur, écran, fenêtre, zone
+    visible, marge du haut, version) — de quoi régler le correctif à distance.
+- Vérifié : ``tools/tests/bottom_band.js`` (8 contrôles : racine et body à la couleur de la
+  barre, #app au fond de page, trois thèmes, écran sans barre).
+
 3.3.1 - 2026-10-21
 ====================
 

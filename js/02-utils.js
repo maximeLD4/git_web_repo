@@ -285,9 +285,33 @@ function ensureLogActionsBarResizeListener() {
 //   "off"             : aucun correctif.
 // Un toucher sur la ligne de version (Réglages) passe au mode suivant.
 const VIEWPORT_FIX_KEY = "gymlog.viewportFix";
-const VIEWPORT_MODES = ["auto", "flux", "bande", "off"];
+// "vh" (3.3.3) : la VRAIE correction, d'après l'enquête r/PWA « PWA sur iOS…
+// combattre l'écart en bas de l'écran » : avec viewport-fit=cover +
+// barre d'état black-translucent (le cas de l'app installée), iOS décale la
+// vue sous la barre d'état SANS agrandir la fenêtre ; une page dont la hauteur
+// suit la fenêtre (height: 100%, ou position: fixed + inset: 0 comme ici)
+// s'arrête donc ~48pt (iPhone 11) à ~59pt (Dynamic Island) avant le bas.
+// height: 100vh, lui, vaut la hauteur réelle de l'écran : la page va jusqu'en
+// bas, plus de bande à masquer. C'est le mode par défaut de l'app installée.
+const VIEWPORT_MODES = ["auto", "vh", "flux", "bande", "off"];
+function isStandaloneApp() {
+  try {
+    return window.navigator.standalone === true || (!!window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  } catch (e) {
+    return false;
+  }
+}
 let viewportFixExtra = 0;
 let viewportResolvedMode = "off";
+// Une fois (3.3.3) : un mode choisi à la main AVANT l'arrivée de « vh » (5
+// touchers sur la version pour tester flux / bande / désactivé) est oublié,
+// pour que l'app installée profite d'emblée de la vraie correction.
+try {
+  if (!localStorage.getItem(VIEWPORT_FIX_KEY + ".v2")) {
+    localStorage.removeItem(VIEWPORT_FIX_KEY);
+    localStorage.setItem(VIEWPORT_FIX_KEY + ".v2", "1");
+  }
+} catch (e) {}
 function getViewportMode() {
   try {
     const m = localStorage.getItem(VIEWPORT_FIX_KEY);
@@ -329,6 +353,22 @@ function applyViewportFix() {
     const insetTop = readSafeAreaTop();
     const gap = Math.round(window.screen.height - window.innerHeight);
     if (insetTop > 0 && gap > 0 && Math.abs(gap - insetTop) <= 6) extra = gap;
+  }
+  // Mode « vh » : choisi d'office pour l'app installée (« auto »), ou à la
+  // main ; indépendant de la détection de l'écart (qui ne reconnaît pas tous
+  // les iPhone).
+  const stored = getViewportMode();
+  const vhMode = stored === "vh" || (stored === "auto" && isStandaloneApp());
+  root.classList.toggle("vfix-vh", vhMode);
+  if (vhMode) {
+    viewportResolvedMode = "vh";
+    viewportFixExtra = extra;
+    ["flux", "bande"].forEach((m) => root.classList.remove("vfix-" + m));
+    root.style.removeProperty("--safe-bottom");
+    root.style.removeProperty("--viewport-h");
+    root.style.removeProperty("--vh");
+    updateBarFlag();
+    return;
   }
   const mode = extra > 0 ? resolveViewportMode() : "off";
   viewportResolvedMode = mode;

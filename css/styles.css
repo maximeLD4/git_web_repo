@@ -136,7 +136,23 @@ html, body {
    est peinte avec le fond de la racine : elle prolonge alors la barre au lieu
    d'apparaître comme une marge beige sous elle. Sans défaut, ce fond n'est
    jamais visible (body le recouvre). */
+/* Mode « vh » (3.3.3, défaut de l'app installée, voir applyViewportFix) :
+   la page fait la hauteur RÉELLE de l'écran (100vh), au lieu de suivre la
+   fenêtre qu'iOS annonce plus courte avec la barre d'état black-translucent.
+   La barre du bas descend donc jusqu'en bas, au-dessus de l'indicateur
+   d'accueil (sa marge env(safe-area-inset-bottom) reste). */
+html.vfix-vh, html.vfix-vh body { bottom: auto; height: 100vh; }
+html.vfix-vh #app { height: 100%; }
 html.vfix-bar { background: rgb(var(--surface-rgb)); }
+/* Sur téléphone (app pleine largeur), le BODY aussi (3.3.2) : selon la
+   version d'iOS, la bande est peinte avec le fond de la racine OU celui du
+   body. #app prend alors le fond de page à sa place, pour que rien ne change
+   à l'écran. (Pas sur un écran large, où les côtés autour de #app restent
+   du fond de page.) */
+@media (max-width: 520px) {
+  html.vfix-bar body { background: rgb(var(--surface-rgb)); }
+  html.vfix-bar #app { background: var(--bg); }
+}
 html.vfix-bar .home-bottom-nav, html.vfix-bar .tabbar {
   background: rgb(var(--surface-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none;
 }
