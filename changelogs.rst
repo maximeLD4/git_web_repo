@@ -7,6 +7,26 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.3.1 - 2026-10-21
+====================
+
+- **Correctif : marge beige sous la barre du bas de l'accueil, sur téléphone.** Sur certains
+  iPhone (app installée sur l'écran d'accueil), iOS annonce à la page une fenêtre plus
+  courte que l'écran : la page ne peut pas peindre la bande tout en bas, et iOS la remplit
+  avec la couleur de fond de la page — d'où la barre « Accueil / Calendrier / Réglages »
+  qui paraît remontée, avec du beige dessous. L'app corrigeait déjà ce défaut, mais
+  seulement quand elle le reconnaissait à une signature précise (qui ne couvre pas tous
+  les modèles / versions d'iOS).
+  - Désormais, dès qu'une barre du bas est affichée, le fond de la racine de la page prend
+    la couleur de la barre, et la barre devient opaque — dans tous les cas, défaut reconnu
+    ou non. La bande prolonge alors la barre jusqu'en bas de l'écran au lieu d'apparaître
+    comme une marge. Sans le défaut, rien ne change à l'écran (ce fond n'y est jamais
+    visible). Jour, Nuit et Anne.
+  - Les écrans sans barre du bas (Séance en direct…) gardent le fond de page.
+- Vérifié : nouvelle batterie ``tools/tests/bottom_band.js`` (5 contrôles, trois thèmes +
+  écran sans barre). Les autres batteries passent toujours. Le défaut iOS lui-même ne se
+  reproduit pas sur ordinateur : à vérifier sur le téléphone.
+
 3.3.0 - 2026-10-21
 ====================
 

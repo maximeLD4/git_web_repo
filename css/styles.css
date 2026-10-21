@@ -128,8 +128,16 @@ html, body {
    prolonge la couleur de la barre dans la bande en dessous (iOS la remplit
    avec la couleur de fond de la page). "flux" est la tentative de récupérer
    réellement la bande (voir plus bas). */
-html.vfix-bande.vfix-bar { background: rgb(var(--surface-rgb)); }
-html.vfix-bande .home-bottom-nav, html.vfix-bande .tabbar {
+/* Barre du bas affichée (accueil, onglets) : le fond de la RACINE prend la
+   couleur de la barre, et la barre devient opaque — DANS TOUS LES CAS, plus
+   seulement quand le défaut est détecté (3.3.1). Si iOS laisse une bande
+   sous la fenêtre (défaut ci-dessus, détecté ou non — la détection repose
+   sur une signature précise qui ne couvre pas tous les iPhone), cette bande
+   est peinte avec le fond de la racine : elle prolonge alors la barre au lieu
+   d'apparaître comme une marge beige sous elle. Sans défaut, ce fond n'est
+   jamais visible (body le recouvre). */
+html.vfix-bar { background: rgb(var(--surface-rgb)); }
+html.vfix-bar .home-bottom-nav, html.vfix-bar .tabbar {
   background: rgb(var(--surface-rgb)); -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 /* "flux" : la racine n'est plus ancrée à la fenêtre de mise en page (qui est
