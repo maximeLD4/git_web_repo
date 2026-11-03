@@ -1,6 +1,6 @@
 
 /* ---------- state ---------- */
-// "day" | "night" | "anne" — voir applyColorMode, appelé tout de suite après
+// "day" | "night" | "anne" | "mono" — voir applyColorMode, appelé tout de suite après
 // pour poser la classe sur <html> et recalculer les couleurs du calendrier
 // partagé (ACTIVITY_META, posées en style inline donc pas suivies par les
 // variables CSS) dès le tout premier rendu, avant même de dessiner quoi que
@@ -9,12 +9,12 @@
 let colorMode = loadJSON(KEYS.colorMode, "day");
 function applyColorMode(mode) {
   colorMode = mode;
-  document.documentElement.classList.remove("mode-day", "mode-night", "mode-anne");
+  document.documentElement.classList.remove("mode-day", "mode-night", "mode-anne", "mode-mono");
   document.documentElement.classList.add("mode-" + mode);
   applyActivityMetaColors(mode);
   // Zone de la barre d'état (iOS, Android) : couleur du fond de page du thème.
   const meta = document.getElementById("theme-color-meta");
-  if (meta) meta.setAttribute("content", { night: "#1E1A17", anne: "#FCE3EC" }[mode] || "#F3ECE4");
+  if (meta) meta.setAttribute("content", { night: "#1E1A17", anne: "#FCE3EC", mono: "#0A0A0A" }[mode] || "#F3ECE4");
 }
 applyColorMode(colorMode);
 

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&display=swap");
 
 /* ==========================================================================
    GymLog — feuille de style de la refonte visuelle.
@@ -1117,6 +1117,65 @@ html.mode-night #app.theme-auth { --accent: #EDE4DB; --accent-rgb: 237, 228, 219
    et lumineux en haut de CHAQUE écran, ce qui va à l'encontre du "doux pour
    les yeux" recherché par un mode nuit. */
 html.mode-night .header { background: #15110E; }
+
+/* ---------- Mono (3.6.0) : noir & blanc, esprit salle de sport ----------
+   Pour un public « fitness » : noir profond, blanc pur, gris en dégradé —
+   aucune couleur. Titres et grands chiffres en Barlow Condensed, capitales,
+   gras, légèrement serrés (codes des marques de sport) ; coins nets (4 px),
+   pas d'ombre. Les boutons principaux sont BLANCS sur noir ; le bandeau du
+   repos est blanc, chiffres noirs. Les sports se distinguent par des gris
+   (du blanc au gris moyen), lisibles sur le noir. */
+html.mode-mono { color-scheme: dark; }
+html.mode-mono, html.mode-mono #app {
+  --bg: #0A0A0A;
+  --surface: #161616;
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.12);
+  --rule: rgba(255, 255, 255, 0.16);
+  --text: #F4F4F4;
+  --text-dim: rgba(244, 244, 244, 0.66);
+  --ink: #F4F4F4;
+  --ink-rgb: 244,244,244;
+  --on-ink: #0A0A0A;
+  --on-ink-rgb: 10,10,10;
+  --surface-rgb: 22,22,22;
+  --action: #F4F4F4;
+  --yellow: #F4F4F4;
+  --yellow-rgb: 244,244,244;
+  --rgb-gym: 244,244,244;
+  --rgb-run: 190,190,190;
+  --rgb-swim: 145,145,145;
+  --rgb-bike: 215,215,215;
+  --rgb-performance: 244,244,244;
+  --rgb-weight: 200,200,200;
+  --rgb-calendar: 170,170,170;
+  --radius: 4px;
+  --radius-sm: 3px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --shadow-card: none;
+  --font-display: "Barlow Condensed", "Arial Narrow", -apple-system, sans-serif;
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A0A0A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+html.mode-mono #app[class*="theme-"] { --accent: #F4F4F4; --accent-rgb: 244, 244, 244; }
+html.mode-mono .header { background: #0A0A0A; }
+/* Typo « sport » : titres d'écran, noms d'exercice, grands chiffres. */
+html.mode-mono .screen-title,
+html.mode-mono .live-exercise-name,
+html.mode-mono .live-plan-next-name,
+html.mode-mono .home-tile-title,
+html.mode-mono .home-hero-title { font-family: var(--font-display); text-transform: uppercase; font-weight: 800; letter-spacing: 0.01em; }
+html.mode-mono .screen-title { font-size: 40px; line-height: 0.95; font-style: italic; }
+html.mode-mono .live-rest-hero-value,
+html.mode-mono .live-header-chrono,
+html.mode-mono .live-stepper-value { font-family: var(--font-display); font-weight: 800; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+html.mode-mono .live-rest-hero-value { font-size: 72px; }
+/* Puces et boutons : contour fin, la choisie pleine blanche. */
+html.mode-mono .ex-type-btn.active { background: #F4F4F4; color: #0A0A0A; border-color: #F4F4F4; }
+html.mode-mono .save-btn, html.mode-mono .live-validate-btn { text-transform: uppercase; letter-spacing: 0.06em; }
+/* Le blanc des boutons « principaux » mérite un texte bien noir. */
+html.mode-mono .live-validate-btn:not(.live-finish-btn) { background: #F4F4F4; color: #0A0A0A; }
+html.mode-mono .live-finish-btn { background: transparent; color: #F4F4F4; border: 1.5px solid #F4F4F4; }
 
 /* ---------- Anne : palette "Barbra" (thème Slack), construite à partir de
    trois couleurs precises — #FFC4D9 (rose clair), #9E0B2E (bordeaux foncé,
@@ -2452,3 +2511,20 @@ html.mode-anne .plan-gap-btn { box-shadow: 0 1px 3px rgba(158, 11, 46, 0.16); }
 .loop-step-add span { display: flex; align-items: center; gap: 6px; color: var(--text-dim); font-weight: 700; }
 .loop-step-add span svg { width: 14px; height: 14px; }
 .live-loop-next { margin-top: 6px; text-align: center; font-family: var(--font); font-size: 14px; font-weight: 700; color: var(--text-dim); }
+
+/* Mono (3.6.0), suite : grandes surfaces blanches → texte noir. */
+html.mode-mono .home-tile-wide { background: #F4F4F4; color: #0A0A0A; border-color: #F4F4F4; }
+html.mode-mono .home-tile-wide .home-tile-eyebrow { color: rgba(10, 10, 10, 0.62) !important; }
+html.mode-mono .home-tile-wide .home-tile-title { color: #0A0A0A !important; font-size: 34px; font-style: italic; }
+html.mode-mono .home-tile-wide .home-tile-play-btn { background: #0A0A0A; color: #F4F4F4; }
+/* Bandeau du chrono : REPOS = blanc, chiffres noirs ; EFFORT = noir, filet
+   blanc, chiffres blancs (les deux restent bien distincts). */
+html.mode-mono .live-rest-hero { background: #F4F4F4; border: 1.5px solid #F4F4F4; }
+html.mode-mono .live-rest-hero .live-rest-hero-label,
+html.mode-mono .live-rest-hero .live-rest-hero-value { color: #0A0A0A; }
+html.mode-mono .live-rest-hero.live-rest-hero-active { background: #0A0A0A; border-color: #F4F4F4; }
+html.mode-mono .live-rest-hero.live-rest-hero-active .live-rest-hero-label,
+html.mode-mono .live-rest-hero.live-rest-hero-active .live-rest-hero-value { color: #F4F4F4; }
+/* Détail d'une séance : disques, haltères… en niveaux de gris (le poids reste
+   lisible par la taille et le chiffre). */
+html.mode-mono .gx-sets svg, html.mode-mono .gx-sets .gx-plate { filter: grayscale(1) contrast(1.1); }

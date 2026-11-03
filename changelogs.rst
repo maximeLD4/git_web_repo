@@ -7,6 +7,28 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.6.0 - 2026-10-21
+====================
+
+- **Nouveau mode « Mono » (Réglages > Apparence)** — une proposition noir & blanc pour un
+  public « fitness », à côté de Jour, Nuit et Anne :
+  - noir profond (#0A0A0A), cartes gris très foncé, blanc pur — **aucune couleur** ; les
+    sports se distinguent par des gris (calendrier, graphiques), et les disques / haltères
+    du détail d'une séance passent en niveaux de gris ;
+  - **typographie « marque de sport »** : titres d'écran, noms d'exercice, tuiles et grands
+    chiffres (chrono, compteurs) en **Barlow Condensed**, gras, capitales, titres en
+    italique ; coins nets (4 px), pas d'ombre ;
+  - boutons principaux **blancs, texte noir, en capitales** (« LANCER SQUAT ») ; « Finir la
+    série » en contour blanc ;
+  - bandeau du chrono : **repos = blanc, chiffres noirs** ; **effort = noir, filet et chiffres
+    blancs** — les deux phases restent distinctes d'un coup d'œil ;
+  - tuile « Séance en direct » de l'accueil blanche, titre noir en italique ;
+  - barre d'état noire.
+  Contraste des grandes surfaces : 18:1.
+- Vérifié : nouvelle batterie ``tools/tests/mono_theme.js`` (8 contrôles : choix et mémorisation
+  du mode, barre d'état, fond et cartes, tuile de l'accueil, bandeaux effort / repos et bouton
+  « Lancer » à 18:1). Les autres batteries passent toujours.
+
 3.5.0 - 2026-10-21
 ====================
 

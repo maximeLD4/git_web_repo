@@ -190,6 +190,14 @@ const ACTIVITY_META = [
 // toutes, pour qu'elles restent lisibles sur un fond sombre (Nuit) ou
 // s'accordent avec la teinte rose (Anne).
 const ACTIVITY_META_COLORS = {
+  // Mono (3.6.0) : des gris, du blanc au gris moyen, lisibles sur le noir.
+  mono: {
+    gym: ["#F4F4F4", "244,244,244"],
+    run: ["#BEBEBE", "190,190,190"],
+    swim: ["#919191", "145,145,145"],
+    bike: ["#D7D7D7", "215,215,215"],
+    gainage: ["#A5A5A5", "165,165,165"],
+  },
   day: {
     gym: ["#8FA06B", "143,160,107"],
     run: ["#D08A62", "208,138,98"],

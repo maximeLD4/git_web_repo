@@ -75,7 +75,7 @@ function renderSettingsContent() {
       <div class="home-list-row" data-open-settings="appearance">
         <div class="home-list-icon home-list-icon-square" style="background: var(--yellow); color:#FFF8F0;">${ICONS.sun}</div>
         <div class="home-list-label">Apparence</div>
-        <div class="home-list-value">${colorMode === "day" ? "Jour" : colorMode === "night" ? "Nuit" : "Anne"}</div>
+        <div class="home-list-value">${{ day: "Jour", night: "Nuit", anne: "Anne", mono: "Mono" }[colorMode] || "Jour"}</div>
         <div class="home-list-chevron">${ICONS.chevronRight}</div>
       </div>
       <div class="home-list-row" data-open-settings="sound">
@@ -127,8 +127,13 @@ function renderSettingsAppearanceApp() {
           <div class="home-list-label">Anne</div>
           ${colorMode === "anne" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
         </div>
+        <div class="home-list-row" data-color-mode="mono">
+          <div class="home-list-icon home-list-icon-square" style="background: #0A0A0A; color:#F4F4F4; border:1px solid rgba(255,255,255,0.2);">${ICONS.dumbbell}</div>
+          <div class="home-list-label">Mono</div>
+          ${colorMode === "mono" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
+        </div>
       </div>
-      <div class="field-hint">Nuit adoucit l'écran le soir. Anne passe l'app dans une palette rose.</div>
+      <div class="field-hint">Nuit adoucit l'écran le soir. Anne passe l'app dans une palette rose. Mono : noir & blanc, esprit salle de sport.</div>
       <div class="home-section-label" style="margin-top:22px;">Aide</div>
       <div class="field-list-card">
         <div class="field-list-row">
