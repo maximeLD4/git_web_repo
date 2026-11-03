@@ -7,6 +7,87 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.4.1 - 2026-10-21
+====================
+
+- **Correctif : le chrono sautait un chiffre** (gainage : 36 → 34, 46 → 44…). Les chronos
+  de la Séance en direct se mettaient à jour avec une minuterie d'une seconde partie à un
+  instant quelconque, et affichaient les secondes entières écoulées : quand un tic tombait
+  juste avant le passage d'une seconde et le suivant un rien après la seconde d'après, la
+  valeur du milieu ne s'affichait jamais — plus fréquent sur téléphone, où les minuteries
+  glissent. Chaque tic est désormais programmé juste après le passage de la seconde
+  suivante, comptée depuis le début de la phase (ou de la séance) : chaque valeur
+  s'affiche, une fois. Vaut pour le bandeau (décompte de la boucle, repos, série au
+  chrono) et le chrono de la séance en haut.
+- Vérifié : nouvelle batterie ``tools/tests/chrono_steps.js`` (3 contrôles : 17 s de boucle de
+  gainage avec des minuteries imprécises de ±30 ms et une phase démarrée juste avant une
+  seconde, lecture de l'affichage à chaque image) — la version précédente sautait le 16
+  (17 → 15), celle-ci affiche toutes les valeurs ; ``loop_countdown``, ``plan_rest``,
+  ``live_fixed``… passent toujours.
+
+3.4.0 - 2026-10-21
+====================
+
+- **Salle de sport : écran de création allégé.**
+  - **Un en-tête à lui** : le titre dit ce qu'on fait (« Nouvelle séance », « Nouveau
+    plan », « Modifier la séance », « Modifier le plan ») ; **un seul lien de retour**,
+    vers la liste (« ‹ Séances » / « ‹ Plans », ou « ‹ Calendrier » pour une modification
+    ouverte depuis le Calendrier) au lieu de « ‹ Accueil » en haut + « ‹ Plans » juste
+    dessous ; **plus le nombre de séances / plans** (il reste sur la liste).
+  - **Plus de rangée « Importer / Réinitialiser » en tête du formulaire.**
+    - « Importer un plan partagé » / « Importer une séance partagée » passe sur la **liste**,
+      en petit lien sous la carte « Ajouter » ; le fichier importé ouvre le formulaire,
+      rempli.
+    - « Réinitialiser » devient **« Tout effacer »**, un petit lien en bas du formulaire,
+      seulement pour une nouvelle saisie qui a du contenu (toujours confirmé d'un second
+      appui).
+  - **Plus de bannière « Modification d'une séance / d'un plan existant · Annuler »** : le
+    titre le dit, et le retour annule (depuis le Calendrier, il y ramène, sans rien
+    garder — comme l'ancien « Annuler »).
+- Vérifié : ``tools/tests/gym_list.js`` (22 contrôles, dont six nouveaux : import sur la liste,
+  en-tête du formulaire, plus de rangée Importer / Réinitialiser, « Tout effacer » en bas
+  seulement avec du contenu, effacement confirmé, en-tête et plus de bannière en
+  modification). Les autres batteries passent toujours.
+
+3.3.7 - 2026-10-21
+====================
+
+- **− et + enfin centrés dans leurs boutons.** C'étaient des caractères : leur hauteur
+  dépend des métriques de la police réellement affichée, et la petite compensation en
+  place ne tombait juste que pour une police — mesuré, le − et le + étaient 1,5 à 3,5 px
+  trop hauts (et sur iPhone, avec la police système, autrement). Ils sont désormais
+  dessinés (deux traits), centrés géométriquement dans le bouton, quelle que soit la
+  police : tous les − / + de l'app (Réglages, Créer, plans, Séance en direct, petits − / +
+  de la distance, repos d'un écart), sans toucher aux gabarits ; le bouton garde son
+  libellé pour les lecteurs d'écran.
+- Vérifié : ``tools/tests/input_focus.js`` (9 contrôles, dont : chaque − / + est un dessin
+  à moins de 0,5 px du centre de son bouton, dans Réglages et en Séance en direct) ;
+  ``live_fixed``, ``settings_layout``, ``plan_rest``, ``increment``, ``session_detail``,
+  ``onboarding`` passent toujours (les − / + y sont touchés).
+
+3.3.6 - 2026-10-21
+====================
+
+- **Boutons − / + : plus jamais collés.** Là où il n'y a pas de valeur entre les deux
+  (« Incrément possible », repos d'un plan, boucle de gainage), ils se touchaient — dans
+  tous les thèmes —, et en mode Anne, où ces petits boutons ont une ombre, les deux ombres
+  se fondaient en une tache. Un espace de 6 px entre eux partout (4 px dans les compteurs
+  de la Séance en direct), et en mode Anne une ombre plus serrée sur ces petits boutons.
+- Vérifié : ``tools/tests/input_focus.js`` (7 contrôles, dont l'écart − / + dans les trois
+  thèmes et l'ombre en mode Anne) ; ``live_fixed.js`` (80) : les écrans du direct tiennent
+  toujours dans la hauteur.
+
+3.3.5 - 2026-10-21
+====================
+
+- **Correctif mode Anne : un rectangle rosé autour du texte qu'on tape.** Un champ touché
+  (nom de l'exercice, poids à ajouter, incrément…) reprenait l'ombre des cartes
+  (``--shadow-card``) : nulle en Jour et en Nuit, mais rosée en mode Anne — la « boîte » du
+  champ ressortait, d'une autre teinte que l'encart. Plus d'ombre sur un champ touché : même
+  rendu dans les trois thèmes.
+- Vérifié : nouvelle batterie ``tools/tests/input_focus.js`` (4 contrôles : trois champs du
+  formulaire d'exercice, trois thèmes).
+
 3.3.4 - 2026-10-21
 ====================
 

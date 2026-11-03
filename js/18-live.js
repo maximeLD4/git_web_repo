@@ -876,9 +876,14 @@ function getExerciseDurationSeconds(ex) {
 let liveChronoInterval = null;
 
 function startLiveChrono() {
-  clearInterval(liveChronoInterval);
-  updateLiveChronoDisplay();
-  liveChronoInterval = setInterval(updateLiveChronoDisplay, 1000);
+  clearTimeout(liveChronoInterval);
+  // Calé sur la seconde, comme le chrono du bandeau (voir liveMsToNextSecond).
+  const step = () => {
+    updateLiveChronoDisplay();
+    if (!liveSession || !liveSession.startedAt || !document.getElementById("live-chrono")) return;
+    liveChronoInterval = setTimeout(step, liveMsToNextSecond(liveSession.startedAt));
+  };
+  step();
 }
 
 function updateLiveChronoDisplay() {
@@ -926,11 +931,30 @@ function stopLiveRestManually() {
 // voir liveStatusHeroHTML), pour ne jamais laisser tourner un intervalle
 // inutile. Fait aussi avancer le minuteur en boucle (Gainage) le cas
 // échéant — voir liveTick.
+// Chronos « calés sur la seconde » (3.4.1). Avant : un setInterval(1000)
+// démarré à un instant quelconque, et l'affichage en secondes entières
+// (Math.floor) — si un tic tombait juste avant le passage d'une seconde
+// (10,99 s → « 10 ») et que le suivant arrivait un rien en retard (12,01 s →
+// « 12 »), le « 11 » ne s'affichait jamais : le décompte sautait un chiffre
+// (36 → 34, 46 → 44…), d'autant plus sur téléphone où les minuteries
+// glissent. Désormais chaque tic est programmé pour tomber juste APRÈS le
+// passage de la seconde suivante, compté depuis le début de la phase : chaque
+// valeur est affichée, une fois.
+const LIVE_TICK_MARGIN_MS = 30;
+function liveMsToNextSecond(startedAt) {
+  const e = Date.now() - startedAt;
+  return 1000 - (((e % 1000) + 1000) % 1000) + LIVE_TICK_MARGIN_MS;
+}
 function ensureLiveRestTicking() {
-  clearInterval(liveRestChronoInterval);
+  clearTimeout(liveRestChronoInterval);
   if (!liveSession || (!liveSession.restStartedAt && !liveSession.setInProgressStartedAt)) return;
-  liveTick();
-  liveRestChronoInterval = setInterval(liveTick, 1000);
+  const step = () => {
+    liveTick();
+    const start = liveSession ? liveSession.restStartedAt || liveSession.setInProgressStartedAt : null;
+    if (!start) return;
+    liveRestChronoInterval = setTimeout(step, liveMsToNextSecond(start));
+  };
+  step();
 }
 
 function liveTick() {

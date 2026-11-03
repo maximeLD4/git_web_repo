@@ -473,11 +473,18 @@ function renderGymApp() {
   // pour cette redirection (voir le bouton "Enregistrer").
   if (tab === "log" && draft.kind && draft.kind !== gymTopMode) gymTopMode = draft.kind;
   const isPlanMode = gymTopMode === "plan";
+  // Formulaire (3.4.0) : un en-tête à lui — retour vers la LISTE (un seul
+  // lien de retour, plus « ‹ Accueil » + « ‹ Plans »), titre qui dit ce qu'on
+  // fait (« Nouveau plan », « Modifier la séance »…), plus de nombre de
+  // séances / plans (inutile ici).
+  const inForm = tab === "log";
+  const formTitle = isPlanMode ? (editingPlanId ? "Modifier le plan" : "Nouveau plan") : editingSessionId ? "Modifier la séance" : "Nouvelle séance";
+  const backLabel = inForm ? (calendarReturnTarget && (editingSessionId || editingPlanId) ? "Calendrier" : isPlanMode ? "Plans" : "Séances") : "Accueil";
   app.innerHTML = `
     <div class="header header-plain-title">
-      <button type="button" class="back-btn-text" data-go-home>${ICONS.back} Accueil</button>
-      <div class="screen-title">Salle de sport</div>
-      <div class="header-sub screen-subtitle" id="gym-header-sub">${gymHeaderSubText()}</div>
+      <button type="button" class="back-btn-text" ${inForm ? "data-gym-back-to-list" : "data-go-home"}>${ICONS.back} ${backLabel}</button>
+      <div class="screen-title">${inForm ? formTitle : "Salle de sport"}</div>
+      ${inForm ? "" : `<div class="header-sub screen-subtitle" id="gym-header-sub">${gymHeaderSubText()}</div>`}
     </div>
     <div class="ex-type-toggle ex-type-toggle-pill" id="gym-top-mode-toggle" style="margin: 14px 16px 0 18px;">
       <button type="button" class="ex-type-btn ${!isPlanMode ? "active" : ""}" data-gym-top-mode="session">Séance effectuée</button>
@@ -489,13 +496,31 @@ function renderGymApp() {
   // Plus de barre « Créer / Séances|Plans » en bas (3.0.0) : un seul choix,
   // Séance effectuée / Plan à préparer, qui affiche sa liste ; en tête de
   // liste, « Ajouter » ouvre le formulaire, qui a son lien de retour.
-  document.querySelector("[data-go-home]").addEventListener("click", () => {
-    if (calendarReturnTarget) {
-      returnToCalendar();
-    } else {
-      goHome();
-    }
-  });
+  const goHomeBtn = document.querySelector("[data-go-home]");
+  if (goHomeBtn)
+    goHomeBtn.addEventListener("click", () => {
+      if (calendarReturnTarget) {
+        returnToCalendar();
+      } else {
+        goHome();
+      }
+    });
+  const backToListBtn = document.querySelector("[data-gym-back-to-list]");
+  if (backToListBtn)
+    backToListBtn.addEventListener("click", () => {
+      // Modification ouverte depuis le Calendrier : on y retourne, sans rien
+      // garder (comme l'ancien « Annuler » de la bannière de modification).
+      if (calendarReturnTarget && (editingSessionId || editingPlanId)) {
+        clearDraft();
+        returnToCalendar();
+        return;
+      }
+      // Sinon : retour à la liste ; le brouillon reste enregistré
+      // (« Ajouter » proposera de le reprendre).
+      flushDraftSave();
+      tab = "history";
+      renderGymApp();
+    });
   document.querySelectorAll("[data-gym-top-mode]").forEach((btn) => {
     btn.addEventListener("click", () => switchGymTopMode(btn.dataset.gymTopMode));
   });
@@ -580,7 +605,11 @@ function gymAddCardHTML() {
         <span class="gym-add-card-title">${isPlan ? "Ajouter un plan" : "Ajouter une séance"}</span>
         ${resume ? `<span class="gym-add-card-sub">Reprendre ${isPlan ? "le plan" : "la séance"} en cours${draft.label ? ` « ${escapeHTML(draft.label)} »` : ""}</span>` : ""}
       </span>
-    </button>`;
+    </button>
+    <div class="gym-import-row">
+      <button type="button" class="gym-import-link" id="import-draft-btn">${ICONS.down} ${isPlan ? "Importer un plan partagé" : "Importer une séance partagée"}</button>
+      <input type="file" id="import-draft-file" accept="application/json" style="display:none">
+    </div>`;
 }
 function startNewGymEntry() {
   const kind = gymTopMode;
@@ -615,18 +644,11 @@ function renderContent() {
   if (sub) sub.textContent = gymHeaderSubText();
   if (tab === "log") {
     const isPlan = gymTopMode === "plan";
-    content.innerHTML = `<button type="button" class="back-btn-text gym-form-back" data-gym-back-to-list>${ICONS.back} ${isPlan ? "Plans" : "Séances"}</button>` + logTabHTML();
+    content.innerHTML = logTabHTML();
   } else content.innerHTML = gymAddCardHTML() + historyTabHTML();
-  const backToList = content.querySelector("[data-gym-back-to-list]");
-  if (backToList)
-    backToList.addEventListener("click", () => {
-      // Le brouillon reste enregistré : « Ajouter » le proposera à la reprise.
-      flushDraftSave();
-      tab = "history";
-      renderGymApp();
-    });
   const addCard = content.querySelector("[data-new-entry]");
   if (addCard) addCard.addEventListener("click", startNewGymEntry);
+  attachGymImport(content);
   attachContentListeners();
 
   const actionsBar = document.getElementById("log-actions-bar");
@@ -900,16 +922,18 @@ function logTabHTML() {
       <label class="field-list-row" for="log-date"><span>Date</span><input type="date" id="log-date" value="${draft.date}"></label>
       <label class="field-list-row" for="log-label"><span>Séance</span><input type="text" id="log-label" placeholder="Push day…" value="${(draft.label || "").replace(/"/g, "&quot;")}"></label>
     </div>`;
+  // Plus de rangée « Importer / Réinitialiser » ni de bannière « Modification
+  // d'un … existant » en tête (3.4.0) : le titre de l'écran dit déjà ce qu'on
+  // fait, l'import est sur la liste, et « Tout effacer » est un petit lien en
+  // bas du formulaire, seulement pour une nouvelle saisie qui a du contenu.
+  void editBanner;
+  const hasContent = (draft.exercises || []).length > 0 || !!(draft.label || "").trim();
+  const resetHTML = !editingSessionId && !editingPlanId && hasContent ? `<div class="form-reset-row"><button type="button" class="form-reset-link" id="reset-draft-btn">${ICONS.reset} Tout effacer</button></div>` : "";
   return `
-    <div class="backup-row">
-      <button class="backup-btn" id="import-draft-btn">${ICONS.down} ${isPlan ? "Importer un plan" : "Importer une séance"}</button>
-      <button class="backup-btn" id="reset-draft-btn">${ICONS.reset} Réinitialiser</button>
-      <input type="file" id="import-draft-file" accept="application/json" style="display:none">
-    </div>
-    ${editBanner}
     ${fieldsHTML}
     <div id="exercises-container">${exercisesHTML}</div>
     <datalist id="exercise-suggestions">${libOptions}</datalist>
+    ${resetHTML}
     <div id="log-bottom-spacer" style="height:0;"></div>
   `;
 }
@@ -932,31 +956,13 @@ function logActionsBarContentHTML() {
 }
 
 
-/* ---------- listeners ---------- */
-function attachContentListeners() {
-  if (tab === "log") attachLogListeners();
-  else attachHistoryListeners();
-}
-
-function attachLogListeners() {
-  const dateEl = document.getElementById("log-date");
-  const labelEl = document.getElementById("log-label");
-  if (dateEl) dateEl.addEventListener("input", scheduleDraftSave);
-  labelEl.addEventListener("input", scheduleDraftSave);
-
-  const importDraftBtn = document.getElementById("import-draft-btn");
-  const importDraftFile = document.getElementById("import-draft-file");
+// Import d'une séance / d'un plan partagé (fichier) — sur la LISTE depuis
+// 3.4.0 : il remplit le formulaire, qui s'ouvre aussitôt.
+function attachGymImport(root) {
+  const importDraftBtn = root.querySelector("#import-draft-btn");
+  const importDraftFile = root.querySelector("#import-draft-file");
+  if (!importDraftBtn || !importDraftFile) return;
   importDraftBtn.addEventListener("click", () => importDraftFile.click());
-
-  attachArmedConfirmButton(
-    document.getElementById("reset-draft-btn"),
-    `${ICONS.reset} Réinitialiser`,
-    `${ICONS.reset} Confirmer ?`,
-    () => {
-      clearDraft();
-      renderContent();
-    }
-  );
   importDraftFile.addEventListener("change", () => {
     const file = importDraftFile.files[0];
     if (!file) return;
@@ -991,8 +997,12 @@ function attachLogListeners() {
             editingSessionId: null,
           };
           editingSessionId = null;
+          editingPlanId = null;
+          draft.kind = gymTopMode;
           saveJSON(KEYS.draft, draft);
-          renderContent();
+          // Importé : on ouvre le formulaire avec (3.4.0, l'import est sur la liste).
+          tab = "log";
+          renderGymApp();
         },
         { confirmLabel: "Charger" }
       );
@@ -1000,6 +1010,28 @@ function attachLogListeners() {
     };
     reader.readAsText(file);
   });
+}
+
+/* ---------- listeners ---------- */
+function attachContentListeners() {
+  if (tab === "log") attachLogListeners();
+  else attachHistoryListeners();
+}
+
+function attachLogListeners() {
+  const dateEl = document.getElementById("log-date");
+  const labelEl = document.getElementById("log-label");
+  if (dateEl) dateEl.addEventListener("input", scheduleDraftSave);
+  labelEl.addEventListener("input", scheduleDraftSave);
+
+  const resetBtn = document.getElementById("reset-draft-btn");
+  if (resetBtn)
+    attachArmedConfirmButton(resetBtn, `${ICONS.reset} Tout effacer`, `${ICONS.reset} Confirmer ?`, () => {
+      clearDraft();
+      draft.kind = gymTopMode;
+      saveJSON(KEYS.draft, draft);
+      renderGymApp();
+    });
 
   const cancelEditBtn = document.getElementById("cancel-edit-btn");
   if (cancelEditBtn) {

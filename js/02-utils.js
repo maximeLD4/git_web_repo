@@ -1035,3 +1035,39 @@ function startDragItem(e, item, container, onDrop) {
   item.addEventListener("pointerup", onUp);
   item.addEventListener("pointercancel", onUp);
 }
+
+/* ---------- − / + dessinés, pas écrits (3.3.7) ----------
+   Les boutons − / + affichaient des caractères : leur position verticale
+   dépend des métriques de la police (et de la police réellement chargée :
+   celle de l'app, ou la police système d'iOS si elle tarde). La petite
+   compensation en em de 2.x ne tombait juste que pour une police — sur
+   iPhone, le − et le + paraissaient trop hauts. On remplace donc le caractère
+   par un petit dessin (deux traits), centré géométriquement dans le bouton,
+   quelle que soit la police. Fait pour tout bouton − / + de l'app, à chaque
+   rendu, sans toucher aux gabarits (le texte reste en aria-label). */
+const STEP_GLYPH_SELECTOR = ".rep-step-btn, .live-stepper-btn, .live-stepper-tiny-btn, .plan-gap-btn";
+function stepGlyphSVG(kind) {
+  const bar = '<line x1="5" y1="12" x2="19" y2="12"/>';
+  const vert = kind === "plus" ? '<line x1="12" y1="5" x2="12" y2="19"/>' : "";
+  return `<svg class="step-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">${bar}${vert}</svg>`;
+}
+function drawStepGlyphs(root) {
+  (root || document).querySelectorAll(STEP_GLYPH_SELECTOR).forEach((btn) => {
+    if (btn.dataset.stepGlyph) return;
+    const t = btn.textContent.trim();
+    const kind = t === "+" ? "plus" : t === "−" || t === "-" || t === "–" ? "minus" : null;
+    if (!kind) return;
+    if (!btn.getAttribute("aria-label")) btn.setAttribute("aria-label", kind === "plus" ? "Plus" : "Moins");
+    btn.innerHTML = stepGlyphSVG(kind);
+    btn.dataset.stepGlyph = kind;
+  });
+}
+new MutationObserver((muts) => {
+  for (const m of muts) {
+    for (const n of m.addedNodes) {
+      if (n.nodeType !== 1) continue;
+      if (n.matches && n.matches(STEP_GLYPH_SELECTOR)) drawStepGlyphs(n.parentNode);
+      else if (n.querySelector && n.querySelector(STEP_GLYPH_SELECTOR)) drawStepGlyphs(n);
+    }
+  }
+}).observe(document.documentElement, { childList: true, subtree: true });

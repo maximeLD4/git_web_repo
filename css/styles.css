@@ -2401,3 +2401,36 @@ select.app-select.app-select-row {
 .cloud-sync-badge.pending::before { background: var(--accent); animation: cloudPulse 1.2s ease-in-out infinite; }
 @keyframes cloudPulse { 50% { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .cloud-sync-badge.pending::before { animation: none; } }
+
+/* Champ de saisie touché (3.3.5) : pas d'ombre de carte autour du texte.
+   input:focus reprenait --shadow-card, nulle en Jour et en Nuit mais rosée en
+   mode Anne : un rectangle (la « boîte » du champ) apparaissait autour du nom
+   qu'on tape, d'une autre teinte que l'encart. Même rendu dans les 3 thèmes. */
+input:focus, .set-main input:focus { box-shadow: none; }
+
+/* Boutons − / + (3.3.6) : jamais collés l'un à l'autre. Dans « Incrément
+   possible », les lignes de repos ou de boucle, il n'y a pas de valeur entre
+   les deux : ils se touchaient, et en mode Anne (où les petits boutons ont une
+   ombre) les deux ombres se fondaient en une tache. Un espace partout, et en
+   mode Anne une ombre plus serrée sur ces petits boutons. */
+.rep-stepper { gap: 6px; }
+.live-stepper { gap: 4px; }
+html.mode-anne .rep-step-btn,
+html.mode-anne .live-stepper-btn,
+html.mode-anne .live-stepper-tiny-btn,
+html.mode-anne .plan-gap-btn { box-shadow: 0 1px 3px rgba(158, 11, 46, 0.16); }
+
+/* − / + dessinés (3.3.7, voir drawStepGlyphs) : centrés géométriquement, plus
+   de compensation de police. Taille proportionnelle au bouton. */
+.rep-step-btn[data-step-glyph], .live-stepper-btn[data-step-glyph], .live-stepper-tiny-btn[data-step-glyph], .plan-gap-btn[data-step-glyph] { padding: 0; }
+.step-glyph { display: block; width: 52%; height: 52%; pointer-events: none; }
+.rep-step-btn .step-glyph { width: 62%; height: 62%; }
+.live-stepper-tiny-btn .step-glyph { width: 56%; height: 56%; }
+.plan-gap-btn .step-glyph { width: 50%; height: 50%; }
+
+/* Salle de sport, liste (3.4.0) : « Importer … partagé(e) » en petit lien sous
+   la carte « Ajouter ». Formulaire : « Tout effacer » en petit lien en bas. */
+.gym-import-row { display: flex; justify-content: center; margin: -2px 0 12px; }
+.gym-import-link, .form-reset-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: none; border: none; color: var(--text-dim); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
+.gym-import-link svg, .form-reset-link svg { width: 14px; height: 14px; }
+.form-reset-row { display: flex; justify-content: center; margin: 4px 0 8px; }
