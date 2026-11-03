@@ -7,6 +7,36 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.5.0 - 2026-10-21
+====================
+
+- **Boucle de gainage à plusieurs exercices.** Le réglage de la boucle (Séance en direct >
+  Gainage > « Lancer en boucle ») décrit maintenant **un tour** : un ou plusieurs gainages,
+  dans l'ordre, chacun avec **sa durée**, enchaînés **sans pause** ; puis le **repos entre
+  les tours** (0 = « Aucun » : on enchaîne directement le tour suivant) et le **nombre de
+  tours**. Exemples : (Planche 30 s, Planche latérale 30 s, repos 30 s) × 10, ou (Planche
+  30 s, Planche latérale 30 s) × 10 sans repos.
+  - Ajouter : « + Ajouter un gainage » (menu des gainages configurés, sinon des
+    suggestions) ; retirer : « × » ; jusqu'à 4 gainages par tour. Le 1er est le gainage
+    affiché.
+  - Pendant la boucle, l'écran et le bandeau passent d'un gainage à l'autre (« Planche
+    latérale — Tour 3/10 ») ; « Ensuite : Planche latérale · 30 s » (ou « repos », ou le 1er
+    gainage du tour suivant) montre ce qui vient ; « Passer » devient « Passer à Planche
+    latérale » entre deux gainages.
+  - **Chaque gainage s'enregistre sous son nom** (une série par passage, avec son temps).
+  - Bips : décompte 3, 2, 1 à chaque changement ; « GO » pour passer d'un gainage au
+    suivant ou au tour suivant, « STOP » seulement avant un repos.
+  - Une boucle à un seul gainage fonctionne exactement comme avant.
+- Correctif au passage : avec un repos de 0 s, passer une phase pouvait la « repasser »
+  aussitôt (le chrono, relancé pendant le passage, le redéclenchait) et terminer la boucle
+  à tort — garde contre ce double passage.
+- Vérifié : nouvelle batterie ``tools/tests/loop_multi.js`` (19 contrôles : réglage — ajout,
+  durées, repos « Aucun », tours, tout visible sur un iPhone SE — ; (Planche 5 s, Planche
+  latérale 5 s) × 2 sans repos : ordre des écrans, une série de 5 s par passage sous chaque
+  exercice, bips ; avec repos : enchaînement sans pause puis repos puis tour 2 ; arrêt ;
+  boucle à un seul gainage inchangée). ``loop_countdown``, ``chrono_steps``, ``live_fixed``,
+  ``activity_icons`` passent toujours.
+
 3.4.2 - 2026-10-21
 ====================
 

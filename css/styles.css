@@ -2437,3 +2437,18 @@ html.mode-anne .plan-gap-btn { box-shadow: 0 1px 3px rgba(158, 11, 46, 0.16); }
 .gym-import-link, .form-reset-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: none; border: none; color: var(--text-dim); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
 .gym-import-link svg, .form-reset-link svg { width: 14px; height: 14px; }
 .form-reset-row { display: flex; justify-content: center; margin: 4px 0 8px; }
+
+/* Boucle à plusieurs gainages (3.5.0) : réglage compact (l'écran du direct
+   ne défile pas) et « Ensuite : … » pendant la boucle. */
+.loop-steps-card .field-list-row { padding-top: 6px; padding-bottom: 6px; min-height: 44px; box-sizing: border-box; }
+.loop-step-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
+.loop-step-name { flex: 1; min-width: 0; font-weight: 700; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: normal; word-break: normal; hyphens: auto; }
+.loop-step-sec { min-width: 34px; text-align: right; }
+.loop-step-remove { margin-left: 2px; width: 24px; }
+.loop-steps-card .rep-step-btn { width: 30px; height: 30px; }
+.loop-steps-card .rep-stepper { padding: 3px; gap: 4px; }
+.loop-step-sec { flex: none; color: var(--text-dim); margin-right: 8px; font-variant-numeric: tabular-nums; }
+.loop-step-remove { flex: none; width: 28px; height: 28px; margin-left: 6px; border: none; border-radius: 50%; background: none; color: var(--text-dim); font-size: 20px; line-height: 1; cursor: pointer; }
+.loop-step-add span { display: flex; align-items: center; gap: 6px; color: var(--text-dim); font-weight: 700; }
+.loop-step-add span svg { width: 14px; height: 14px; }
+.live-loop-next { margin-top: 6px; text-align: center; font-family: var(--font); font-size: 14px; font-weight: 700; color: var(--text-dim); }

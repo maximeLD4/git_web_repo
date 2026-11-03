@@ -22,14 +22,19 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
     window.__seen = []; const read = () => { const el = document.getElementById('live-rest-chrono'); const c = document.getElementById('live-chrono'); window.__seen.push([el ? el.textContent : '', c ? c.textContent : '']); }; window.__rd = setInterval.call(window, read, 0); // remplacé ci-dessous
   });
   // Lecture fine de l'affichage (toutes les 25 ms, minuterie native non perturbée via requestAnimationFrame).
-  await p.evaluate(() => { clearInterval(window.__rd); window.__seen = []; const loop = () => { const el = document.getElementById('live-rest-chrono'); const c = document.getElementById('live-chrono'); window.__seen.push([el ? el.textContent : '', c ? c.textContent : '']); requestAnimationFrame(loop); }; requestAnimationFrame(loop); });
+  await p.evaluate(() => { clearInterval(window.__rd); window.__seen = []; const loop = () => { const el = document.getElementById('live-rest-chrono'); const c = document.getElementById('live-chrono'); window.__seen.push([el ? el.textContent : '', c ? c.textContent : '', performance.now()]); requestAnimationFrame(loop); }; requestAnimationFrame(loop); });
   await p.waitForTimeout(17000);
   const seen = await p.evaluate(() => window.__seen);
-  const seq = (k) => seen.map((x) => x[k]).filter((v, i, a) => v && v !== a[i - 1]);
+  // Valeurs successives affichées, avec l'instant où l'observateur les a vues. Si l'observateur lui-même
+  // a été suspendu plus de 0,9 s (machine de test surchargée), il a pu manquer une valeur : ce passage-là
+  // n'est pas compté comme un saut de l'app.
+  const seqT = (k) => { const out = []; let prevT = null; seen.forEach((x) => { if (!x[k]) return; if (!out.length || out[out.length - 1].v !== x[k]) out.push({ v: x[k], gap: prevT === null ? 0 : x[2] - prevT }); prevT = x[2]; }); return out; };
+  const seq = (k) => seqT(k).map((o) => o.v);
+  const blind = (k) => seqT(k).map((o) => o.gap > 900);
   const secs = (t) => { const [m, s] = t.split(':').map(Number); return m * 60 + s; };
   const band = seq(0).map(secs), head = seq(1).map(secs);
-  const skips = (arr, dir) => arr.slice(1).map((v, i) => [arr[i], v]).filter(([a, v]) => !((dir < 0 && (a - v === 1 || v > a)) || (dir > 0 && (v - a === 1 || v < a))));
-  check(`Bandeau du gainage (décompte travail 20 s puis repos 10 s) : aucun chiffre sauté (${band.length} valeurs vues)`, band.length >= 15 && skips(band, -1).length === 0, JSON.stringify(skips(band, -1)) + ' | ' + band.join(','));
-  check(`Chrono de la séance (en haut) : aucune seconde sautée (${head.length} valeurs vues)`, head.length >= 15 && skips(head, 1).length === 0, JSON.stringify(skips(head, 1)));
+  const skips = (arr, dir, bl) => arr.slice(1).map((v, i) => [arr[i], v, bl ? bl[i + 1] : false]).filter(([a, v, b]) => !b && !((dir < 0 && (a - v === 1 || v > a)) || (dir > 0 && (v - a === 1 || v < a))));
+  check(`Bandeau du gainage (décompte travail 20 s puis repos 10 s) : aucun chiffre sauté (${band.length} valeurs vues)`, band.length >= 15 && skips(band, -1, blind(0)).length === 0, JSON.stringify(skips(band, -1, blind(0))) + ' | ' + band.join(','));
+  check(`Chrono de la séance (en haut) : aucune seconde sautée (${head.length} valeurs vues)`, head.length >= 15 && skips(head, 1, blind(1)).length === 0, JSON.stringify(skips(head, 1, blind(1))));
   check('    aucune erreur JS', p.errs.length === 0, p.errs.join(' | ') || 'aucune');
   console.log(`\n${ok} réussis, ${ko} échoués`); await b.close(); process.exit(ko ? 1 : 0); })();

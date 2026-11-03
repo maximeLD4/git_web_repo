@@ -224,6 +224,11 @@ let liveLoopFormOpen = false;
 let liveLoopDraftRounds = 10;
 let liveLoopDraftWork = 30;
 let liveLoopDraftRest = 30;
+// Boucle à plusieurs gainages (3.5.0) : les étapes d'un tour, dans l'ordre,
+// chacune avec sa durée — [{ name, sec }]. Préparée à l'ouverture du réglage
+// de la boucle (la 1re étape = l'exercice affiché). Repos entre les tours :
+// liveLoopDraftRest (0 = pas de repos).
+let liveLoopDraftSteps = [];
 // Vrai juste après un changement de tour (auto ou via "Passer", voir
 // advanceLiveLoopPhase) — lu une fois par rendu pour poser une petite
 // animation sur le numéro de tour, puis remis à zéro (voir renderLiveApp),

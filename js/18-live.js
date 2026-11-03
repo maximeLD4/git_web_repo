@@ -117,7 +117,7 @@ function liveStatusHeroHTML() {
     </div>`;
   }
   if (liveSession.setInProgressStartedAt) {
-    const label = loop ? `${ICONS.play} Travail — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.play} ${liveDraftName || "Série en cours"}`;
+    const label = loop ? `${ICONS.play} ${liveLoopSteps(loop).length > 1 ? escapeHTML(liveDraftName) : "Travail"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.play} ${liveDraftName || "Série en cours"}`;
     return `
     <div class="live-rest-hero live-rest-hero-active" id="live-rest-hero">
       <div class="live-rest-hero-label">${label}</div>
@@ -616,13 +616,43 @@ function liveCardioSetFormHTML(activeExercise) {
     // Sur le dernier tour, "passer" le repos termine la boucle plutôt que
     // d'enchaîner sur un tour suivant qui n'existe pas — le libellé le dit
     // clairement plutôt que de promettre un tour de plus qui ne viendra pas.
-    const skipLabel = workingNow ? "Passer au repos" : loop.currentRound >= loop.rounds ? "Terminer la boucle" : "Passer au tour suivant";
+    const steps = liveLoopSteps(loop);
+    const idx = liveLoopStepIndex(loop);
+    const lastRound = loop.currentRound >= loop.rounds;
+    const hasNextStep = idx < steps.length - 1;
+    const skipLabel = workingNow
+      ? hasNextStep
+        ? `Passer à ${escapeHTML(steps[idx + 1].name)}`
+        : loop.restSec > 0
+          ? "Passer au repos"
+          : lastRound
+            ? "Terminer la boucle"
+            : "Passer au tour suivant"
+      : lastRound
+        ? "Terminer la boucle"
+        : "Passer au tour suivant";
+    // « Ensuite : … » — ce qui vient après (étape suivante, repos, ou 1re
+    // étape du tour suivant), pour voir venir.
+    const nextInfo = steps.length > 1
+      ? workingNow
+        ? hasNextStep
+          ? `Ensuite : ${escapeHTML(steps[idx + 1].name)} · ${steps[idx + 1].sec} s`
+          : loop.restSec > 0
+            ? `Ensuite : repos · ${loop.restSec} s`
+            : lastRound
+              ? "Dernière étape"
+              : `Ensuite : ${escapeHTML(steps[0].name)} · tour ${loop.currentRound + 1}`
+        : lastRound
+          ? ""
+          : `Ensuite : ${escapeHTML(steps[0].name)} · ${steps[0].sec} s`
+      : "";
     return `
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
           ${workingNow ? liveActivityAnimHTML("plank") : liveRestCenterHTML()}
           <div class="live-in-progress-banner live-hint">${workingNow ? "Travail" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span></div>
+          ${nextInfo ? `<div class="live-loop-next">${nextInfo}</div>` : ""}
         </div>
         <div class="live-set-form-actions">
           <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-skip-loop-phase>${ICONS.chevronRight} ${skipLabel}</button>
@@ -673,7 +703,6 @@ function liveCardioSetFormHTML(activeExercise) {
     return `
       <div class="live-set-form">
         <div class="live-set-form-scroll live-set-form-scroll-fixed">
-          <div class="live-exercise-name">${liveDraftName}</div>
           ${liveLoopStepperHTML()}
         </div>
         <div class="live-set-form-actions">
@@ -707,36 +736,80 @@ function liveCardioSetFormHTML(activeExercise) {
 // ne pas repartir de zéro d'une fois sur l'autre dans la même session de
 // l'app. Les boutons Démarrer/Annuler vivent dans la zone fixe du bas, pas
 // ici (voir liveCardioSetFormHTML).
+const LIVE_LOOP_MAX_STEPS = 4;
+// Étapes de la boucle en préparation : repart de l'exercice affiché si besoin
+// (1re ouverture, ou autre exercice que la dernière fois).
+function ensureLiveLoopDraftSteps() {
+  if (!liveLoopDraftSteps.length || liveLoopDraftSteps[0].name !== liveDraftName) {
+    liveLoopDraftSteps = [{ name: liveDraftName, sec: liveLoopDraftWork }];
+  }
+  return liveLoopDraftSteps;
+}
+// Gainages qu'on peut ajouter à la boucle : ceux configurés (Réglages >
+// Exercices > Gainage), sinon les suggestions de gainage.
+function liveLoopAddableNames() {
+  const names = gainageExerciseConfigs.map((c) => c.name);
+  const list = names.length ? names : EXERCISE_SUGGESTIONS.gainage || [];
+  return [...new Set([liveDraftName, ...list])];
+}
+// Réglage de la boucle (3.5.0) : les étapes d'un tour (un ou plusieurs
+// gainages, chacun avec sa durée, enchaînés sans repos), puis le nombre de
+// tours et le repos entre les tours (0 = aucun). Saisis à chaque lancement ;
+// les valeurs restent en mémoire pour la fois suivante dans la session.
+// Les boutons Démarrer / Annuler vivent dans la zone fixe du bas (voir
+// liveCardioSetFormHTML).
 function liveLoopStepperHTML() {
+  const steps = ensureLiveLoopDraftSteps();
+  const stepRows = steps
+    .map(
+      (st, i) => `
+      <div class="field-list-row loop-step-row">
+        <span class="loop-step-num">${i + 1}</span>
+        <span class="loop-step-name">${escapeHTML(st.name)}</span>
+        <span class="loop-step-sec">${st.sec} s</span>
+        <div class="rep-stepper" style="flex:none;">
+          <button type="button" class="rep-step-btn" data-live-loop-step-minus="${i}" aria-label="Moins">−</button>
+          <button type="button" class="rep-step-btn" data-live-loop-step-plus="${i}" aria-label="Plus">+</button>
+        </div>
+        ${steps.length > 1 ? `<button type="button" class="loop-step-remove" data-live-loop-step-remove="${i}" aria-label="Retirer ${escapeHTML(st.name)}">×</button>` : ""}
+      </div>`
+    )
+    .join("");
+  const canAdd = steps.length < LIVE_LOOP_MAX_STEPS;
+  const addHTML = canAdd
+    ? `<label class="field-list-row loop-step-add" for="live-loop-add-step">
+        <span style="flex:1;">${ICONS.plus} Ajouter un gainage</span>
+        <select class="field-select app-select app-select-row" id="live-loop-add-step">
+          <option value="" selected>Choisir…</option>
+          ${liveLoopAddableNames().map((n) => `<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`).join("")}
+        </select>
+      </label>`
+    : "";
   return `
-    <div class="home-section-label" style="margin-top:0;">Boucle</div>
-    <div class="field-list-card">
+    <div class="home-section-label" style="margin-top:0;">Un tour</div>
+    <div class="field-list-card loop-steps-card">
+      ${stepRows}
+      ${addHTML}
+    </div>
+    <div class="field-list-card loop-steps-card" style="margin-top:10px;">
       <div class="field-list-row">
-        <span style="flex:1;">Tours</span>
-        <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftRounds}</span>
-        <div class="rep-stepper" style="flex:none;">
-          <button type="button" class="rep-step-btn" data-live-loop-rounds-minus aria-label="Moins">−</button>
-          <button type="button" class="rep-step-btn" data-live-loop-rounds-plus aria-label="Plus">+</button>
-        </div>
-      </div>
-      <div class="field-list-row">
-        <span style="flex:1;">Travail</span>
-        <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftWork} s</span>
-        <div class="rep-stepper" style="flex:none;">
-          <button type="button" class="rep-step-btn" data-live-loop-work-minus aria-label="Moins">−</button>
-          <button type="button" class="rep-step-btn" data-live-loop-work-plus aria-label="Plus">+</button>
-        </div>
-      </div>
-      <div class="field-list-row">
-        <span style="flex:1;">Repos</span>
-        <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftRest} s</span>
+        <span style="flex:1;">Repos entre les tours</span>
+        <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftRest > 0 ? liveLoopDraftRest + " s" : "Aucun"}</span>
         <div class="rep-stepper" style="flex:none;">
           <button type="button" class="rep-step-btn" data-live-loop-rest-minus aria-label="Moins">−</button>
           <button type="button" class="rep-step-btn" data-live-loop-rest-plus aria-label="Plus">+</button>
         </div>
       </div>
+      <div class="field-list-row">
+        <span style="flex:1;">Tours</span>
+        <span style="color:var(--text-dim); margin-right:10px;">× ${liveLoopDraftRounds}</span>
+        <div class="rep-stepper" style="flex:none;">
+          <button type="button" class="rep-step-btn" data-live-loop-rounds-minus aria-label="Moins">−</button>
+          <button type="button" class="rep-step-btn" data-live-loop-rounds-plus aria-label="Plus">+</button>
+        </div>
+      </div>
     </div>
-    <div class="field-hint">Chaque changement s'annonce par un décompte en bips sur les 4 dernières secondes : 3, 2, 1 puis un bip long — aigu pour repartir, grave pour s'arrêter.</div>`;
+    <div class="field-hint">Les gainages d'un tour s'enchaînent sans pause ; chaque changement s'annonce par un décompte en bips : 3, 2, 1 puis un bip long.</div>`;
 }
 
 function computeNextLiveBaseWeight(name, currentBaseWeight) {
@@ -991,7 +1064,7 @@ function scheduleLiveLoopCountdown() {
   if (key === liveLoopCountdownKey) return;
   clearLiveLoopCountdown();
   liveLoopCountdownKey = key;
-  const endsAt = startedAt + (working ? loop.workSec : loop.restSec) * 1000;
+  const endsAt = startedAt + (working ? liveLoopWorkSec(loop) : loop.restSec) * 1000;
   const now = Date.now();
   [3, 2, 1].forEach((sec) => {
     const at = endsAt - sec * 1000;
@@ -1066,7 +1139,7 @@ function updateLiveRestChronoDisplay() {
   const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
   const loop = liveSession.loop;
   if (loop) {
-    const totalSec = liveSession.setInProgressStartedAt ? loop.workSec : loop.restSec;
+    const totalSec = liveSession.setInProgressStartedAt ? liveLoopWorkSec(loop) : loop.restSec;
     el.textContent = formatLiveChrono(Math.max(0, totalSec - elapsedSec));
     return;
   }
@@ -1112,10 +1185,93 @@ function updateLiveRestChronoDisplay() {
 // le bouton "Passer" manuel (voir data-live-skip-loop-phase), pour couper
 // court à un repos ou un effort jugé trop long sans fausser le nombre de
 // tours ni l'enchaînement.
+// Boucle à plusieurs gainages (3.5.0). Un tour = les étapes dans l'ordre
+// (gainage 1 – 30 s, gainage 2 – 30 s…), enchaînées SANS repos entre elles,
+// puis le repos du tour (restSec ; 0 = aucun, on enchaîne directement le tour
+// suivant). Chaque étape est une vraie série de SON exercice (son temps
+// s'enregistre sous son nom). Ancienne forme (un seul exercice : workSec) :
+// lue comme une boucle à une seule étape.
+function liveLoopSteps(loop) {
+  if (loop && Array.isArray(loop.steps) && loop.steps.length) return loop.steps;
+  return [{ name: liveDraftName, sec: (loop && loop.workSec) || 30 }];
+}
+function liveLoopStepIndex(loop) {
+  return Math.min(Math.max(0, (loop && loop.stepIndex) || 0), liveLoopSteps(loop).length - 1);
+}
+function liveLoopWorkSec(loop) {
+  return liveLoopSteps(loop)[liveLoopStepIndex(loop)].sec;
+}
+// Passe l'écran (et l'enregistrement) sur l'exercice de l'étape, sans quitter
+// la boucle.
+function liveLoopSwitchTo(name) {
+  if (!name || name === liveDraftName) return;
+  liveDraftName = name;
+  liveDraftType = "cardio";
+  liveDraftCategory = GAINAGE_CATEGORY.key;
+  startOrResumeLiveExercise();
+  liveStep = "log-set";
+}
+// Fin de la boucle (dernier tour fini) : comme avant.
+function finishWholeLiveLoop() {
+  playLiveLoopDoneSignal();
+  liveSession.loop = null;
+  if (liveSession.restStartedAt) stopLiveRestManually();
+  const planExercise = getAttachedPlanExerciseFor(liveDraftName);
+  if (planExercise && planExercise.loop) {
+    closeCurrentLiveSegment();
+    liveActiveExerciseId = null;
+    liveStep = "category";
+  }
+  saveJSON(KEYS.liveSession, liveSession);
+  renderLiveApp();
+}
+// Démarre l'étape `idx` du tour en cours.
+function startLiveLoopStep(loop, idx) {
+  loop.stepIndex = idx;
+  liveLoopSwitchTo(liveLoopSteps(loop)[idx].name);
+  playLiveGoSignal();
+  startLiveSet();
+}
+
+// Garde contre la ré-entrée : pendant un passage de phase, enregistrer une
+// étape démarre un repos (applyFinishLiveSet) qui relance aussitôt le tic du
+// chrono — lequel, avec un repos de 0 s, aurait de nouveau « passé la phase »
+// au beau milieu de celle-ci (et terminé la boucle à tort).
+let liveLoopAdvancing = false;
 function advanceLiveLoopPhase() {
+  if (liveLoopAdvancing) return;
+  liveLoopAdvancing = true;
+  try {
+    advanceLiveLoopPhaseNow();
+  } finally {
+    liveLoopAdvancing = false;
+  }
+}
+function advanceLiveLoopPhaseNow() {
   const loop = liveSession ? liveSession.loop : null;
   if (!loop) return;
   if (liveSession.setInProgressStartedAt) {
+    const steps = liveLoopSteps(loop);
+    const idx = liveLoopStepIndex(loop);
+    if (idx < steps.length - 1) {
+      // Étape suivante du même tour, sans repos : on enregistre celle-ci et
+      // on enchaîne (bip « GO »).
+      applyFinishLiveSet();
+      startLiveLoopStep(loop, idx + 1);
+      return;
+    }
+    if (!(loop.restSec > 0)) {
+      // Pas de repos entre les tours : tour suivant directement, ou fin.
+      applyFinishLiveSet();
+      if (loop.currentRound >= loop.rounds) {
+        finishWholeLiveLoop();
+        return;
+      }
+      loop.currentRound += 1;
+      liveLoopRoundJustChanged = true;
+      startLiveLoopStep(loop, 0);
+      return;
+    }
     playLiveStopSignal();
     finishLiveSet();
   } else if (liveSession.restStartedAt) {
@@ -1140,20 +1296,19 @@ function advanceLiveLoopPhase() {
       saveJSON(KEYS.liveSession, liveSession);
       renderLiveApp();
     } else {
-      playLiveGoSignal();
       loop.currentRound += 1;
       liveLoopRoundJustChanged = true;
-      startLiveSet();
+      startLiveLoopStep(loop, 0);
     }
   }
 }
 
 function checkLiveLoopAutoAdvance() {
   const loop = liveSession ? liveSession.loop : null;
-  if (!loop) return;
+  if (!loop || liveLoopAdvancing) return;
   if (liveSession.setInProgressStartedAt) {
     const elapsed = (Date.now() - liveSession.setInProgressStartedAt) / 1000;
-    if (elapsed >= loop.workSec) advanceLiveLoopPhase();
+    if (elapsed >= liveLoopWorkSec(loop)) advanceLiveLoopPhase();
   } else if (liveSession.restStartedAt) {
     const elapsed = (Date.now() - liveSession.restStartedAt) / 1000;
     if (elapsed >= loop.restSec) advanceLiveLoopPhase();
@@ -1163,11 +1318,13 @@ function checkLiveLoopAutoAdvance() {
 // Lance un minuteur en boucle pour l'exercice de gainage actuel : démarre
 // immédiatement le premier tour de travail, puis bascule tout seul
 // travail/repos jusqu'au nombre de tours prévu (voir checkLiveLoopAutoAdvance).
-function startLiveLoop(rounds, workSec, restSec) {
+function startLiveLoop(rounds, workSec, restSec, steps) {
   if (liveSetPhase() === "in-progress") return; // déjà en cours, rien à faire
-  liveSession.loop = { rounds, workSec, restSec, currentRound: 1 };
+  const list = Array.isArray(steps) && steps.length ? steps.map((x) => ({ name: x.name, sec: x.sec })) : [{ name: liveDraftName, sec: workSec }];
+  liveSession.loop = { rounds, workSec: list[0].sec, restSec, steps: list, stepIndex: 0, currentRound: 1 };
   liveLoopFormOpen = false;
   saveJSON(KEYS.liveSession, liveSession);
+  liveLoopSwitchTo(list[0].name);
   playLiveGoSignal();
   startLiveSet();
 }
@@ -2001,6 +2158,42 @@ function attachLiveLoopListeners(content) {
   if (loopRoundsMinus) loopRoundsMinus.addEventListener("click", () => { liveLoopDraftRounds = Math.max(1, liveLoopDraftRounds - 1); renderLiveApp(); });
   if (loopRoundsPlus) loopRoundsPlus.addEventListener("click", () => { liveLoopDraftRounds = Math.min(50, liveLoopDraftRounds + 1); renderLiveApp(); });
 
+  content.querySelectorAll("[data-live-loop-step-minus]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const st = ensureLiveLoopDraftSteps()[Number(btn.dataset.liveLoopStepMinus)];
+      st.sec = Math.max(5, st.sec - 5);
+      renderLiveApp();
+    })
+  );
+  content.querySelectorAll("[data-live-loop-step-plus]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const st = ensureLiveLoopDraftSteps()[Number(btn.dataset.liveLoopStepPlus)];
+      st.sec = Math.min(600, st.sec + 5);
+      renderLiveApp();
+    })
+  );
+  content.querySelectorAll("[data-live-loop-step-remove]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const steps = ensureLiveLoopDraftSteps();
+      const i = Number(btn.dataset.liveLoopStepRemove);
+      if (steps.length > 1) steps.splice(i, 1);
+      // L'écran montre toujours le 1er gainage de la boucle.
+      if (i === 0) {
+        liveLoopSwitchTo(steps[0].name);
+        liveLoopFormOpen = true; // changer d'exercice referme le réglage : on le garde ouvert
+      }
+      renderLiveApp();
+    })
+  );
+  const addStep = content.querySelector("#live-loop-add-step");
+  if (addStep)
+    addStep.addEventListener("change", () => {
+      if (!addStep.value) return;
+      const steps = ensureLiveLoopDraftSteps();
+      if (steps.length < LIVE_LOOP_MAX_STEPS) steps.push({ name: addStep.value, sec: steps[steps.length - 1].sec });
+      renderLiveApp();
+    });
+
   const loopWorkMinus = content.querySelector("[data-live-loop-work-minus]");
   const loopWorkPlus = content.querySelector("[data-live-loop-work-plus]");
   if (loopWorkMinus) loopWorkMinus.addEventListener("click", () => { liveLoopDraftWork = Math.max(5, liveLoopDraftWork - 5); renderLiveApp(); });
@@ -2012,7 +2205,12 @@ function attachLiveLoopListeners(content) {
   if (loopRestPlus) loopRestPlus.addEventListener("click", () => { liveLoopDraftRest = Math.min(600, liveLoopDraftRest + 5); renderLiveApp(); });
 
   const startLoopBtn = content.querySelector("[data-live-start-loop]");
-  if (startLoopBtn) startLoopBtn.addEventListener("click", () => startLiveLoop(liveLoopDraftRounds, liveLoopDraftWork, liveLoopDraftRest));
+  if (startLoopBtn)
+    startLoopBtn.addEventListener("click", () => {
+      const steps = ensureLiveLoopDraftSteps();
+      liveLoopDraftWork = steps[0].sec;
+      startLiveLoop(liveLoopDraftRounds, steps[0].sec, liveLoopDraftRest, steps);
+    });
 
   const stopLoopBtn = content.querySelector("[data-live-stop-loop]");
   if (stopLoopBtn) stopLoopBtn.addEventListener("click", stopLiveLoop);
