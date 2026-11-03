@@ -7,6 +7,29 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.4.2 - 2026-10-21
+====================
+
+- **Mode Anne plus lisible.** Mesure du contraste de chaque texte sur 9 écrans (accueil,
+  listes et formulaire Salle de sport, réglages d'exercice, Séance en direct, plan en direct,
+  calendrier, réglages) : 130 textes sous le seuil de lisibilité WCAG en mode Anne. Les plus
+  pâles étaient ceux à la couleur d'accent du sport — rose clair sur fond rose : « ‹ Plans »
+  et autres retours (2,8:1), « Modifier / Dupliquer / Partager » (3,2:1), « Ajouter un
+  exercice » (3,2:1), la puce choisie (« Muscu », « Jambes » : texte clair sur rose clair,
+  3,1:1), les numéros de série (2,7:1).
+  - Accents du mode Anne foncés, dans la même famille de roses : Salle de sport #C9718F →
+    #AC4166, Course #D9435F → #C42845, Vélo #E0708F → #C22A54 (Natation, Poids, Calendrier,
+    etc. étaient déjà assez foncés) ; mêmes valeurs pour les icônes et les couleurs de
+    sport (cercles des tuiles, graphiques). Tous au moins à 4,5:1 sur le fond rose et sous
+    un texte clair.
+  - Textes secondaires (sous-titres, étiquettes, dates…) : un peu plus soutenus (opacité
+    0,7 → 0,8).
+  - Résultat : 130 → 48 textes sous le seuil (restent surtout les catégories sans exercice,
+    volontairement grisées, et le numéro de version).
+- Vérifié : nouvelle batterie ``tools/tests/anne_contrast.js`` (3 contrôles : le mode Anne n'a
+  pas plus de textes peu lisibles que le mode Jour, retours / liens d'action / sous-titres à
+  4,5:1, puces de choix au-dessus de 4:1).
+
 3.4.1 - 2026-10-21
 ====================
 

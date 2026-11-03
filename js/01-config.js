@@ -205,10 +205,12 @@ const ACTIVITY_META_COLORS = {
     gainage: ["#C47C6C", "196,124,108"],
   },
   anne: {
-    gym: ["#C9718F", "201,113,143"],
-    run: ["#D9435F", "217,67,95"],
+    // Foncés en 3.4.2 (mêmes valeurs que les accents du mode Anne en CSS) :
+    // lisibles sur le fond rose, au moins 4,5:1.
+    gym: ["#AC4166", "172,65,102"],
+    run: ["#C42845", "196,40,69"],
     swim: ["#B03A5B", "176,58,91"],
-    bike: ["#E0708F", "224,112,143"],
+    bike: ["#C22A54", "194,42,84"],
     gainage: ["#8C2F45", "140,47,69"],
   },
 };

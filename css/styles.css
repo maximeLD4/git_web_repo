@@ -1131,7 +1131,7 @@ html.mode-anne, html.mode-anne #app {
   --border: rgba(158, 11, 46, 0.16);
   --rule: rgba(158, 11, 46, 0.20);
   --text: #9E0B2E;
-  --text-dim: rgba(158, 11, 46, 0.7);
+  --text-dim: rgba(158, 11, 46, 0.8); /* 0.7 avant 3.4.2 : trop pâle sur le rose */
   --ink: #9E0B2E;
   --ink-rgb: 158,11,46;
   --on-ink: #FFF2F6;
@@ -1140,10 +1140,10 @@ html.mode-anne, html.mode-anne #app {
   --action: #9E0B2E;
   --yellow: #FFC4D9;
   --yellow-rgb: 255,196,217;
-  --rgb-gym: 224,110,150;
-  --rgb-run: 209,60,95;
+  --rgb-gym: 172,65,102; /* 224,110,150 avant 3.4.2 */
+  --rgb-run: 196,40,69;
   --rgb-swim: 176,58,91;
-  --rgb-bike: 224,140,170;
+  --rgb-bike: 194,42,84; /* 224,140,170 avant 3.4.2 */
   --rgb-performance: 192,19,67;
   --rgb-weight: 158,11,46;
   --rgb-calendar: 158,11,46;
@@ -1157,13 +1157,16 @@ html.mode-anne, html.mode-anne #app {
   --radius-sm: 10px;
   --shadow-card: 0 3px 14px rgba(158, 11, 46, 0.14);
 }
-html.mode-anne #app.theme-gym { --accent: #C9718F; --accent-rgb: 201, 113, 143; }
-html.mode-anne #app.theme-run { --accent: #D9435F; --accent-rgb: 217, 67, 95; }
+/* Accents du mode Anne foncés en 3.4.2 : ils servent aussi de couleur de TEXTE
+   (retour, « Modifier », « Ajouter un exercice », puce choisie…) — au moins
+   4,5:1 sur le fond rose et sous un texte clair (avant : 2,5 à 3,5:1). */
+html.mode-anne #app.theme-gym { --accent: #AC4166; --accent-rgb: 172, 65, 102; }
+html.mode-anne #app.theme-run { --accent: #C42845; --accent-rgb: 196, 40, 69; }
 html.mode-anne #app.theme-weight { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 html.mode-anne #app.theme-calendar { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 html.mode-anne #app.theme-settings { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 html.mode-anne #app.theme-swim { --accent: #B03A5B; --accent-rgb: 176, 58, 91; }
-html.mode-anne #app.theme-bike { --accent: #E0708F; --accent-rgb: 224, 112, 143; }
+html.mode-anne #app.theme-bike { --accent: #C22A54; --accent-rgb: 194, 42, 84; }
 html.mode-anne #app.theme-home { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 html.mode-anne #app.theme-scanner { --accent: #C01343; --accent-rgb: 192, 19, 67; }
 html.mode-anne #app.theme-performance { --accent: #C01343; --accent-rgb: 192, 19, 67; }
