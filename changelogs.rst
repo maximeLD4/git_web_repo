@@ -7,6 +7,58 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.7.0 - 2026-10-21
+====================
+
+- **Mode Mono : des éléments vivants, qu'on sent sous le doigt** (nouveau
+  ``js/21-motion.js`` + section « MONO : MOUVEMENT » de la feuille de style) :
+  - **toucher** : le bouton (ou la carte, la ligne, la puce) s'enfonce vite, puis
+    **rebondit** en se relâchant — un ressort qui dépasse un peu ; les gros boutons acier
+    s'enfoncent vraiment (l'ombre passe à l'intérieur) ; **une onde part du doigt** ; sur
+    Android, une **micro-vibration** ;
+  - **arrivée sur un écran** : cartes, lignes et boutons **montent en cascade**, avec un
+    léger dépassement — seulement quand on change d'écran, jamais à chaque petit redessin
+    du même écran (un + / −, une frappe), qui ferait clignoter ;
+  - **un chiffre qui change saute** : répétitions, poids, repos prévu, durées de la boucle,
+    tour en cours ;
+  - **carte glissée** (pour supprimer) : revient avec un **rebond** ; la bande « Supprimer »
+    révélée passe en bandes de danger (elle était blanc sur blanc en Mono) ;
+  - **interrupteur** : la boule claque avec un rebond ; **puce choisie** et **onglet actif**
+    de la barre du bas : petit « clac ».
+  Rien de tout ça hors du mode Mono, ni quand l'appareil demande de réduire les animations.
+  Uniquement de la présentation : aucun rendu ni aucune donnée n'en dépend.
+- Vérifié : nouvelle batterie ``tools/tests/motion.js`` (7 contrôles : cascade à l'arrivée
+  avec décalage croissant, onde + vibration + enfoncement au toucher, onde qui disparaît,
+  saut du chiffre sans cascade sur le même écran, rien en Jour, rien avec « réduire les
+  animations »). Les autres batteries passent toujours.
+
+3.6.1 - 2026-10-21
+====================
+
+- **Mode Mono : des matières, pour que le noir & blanc ne soit pas plat.** Toutes très
+  discrètes (le texte reste net, 17 à 18:1 sur les grandes surfaces), inspirées d'une salle
+  de sport :
+  - fond : **grain fin** (mur brut) et léger vignettage ;
+  - cartes, listes, barres du bas : **tissage carbone** à peine visible ;
+  - surfaces et boutons blancs (« Lancer », « Enregistrer », tuile Séance en direct, « À
+    suivre », bandeau du repos, puce choisie) : **acier brossé** — dégradé, fines stries,
+    liseré de lumière ;
+  - bandeau d'effort et « Finir la série » : **moletage** croisé, comme la poignée d'une
+    barre ;
+  - compteurs − / + : **picots de sol caoutchouc** ;
+  - « Supprimer sans enregistrer » : **cadre à bandes de danger** noires et blanches,
+    intérieur noir (au lieu du seul rouge qui restait dans le mode).
+- **Correctifs « blanc sur blanc » en Mono** :
+  - interrupteurs allumés : la boule était blanche sur une piste blanche (invisible) —
+    boule noire ;
+  - tuile « Séance en cours » de l'accueil : restait blanche unie avec un bouton et un point
+    brun / blanc — acier, bouton et point noirs.
+  Audit de tous les boutons, menus et interrupteurs sur 15 écrans en Mono : plus aucun
+  contenu illisible sur son fond.
+- Vérifié : ``tools/tests/mono_theme.js`` (12 contrôles, dont : grain / carbone / acier
+  présents, titre net sur l'acier, interrupteur allumé, bouton de suppression). Les autres
+  batteries passent toujours.
+
 3.6.0 - 2026-10-21
 ====================
 

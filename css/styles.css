@@ -2528,3 +2528,132 @@ html.mode-mono .live-rest-hero.live-rest-hero-active .live-rest-hero-value { col
 /* Détail d'une séance : disques, haltères… en niveaux de gris (le poids reste
    lisible par la taille et le chiffre). */
 html.mode-mono .gx-sets svg, html.mode-mono .gx-sets .gx-plate { filter: grayscale(1) contrast(1.1); }
+
+/* ==========================================================================
+   MONO : TEXTURES (3.6.1) — le noir & blanc reste vivant grâce aux matières
+   d'une salle de sport, toutes très discrètes (le texte reste net) :
+     - fond : grain fin (comme un mur peint brut) et léger vignettage ;
+     - cartes et barres : tissage « carbone » à peine visible ;
+     - boutons et surfaces blancs : acier brossé (dégradé + fines stries) ;
+     - bandeau d'effort et boutons à contour : moletage croisé, comme la
+       poignée d'une barre ;
+     - compteurs − / + : picots de sol caoutchouc ;
+     - action destructrice : bandes de danger noires et blanches.
+   ========================================================================== */
+html.mode-mono {
+  --mono-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --mono-carbon: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.028) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 5px);
+  --mono-steel: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.035) 0 1px, transparent 1px 3px), linear-gradient(180deg, #FFFFFF 0%, #EDEDED 48%, #D9D9D9 100%);
+  --mono-knurl: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 7px), repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 7px);
+  --mono-rubber: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1px, transparent 1.3px) 0 0 / 7px 7px;
+}
+/* Fond : grain + vignettage. */
+html.mode-mono #app { background-color: #0A0A0A; background-image: var(--mono-grain), radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 60%); }
+/* Cartes, listes, barres : carbone. */
+html.mode-mono .home-tile:not(.home-tile-wide),
+html.mode-mono .home-list,
+html.mode-mono .history-card,
+html.mode-mono .exercise-card,
+html.mode-mono .field-list-card:not(.exercise-form .field-list-card),
+html.mode-mono .live-plan-list,
+html.mode-mono .home-bottom-nav,
+html.mode-mono .log-actions-bar { background-color: #161616 !important; background-image: var(--mono-carbon) !important; }
+/* Surfaces et boutons blancs : acier brossé, avec un liseré de lumière. */
+html.mode-mono .home-tile-wide,
+html.mode-mono .home-tile.live-recording[data-open-app="live"],
+html.mode-mono .save-btn,
+html.mode-mono .live-validate-btn:not(.live-finish-btn),
+html.mode-mono .live-plan-next,
+html.mode-mono .live-rest-hero:not(.live-rest-hero-active),
+html.mode-mono .modal-confirm:not(.danger) {
+  background-color: #EDEDED !important; background-image: var(--mono-steel) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+html.mode-mono .ex-type-btn.active { background-image: var(--mono-steel); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18); }
+/* Effort et boutons à contour : moletage. */
+html.mode-mono .live-rest-hero.live-rest-hero-active,
+html.mode-mono .live-finish-btn { background-color: #0A0A0A !important; background-image: var(--mono-knurl) !important; }
+/* Compteurs − / + : caoutchouc. */
+html.mode-mono .rep-stepper,
+html.mode-mono .live-stepper { background: var(--mono-rubber), rgba(255, 255, 255, 0.06); }
+/* Interrupteur allumé : piste blanche (acier), boule NOIRE — avant, boule
+   blanche sur piste blanche, invisible. */
+html.mode-mono .toggle-switch.on { background-color: #EDEDED; background-image: var(--mono-steel); }
+html.mode-mono .toggle-switch.on .toggle-switch-knob { background: #0A0A0A; box-shadow: none; }
+/* Action destructrice : bandes de danger (au lieu du seul rouge du mode). */
+html.mode-mono .modal-btn.danger,
+html.mode-mono .modal-actions-stack .modal-btn.danger,
+html.mode-mono .modal-confirm.danger {
+  /* Bandes de danger en CADRE (4 px), intérieur noir : le texte reste net. */
+  background: linear-gradient(#0A0A0A, #0A0A0A) padding-box, repeating-linear-gradient(-45deg, #F4F4F4 0 6px, #0A0A0A 6px 12px) border-box !important;
+  border: 4px solid transparent !important;
+  color: #F4F4F4 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+}
+/* Menus (poids…) : laissés blancs unis — leur chevron occupe déjà le fond. */
+/* Mono : séance en cours sur l'accueil — même acier, bouton et point noirs. */
+html.mode-mono .home-tile.live-recording .home-tile-play-btn { background: #0A0A0A; color: #F4F4F4; }
+html.mode-mono .home-tile.live-recording .live-rec-dot { background: #0A0A0A; }
+
+/* ==========================================================================
+   MONO : MOUVEMENT (3.7.0, voir 21-motion.js) — on sent les boutons.
+   Toucher : le bouton s'enfonce vite, puis REBONDIT en se relâchant (ressort
+   qui dépasse un peu) ; une onde part du doigt. Écran : cartes et lignes
+   montent en cascade. Chiffre qui change : petit saut. Carte glissée : retour
+   avec rebond. Interrupteur : la boule claque. Rien si l'appareil demande
+   moins d'animations.
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  html.mode-mono button,
+  html.mode-mono .home-tile,
+  html.mode-mono .home-list-row,
+  html.mode-mono .history-head,
+  html.mode-mono .live-plan-row,
+  html.mode-mono .gym-add-card,
+  html.mode-mono .live-exercise-btn {
+    transition: transform 0.5s cubic-bezier(0.34, 1.7, 0.5, 1), box-shadow 0.25s ease, background-color 0.2s ease, color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.mode-mono button:active:not(:disabled),
+  html.mode-mono .home-tile:active,
+  html.mode-mono .home-list-row:active,
+  html.mode-mono .history-head:active,
+  html.mode-mono .live-plan-row:active,
+  html.mode-mono .gym-add-card:active,
+  html.mode-mono .live-exercise-btn:active {
+    transform: scale(0.95);
+    transition-duration: 0.07s;
+  }
+  /* Les gros boutons acier s'enfoncent vraiment : l'ombre passe à l'intérieur. */
+  html.mode-mono .save-btn:active,
+  html.mode-mono .live-validate-btn:active,
+  html.mode-mono .home-tile-wide:active,
+  html.mode-mono .live-plan-next:active {
+    transform: scale(0.97) translateY(1px);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 -1px 0 rgba(255, 255, 255, 0.6) !important;
+  }
+  /* Onde au toucher. */
+  html.mode-mono .motion-host { overflow: hidden; }
+  html.mode-mono .motion-host-static { position: relative; }
+  html.mode-mono .motion-ripple {
+    position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+    background: radial-gradient(circle, rgba(128, 128, 128, 0.35) 0%, rgba(128, 128, 128, 0.18) 40%, transparent 70%);
+    transform: scale(0); animation: motionRipple 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  }
+  @keyframes motionRipple { to { transform: scale(1); opacity: 0; } }
+  /* Arrivée sur un écran : cascade avec un léger dépassement. */
+  html.mode-mono .motion-enter { animation: motionEnter 0.55s cubic-bezier(0.34, 1.45, 0.55, 1) both; animation-delay: calc(var(--motion-i, 0) * 38ms); }
+  @keyframes motionEnter { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+  /* Chiffre qui change. */
+  html.mode-mono .motion-pop { display: inline-block; animation: motionPop 0.38s cubic-bezier(0.34, 1.9, 0.5, 1); }
+  @keyframes motionPop { 0% { transform: scale(1); } 35% { transform: scale(1.22); } 100% { transform: scale(1); } }
+  /* Carte glissée : retour avec rebond. */
+  html.mode-mono .swipe-row > [data-swipe-id] { transition: transform 0.55s cubic-bezier(0.34, 1.6, 0.5, 1); }
+  /* Interrupteur : la boule claque avec un rebond. */
+  html.mode-mono .toggle-switch-knob { transition: transform 0.45s cubic-bezier(0.34, 1.9, 0.5, 1), background-color 0.2s ease; }
+  /* Puce qu'on choisit : petit « clac ». */
+  html.mode-mono .ex-type-btn.active, html.mode-mono .live-subcat-btn.active { animation: motionPop 0.34s cubic-bezier(0.34, 1.9, 0.5, 1); }
+  /* Icônes de la barre du bas : saut de l'onglet actif. */
+  html.mode-mono .home-bottom-nav .active svg { animation: motionPop 0.4s cubic-bezier(0.34, 1.9, 0.5, 1); }
+}
+/* Révélation « Supprimer » sous une carte glissée : plus de blanc sur blanc. */
+html.mode-mono .swipe-delete-reveal { background: linear-gradient(#0A0A0A, #0A0A0A) padding-box, repeating-linear-gradient(-45deg, #F4F4F4 0 6px, #0A0A0A 6px 12px) border-box; border: 3px solid transparent; color: #F4F4F4; }
