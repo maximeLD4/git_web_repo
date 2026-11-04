@@ -109,3 +109,70 @@ new MutationObserver(() => {
     motionAfterRender();
   });
 }).observe(document.getElementById("app"), { childList: true, subtree: true });
+
+/* ---------- Mode Mono : garde-fou « blanc sur blanc » (3.7.1) ----------
+   En Mono, tout ce qui était « couleur d'accent » devient blanc. Beaucoup
+   d'éléments de l'app posent, eux, un texte ou une icône clairs SUR cette
+   couleur (styles écrits en dur, parfois directement dans le gabarit :
+   « color:#FFF8F0 » sur « var(--yellow) »…) : blanc sur blanc. Plutôt que de
+   les traquer un par un, après chaque rendu on repère en Mono les éléments
+   à fond clair et on passe en noir ce qui, dedans, est clair (texte, et
+   icônes, qui suivent la couleur du texte). Hors Mono : rien. */
+const MONO_FIX_CLASS = "mono-ink-fix";
+function monoLum(c) {
+  const m = c && c.match(/[\d.]+/g);
+  if (!m) return null;
+  const [r, g, b, a = 1] = m.map(Number);
+  if (a < 0.5) return null;
+  const f = (v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+function monoLightBackground(el) {
+  const cs = getComputedStyle(el);
+  const l = monoLum(cs.backgroundColor);
+  if (l !== null) return l > 0.55;
+  // Acier brossé & co : fond porté par un dégradé.
+  const img = cs.backgroundImage;
+  if (img && img !== "none" && /gradient/.test(img) && !/repeating-linear-gradient\(-?45deg/.test(img.split("),")[0])) {
+    const cols = (img.match(/rgba?\([^)]+\)/g) || []).map(monoLum).filter((x) => x !== null);
+    if (cols.length) return cols.reduce((s, x) => s + x, 0) / cols.length > 0.55;
+  }
+  return false;
+}
+function monoFixContrast() {
+  const roots = ["app", "custom-modal-root", "onb-root"].map((id) => document.getElementById(id)).filter(Boolean);
+  const on = document.documentElement.classList.contains("mode-mono");
+  roots.forEach((root) => {
+    if (!on) {
+      root.querySelectorAll("." + MONO_FIX_CLASS).forEach((e) => e.classList.remove(MONO_FIX_CLASS));
+      return;
+    }
+    root.querySelectorAll("*").forEach((el) => {
+      if (el.namespaceURI === "http://www.w3.org/2000/svg" && el.tagName.toLowerCase() !== "svg") return;
+      if (!monoLightBackground(el)) return;
+      // L'élément lui-même et ses descendants qui n'ont pas leur propre fond.
+      const stack = [el];
+      while (stack.length) {
+        const n = stack.pop();
+        const ownBg = n !== el && (monoLum(getComputedStyle(n).backgroundColor) !== null);
+        if (ownBg) continue; // il a son propre fond : il sera examiné pour lui-même
+        const l = monoLum(getComputedStyle(n).color);
+        if (l !== null && l > 0.55) n.classList.add(MONO_FIX_CLASS);
+        for (const ch of n.children) stack.push(ch);
+      }
+    });
+  });
+}
+let monoFixPending = false;
+function scheduleMonoFix() {
+  if (monoFixPending) return;
+  monoFixPending = true;
+  requestAnimationFrame(() => {
+    monoFixPending = false;
+    monoFixContrast();
+  });
+}
+new MutationObserver(scheduleMonoFix).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });

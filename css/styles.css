@@ -2657,3 +2657,10 @@ html.mode-mono .home-tile.live-recording .live-rec-dot { background: #0A0A0A; }
 }
 /* Révélation « Supprimer » sous une carte glissée : plus de blanc sur blanc. */
 html.mode-mono .swipe-delete-reveal { background: linear-gradient(#0A0A0A, #0A0A0A) padding-box, repeating-linear-gradient(-45deg, #F4F4F4 0 6px, #0A0A0A 6px 12px) border-box; border: 3px solid transparent; color: #F4F4F4; }
+/* Mono : garde-fou blanc sur blanc (3.7.1, voir monoFixContrast) — texte et
+   icônes clairs posés sur un fond clair passent en noir. */
+html.mode-mono .mono-ink-fix { color: #0A0A0A !important; }
+html.mode-mono .mono-ink-fix svg:not([data-anim-icon]) { color: #0A0A0A; }
+/* Révélation « Supprimer » sous une carte : fond blanc, texte noir (la bande
+   à rayures faisait un pointillé parasite au bord des cartes). */
+html.mode-mono .swipe-delete-reveal { background: #F4F4F4 !important; border: none !important; color: #0A0A0A !important; }

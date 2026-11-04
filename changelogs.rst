@@ -7,6 +7,28 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.7.1 - 2026-10-21
+====================
+
+- **Mode Mono : plus de blanc sur blanc.** En Mono, tout ce qui était à la couleur
+  d'accent devient blanc ; or beaucoup d'éléments posaient dessus un texte ou une icône
+  clairs, parfois écrits en dur dans les gabarits (avatar du profil, icônes carrées des
+  Réglages, logo de l'écran de connexion, icône « Scanner depuis une photo »…).
+  - **Garde-fou** : après chaque rendu, en Mono, tout texte ou icône clair posé sur un
+    fond clair (blanc, acier brossé…) passe en noir. Il couvre aussi les cas qu'on ne
+    voit pas encore. Hors Mono, il ne fait rien.
+  - La bande « Supprimer » qui dépasse au bord des cartes (glisser pour supprimer) est
+    blanche à texte noir : les rayures y faisaient un pointillé parasite.
+  - Audit de chaque texte et icône contre son fond réel sur 35 écrans en Mono (accueil,
+    séance en cours, Salle de sport, Course, Natation, Vélo, Réglages, exercices,
+    Séance en direct sous tous ses états, boucle, fenêtres de confirmation, calendrier,
+    performances, poids, connexion, guide) : plus aucun texte ni icône illisible (le
+    seul signalement restant, la bascule Muscu / Cardio, est un faux positif — son fond
+    blanc est un calque glissant derrière le texte noir).
+- Vérifié : ``tools/tests/mono_theme.js`` (16 contrôles, dont : avatar, icônes des
+  Réglages et logo de connexion lisibles ; le garde-fou n'agit pas hors Mono). Les autres
+  batteries passent toujours.
+
 3.7.0 - 2026-10-21
 ====================
 
