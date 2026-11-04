@@ -107,7 +107,7 @@ function liveStatusHeroHTML() {
   if (!liveSession) return "";
   const loop = liveSession.loop;
   if (liveSession.restStartedAt) {
-    const label = loop ? `${ICONS.stopwatch} Repos — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} <span id="live-rest-label-text">Repos</span> — ${liveDraftName || "Repos"}`;
+    const label = loop ? `${ICONS.stopwatch} ${loop.inTransition ? "Changement" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span>` : `${ICONS.stopwatch} <span id="live-rest-label-text">Repos</span> — ${liveDraftName || "Repos"}`;
     // (Le bonhomme du repos n'est plus dans ce bandeau depuis 2.87.0 : il est
     // au centre de l'écran, voir liveRestCenterHTML.)
     return `
@@ -304,35 +304,11 @@ function liveCategoryStepHTML() {
           )
           .join("")}
       </div>`;
-    let gainageListHTML = "";
-    if (liveDraftCategory === GAINAGE_CATEGORY.key) {
-      // Même drapeau/consommation qu'en Muscu (voir plus bas) — évite de
-      // rejouer l'animation d'entrée à chaque rendu non lié à ce choix.
-      const shouldAnimateEnter = liveCategoryJustChanged;
-      liveCategoryJustChanged = false;
-      // Le gainage n'a pas besoin d'un exercice nommé pour être lancé — au
-      // fond, c'est juste une boucle générique (n tours de t1 travail / t2
-      // repos), exactement comme Rameur/Vélo/Course n'ont pas besoin d'être
-      // configurés au préalable. Un bouton "Gainage" générique est donc
-      // toujours proposé en premier, que des exercices nommés (Planche,
-      // Superman...) soient configurés ou non — ceux-ci restent de simples
-      // raccourcis nommés facultatifs par-dessus, pas un préalable.
-      const genericAlready = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === "gainage");
-      const genericBadgeHTML = genericAlready ? `<span class="live-exercise-btn-badge">${genericAlready.sets.length}</span>` : "";
-      const genericButtonHTML = `<button type="button" class="live-btn ${genericAlready ? "has-progress" : ""}" data-live-exercise="Gainage"><span class="live-exercise-btn-name">Gainage</span>${genericBadgeHTML}</button>`;
-      const configuredButtonsHTML = [...gainageExerciseConfigs]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((c) => {
-          const already = liveSession.exercises.find((e) => e.name.trim().toLowerCase() === c.name.trim().toLowerCase());
-          const badgeHTML = already ? `<span class="live-exercise-btn-badge">${already.sets.length}</span>` : "";
-          return `<button type="button" class="live-btn ${already ? "has-progress" : ""}" data-live-exercise="${c.name.replace(/"/g, "&quot;")}"><span class="live-exercise-btn-name">${c.name}</span>${badgeHTML}</button>`;
-        })
-        .join("");
-      const inner = `<div class="live-grid" style="grid-template-columns:1fr 1fr;">${genericButtonHTML}${configuredButtonsHTML}<button type="button" class="live-btn configure-exercise-tile" data-live-go-settings>${ICONS.plus} Configurer un exercice</button></div>`;
-      gainageListHTML = `<div id="live-exercise-list" class="${shouldAnimateEnter ? "live-exercise-list-enter" : ""}">${inner}</div>`;
-    }
+    // (Avant 3.10.0, toucher « Gainage » dépliait ici la liste des gainages
+    // configurés. Gainage se lance désormais directement, comme les autres ;
+    // les gainages précis s'enchaînent dans « Lancer en boucle ».)
     liveTypeJustSwitched = false;
-    return liveTimelineHTML() + planSectionHTML + switchHTML + categoriesHTML + gainageListHTML;
+    return liveTimelineHTML() + planSectionHTML + switchHTML + categoriesHTML;
   }
 
   // Aucun exercice Muscu configuré nulle part : pas la peine de faire
@@ -599,6 +575,9 @@ function liveCardioSetFormHTML(activeExercise) {
   // proposer (contrairement à Rameur/Vélo/Course), et c'est le seul type
   // d'exercice où le minuteur en boucle a du sens (voir plus bas).
   const isGainage = liveDraftCategory === GAINAGE_CATEGORY.key;
+  // La boucle (minuteur en tours) : gainage, et course à pied pour le
+  // fractionné (3.10.0).
+  const isLoopable = isGainage || liveDraftCategory === "course";
   const loop = liveSession.loop;
   // En cours, la dernière entrée est le PLACEHOLDER de la série en train de
   // se faire (durée/distance pas encore connues, voir startLiveSet) — pas
@@ -620,23 +599,32 @@ function liveCardioSetFormHTML(activeExercise) {
     const idx = liveLoopStepIndex(loop);
     const lastRound = loop.currentRound >= loop.rounds;
     const hasNextStep = idx < steps.length - 1;
+    const trans = liveLoopTransitionSec(loop);
     const skipLabel = workingNow
       ? hasNextStep
-        ? `Passer à ${escapeHTML(steps[idx + 1].name)}`
+        ? trans > 0
+          ? "Passer au changement"
+          : `Passer à ${escapeHTML(steps[idx + 1].name)}`
         : loop.restSec > 0
           ? "Passer au repos"
           : lastRound
             ? "Terminer la boucle"
             : "Passer au tour suivant"
-      : lastRound
-        ? "Terminer la boucle"
-        : "Passer au tour suivant";
+      : loop.inTransition
+        ? `Passer à ${escapeHTML(steps[idx + 1] ? steps[idx + 1].name : "")}`
+        : lastRound
+          ? "Terminer la boucle"
+          : "Passer au tour suivant";
     // « Ensuite : … » — ce qui vient après (étape suivante, repos, ou 1re
     // étape du tour suivant), pour voir venir.
     const nextInfo = steps.length > 1
-      ? workingNow
+      ? loop.inTransition
+        ? `Ensuite : ${escapeHTML(steps[idx + 1].name)} · ${steps[idx + 1].sec} s`
+        : workingNow
         ? hasNextStep
-          ? `Ensuite : ${escapeHTML(steps[idx + 1].name)} · ${steps[idx + 1].sec} s`
+          ? trans > 0
+            ? `Ensuite : ${trans} s pour changer, puis ${escapeHTML(steps[idx + 1].name)}`
+            : `Ensuite : ${escapeHTML(steps[idx + 1].name)} · ${steps[idx + 1].sec} s`
           : loop.restSec > 0
             ? `Ensuite : repos · ${loop.restSec} s`
             : lastRound
@@ -650,8 +638,8 @@ function liveCardioSetFormHTML(activeExercise) {
       <div class="live-set-form">
         <div class="live-set-form-scroll">
           <div class="live-exercise-name">${liveDraftName}</div>
-          ${workingNow ? liveActivityAnimHTML("plank") : liveRestCenterHTML()}
-          <div class="live-in-progress-banner live-hint">${workingNow ? "Travail" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span></div>
+          ${workingNow ? liveActivityAnimHTML(loop.category === "course" ? "stopwatch" : "plank") : liveRestCenterHTML()}
+          <div class="live-in-progress-banner live-hint">${workingNow ? "Travail" : loop.inTransition ? "Changement" : "Repos"} — <span class="${liveLoopRoundJustChanged ? "live-round-pop" : ""}">Tour ${loop.currentRound}/${loop.rounds}</span></div>
           ${nextInfo ? `<div class="live-loop-next">${nextInfo}</div>` : ""}
         </div>
         <div class="live-set-form-actions">
@@ -699,7 +687,7 @@ function liveCardioSetFormHTML(activeExercise) {
   // de bouton, dans la zone fixe du bas. Contenu volontairement minimal
   // (pas de "Précédent" ni de texte d'aide) et défilement désactivé, pour
   // que l'écran tienne sans bouger.
-  if (isGainage && liveLoopFormOpen) {
+  if (isLoopable && liveLoopFormOpen) {
     return `
       <div class="live-set-form">
         <div class="live-set-form-scroll live-set-form-scroll-fixed">
@@ -723,7 +711,7 @@ function liveCardioSetFormHTML(activeExercise) {
         <div class="live-prev-set live-hint">Le temps est chronométré automatiquement dès que tu lances.</div>
       </div>
       <div class="live-set-form-actions">
-        ${isGainage ? `<button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-open-loop-form>${ICONS.stopwatch} Lancer en boucle</button>` : ""}
+        ${isLoopable ? `<button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--accent); color:var(--accent); padding:13px;" data-live-open-loop-form>${ICONS.stopwatch} ${isGainage ? "Lancer en boucle" : "Fractionné (boucle)"}</button>` : ""}
         <button type="button" class="live-validate-btn" data-live-start-set>${ICONS.play} <span class="live-btn-label">Lancer ${liveDraftName}</span></button>
         <button type="button" class="live-post-btn" style="background:var(--surface); border:1px solid var(--border); color:var(--text); padding:13px;" data-live-change-exercise>${ICONS.chevron} Changer d'exercice</button>
       </div>
@@ -748,9 +736,22 @@ function ensureLiveLoopDraftSteps() {
 // Gainages qu'on peut ajouter à la boucle : ceux configurés (Réglages >
 // Exercices > Gainage), sinon les suggestions de gainage.
 function liveLoopAddableNames() {
+  if (liveDraftCategory === "course") return [...new Set([liveDraftName, ...LIVE_RUN_LOOP_STEPS])];
   const names = gainageExerciseConfigs.map((c) => c.name);
   const list = names.length ? names : EXERCISE_SUGGESTIONS.gainage || [];
   return [...new Set([liveDraftName, ...list])];
+}
+// Fractionné en course : les allures qu'on enchaîne dans un tour.
+const LIVE_RUN_LOOP_STEPS = ["Rapide", "Sprint", "Modéré", "Récup"];
+// Repos entre étapes : valeur par défaut propre au type de boucle (5 s en
+// gainage, 0 en course), reprise quand on change de type.
+function ensureLiveLoopDraftTransition() {
+  const cat = liveDraftCategory === "course" ? "course" : "gainage";
+  if (liveLoopDraftTransitionFor !== cat) {
+    liveLoopDraftTransition = LIVE_LOOP_TRANSITION_DEFAULT[cat];
+    liveLoopDraftTransitionFor = cat;
+  }
+  return liveLoopDraftTransition;
 }
 // Réglage de la boucle (3.5.0) : les étapes d'un tour (un ou plusieurs
 // gainages, chacun avec sa durée, enchaînés sans repos), puis le nombre de
@@ -760,6 +761,8 @@ function liveLoopAddableNames() {
 // liveCardioSetFormHTML).
 function liveLoopStepperHTML() {
   const steps = ensureLiveLoopDraftSteps();
+  const isRun = liveDraftCategory === "course";
+  const trans = ensureLiveLoopDraftTransition();
   const stepRows = steps
     .map(
       (st, i) => `
@@ -778,7 +781,7 @@ function liveLoopStepperHTML() {
   const canAdd = steps.length < LIVE_LOOP_MAX_STEPS;
   const addHTML = canAdd
     ? `<label class="field-list-row loop-step-add" for="live-loop-add-step">
-        <span style="flex:1;">${ICONS.plus} Ajouter un gainage</span>
+        <span style="flex:1;">${ICONS.plus} ${isRun ? "Ajouter une allure" : "Ajouter un gainage"}</span>
         <select class="field-select app-select app-select-row" id="live-loop-add-step">
           <option value="" selected>Choisir…</option>
           ${liveLoopAddableNames().map((n) => `<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`).join("")}
@@ -786,12 +789,24 @@ function liveLoopStepperHTML() {
       </label>`
     : "";
   return `
-    <div class="home-section-label" style="margin-top:0;">Un tour</div>
+    <div class="home-section-label" style="margin-top:0;">${isRun ? "Un tour de fractionné" : "Un tour"}</div>
     <div class="field-list-card loop-steps-card">
       ${stepRows}
       ${addHTML}
     </div>
     <div class="field-list-card loop-steps-card" style="margin-top:10px;">
+      ${
+        steps.length > 1
+          ? `<div class="field-list-row" data-loop-transition-row>
+        <span style="flex:1;">${isRun ? "Récup. entre les allures" : "Repos entre les gainages"}</span>
+        <span style="color:var(--text-dim); margin-right:10px;">${trans > 0 ? trans + " s" : "Aucun"}</span>
+        <div class="rep-stepper" style="flex:none;">
+          <button type="button" class="rep-step-btn" data-live-loop-trans-minus aria-label="Moins">−</button>
+          <button type="button" class="rep-step-btn" data-live-loop-trans-plus aria-label="Plus">+</button>
+        </div>
+      </div>`
+          : ""
+      }
       <div class="field-list-row">
         <span style="flex:1;">Repos entre les tours</span>
         <span style="color:var(--text-dim); margin-right:10px;">${liveLoopDraftRest > 0 ? liveLoopDraftRest + " s" : "Aucun"}</span>
@@ -809,7 +824,7 @@ function liveLoopStepperHTML() {
         </div>
       </div>
     </div>
-    <div class="field-hint">Les gainages d'un tour s'enchaînent sans pause ; chaque changement s'annonce par un décompte en bips : 3, 2, 1 puis un bip long.</div>`;
+    <div class="field-hint">${isRun ? "Les allures d'un tour s'enchaînent" : "Les gainages d'un tour s'enchaînent"}, séparés par le temps de ${isRun ? "récupération" : "changement de position"} réglé ci-dessus ; chaque changement s'annonce par un décompte en bips : 3, 2, 1 puis un bip long.</div>`;
 }
 
 function computeNextLiveBaseWeight(name, currentBaseWeight) {
@@ -1064,7 +1079,7 @@ function scheduleLiveLoopCountdown() {
   if (key === liveLoopCountdownKey) return;
   clearLiveLoopCountdown();
   liveLoopCountdownKey = key;
-  const endsAt = startedAt + (working ? liveLoopWorkSec(loop) : loop.restSec) * 1000;
+  const endsAt = startedAt + (working ? liveLoopWorkSec(loop) : liveLoopRestSec(loop)) * 1000;
   const now = Date.now();
   [3, 2, 1].forEach((sec) => {
     const at = endsAt - sec * 1000;
@@ -1139,7 +1154,7 @@ function updateLiveRestChronoDisplay() {
   const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
   const loop = liveSession.loop;
   if (loop) {
-    const totalSec = liveSession.setInProgressStartedAt ? liveLoopWorkSec(loop) : loop.restSec;
+    const totalSec = liveSession.setInProgressStartedAt ? liveLoopWorkSec(loop) : liveLoopRestSec(loop);
     el.textContent = formatLiveChrono(Math.max(0, totalSec - elapsedSec));
     return;
   }
@@ -1198,6 +1213,14 @@ function liveLoopSteps(loop) {
 function liveLoopStepIndex(loop) {
   return Math.min(Math.max(0, (loop && loop.stepIndex) || 0), liveLoopSteps(loop).length - 1);
 }
+// Repos entre deux étapes d'un tour (« changement ») et durée du repos en
+// cours (changement ou repos du tour).
+function liveLoopTransitionSec(loop) {
+  return loop && liveLoopSteps(loop).length > 1 ? Math.max(0, parseInt(loop.transitionSec, 10) || 0) : 0;
+}
+function liveLoopRestSec(loop) {
+  return loop && loop.inTransition ? liveLoopTransitionSec(loop) : loop ? loop.restSec : 0;
+}
 function liveLoopWorkSec(loop) {
   return liveLoopSteps(loop)[liveLoopStepIndex(loop)].sec;
 }
@@ -1207,7 +1230,8 @@ function liveLoopSwitchTo(name) {
   if (!name || name === liveDraftName) return;
   liveDraftName = name;
   liveDraftType = "cardio";
-  liveDraftCategory = GAINAGE_CATEGORY.key;
+  const loop = liveSession && liveSession.loop;
+  liveDraftCategory = (loop && loop.category) || liveDraftCategory || GAINAGE_CATEGORY.key;
   startOrResumeLiveExercise();
   liveStep = "log-set";
 }
@@ -1254,8 +1278,17 @@ function advanceLiveLoopPhaseNow() {
     const steps = liveLoopSteps(loop);
     const idx = liveLoopStepIndex(loop);
     if (idx < steps.length - 1) {
-      // Étape suivante du même tour, sans repos : on enregistre celle-ci et
-      // on enchaîne (bip « GO »).
+      // Étape suivante du même tour. Avec un temps de changement (3.10.0) :
+      // on enregistre celle-ci, bip « STOP », court repos « Changement »,
+      // puis l'étape suivante (bip « GO »). Sans : on enchaîne directement.
+      if (liveLoopTransitionSec(loop) > 0) {
+        playLiveStopSignal();
+        applyFinishLiveSet();
+        loop.inTransition = true;
+        saveJSON(KEYS.liveSession, liveSession);
+        renderLiveStep();
+        return;
+      }
       applyFinishLiveSet();
       startLiveLoopStep(loop, idx + 1);
       return;
@@ -1275,6 +1308,12 @@ function advanceLiveLoopPhaseNow() {
     playLiveStopSignal();
     finishLiveSet();
   } else if (liveSession.restStartedAt) {
+    if (loop.inTransition) {
+      // Fin du changement : l'étape suivante du même tour.
+      loop.inTransition = false;
+      startLiveLoopStep(loop, liveLoopStepIndex(loop) + 1);
+      return;
+    }
     if (loop.currentRound >= loop.rounds) {
       // Dernier tour terminé : la boucle s'arrête d'elle-même, on repasse
       // en mode manuel normal (le repos qui vient de s'écouler reste
@@ -1311,17 +1350,17 @@ function checkLiveLoopAutoAdvance() {
     if (elapsed >= liveLoopWorkSec(loop)) advanceLiveLoopPhase();
   } else if (liveSession.restStartedAt) {
     const elapsed = (Date.now() - liveSession.restStartedAt) / 1000;
-    if (elapsed >= loop.restSec) advanceLiveLoopPhase();
+    if (elapsed >= liveLoopRestSec(loop)) advanceLiveLoopPhase();
   }
 }
 
 // Lance un minuteur en boucle pour l'exercice de gainage actuel : démarre
 // immédiatement le premier tour de travail, puis bascule tout seul
 // travail/repos jusqu'au nombre de tours prévu (voir checkLiveLoopAutoAdvance).
-function startLiveLoop(rounds, workSec, restSec, steps) {
+function startLiveLoop(rounds, workSec, restSec, steps, transitionSec) {
   if (liveSetPhase() === "in-progress") return; // déjà en cours, rien à faire
   const list = Array.isArray(steps) && steps.length ? steps.map((x) => ({ name: x.name, sec: x.sec })) : [{ name: liveDraftName, sec: workSec }];
-  liveSession.loop = { rounds, workSec: list[0].sec, restSec, steps: list, stepIndex: 0, currentRound: 1 };
+  liveSession.loop = { rounds, workSec: list[0].sec, restSec, steps: list, stepIndex: 0, currentRound: 1, category: liveDraftCategory || GAINAGE_CATEGORY.key, transitionSec: Math.max(0, parseInt(transitionSec, 10) || 0), inTransition: false };
   liveLoopFormOpen = false;
   saveJSON(KEYS.liveSession, liveSession);
   liveLoopSwitchTo(list[0].name);
@@ -1946,12 +1985,12 @@ function attachLiveNavigationListeners(content) {
     btn.addEventListener("click", () => {
       const key = btn.dataset.liveCardioCategory;
       if (key === GAINAGE_CATEGORY.key) {
-        // Comme les catégories Muscu : on sélectionne/désélectionne, ça
-        // révèle la liste des exercices de gainage juste en dessous, sans
-        // démarrer quoi que ce soit tout de suite.
-        liveDraftCategory = liveDraftCategory === key ? "" : key;
-        liveCategoryJustChanged = true;
-        renderLiveApp();
+        // Gainage = un seul type (3.10.0), lancé directement comme Rameur,
+        // Vélo ou Course. Les gainages précis (Planche, Planche latérale…)
+        // s'enchaînent dans la boucle (« Lancer en boucle »).
+        liveDraftCategory = key;
+        liveDraftName = GAINAGE_CATEGORY.label;
+        startOrResumeLiveExercise();
         return;
       }
       const cat = CARDIO_CATEGORIES.find((c) => c.key === key);
@@ -2185,6 +2224,18 @@ function attachLiveLoopListeners(content) {
       renderLiveApp();
     })
   );
+  const transMinus = content.querySelector("[data-live-loop-trans-minus]");
+  const transPlus = content.querySelector("[data-live-loop-trans-plus]");
+  if (transMinus)
+    transMinus.addEventListener("click", () => {
+      liveLoopDraftTransition = Math.max(0, ensureLiveLoopDraftTransition() - 5);
+      renderLiveApp();
+    });
+  if (transPlus)
+    transPlus.addEventListener("click", () => {
+      liveLoopDraftTransition = Math.min(60, ensureLiveLoopDraftTransition() + 5);
+      renderLiveApp();
+    });
   const addStep = content.querySelector("#live-loop-add-step");
   if (addStep)
     addStep.addEventListener("change", () => {
@@ -2209,7 +2260,7 @@ function attachLiveLoopListeners(content) {
     startLoopBtn.addEventListener("click", () => {
       const steps = ensureLiveLoopDraftSteps();
       liveLoopDraftWork = steps[0].sec;
-      startLiveLoop(liveLoopDraftRounds, steps[0].sec, liveLoopDraftRest, steps);
+      startLiveLoop(liveLoopDraftRounds, steps[0].sec, liveLoopDraftRest, steps, steps.length > 1 ? ensureLiveLoopDraftTransition() : 0);
     });
 
   const stopLoopBtn = content.querySelector("[data-live-stop-loop]");

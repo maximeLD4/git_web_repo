@@ -226,6 +226,12 @@ let liveLoopDraftRest = 30;
 // de la boucle (la 1re étape = l'exercice affiché). Repos entre les tours :
 // liveLoopDraftRest (0 = pas de repos).
 let liveLoopDraftSteps = [];
+// Repos entre deux étapes d'un même tour (changement de position entre deux
+// gainages, récupération entre deux allures en course) — 3.10.0. Par défaut
+// 5 s en gainage, 0 en course ; réglable de 0 à 60 s.
+const LIVE_LOOP_TRANSITION_DEFAULT = { gainage: 5, course: 0 };
+let liveLoopDraftTransition = 5;
+let liveLoopDraftTransitionFor = "";
 // Vrai juste après un changement de tour (auto ou via "Passer", voir
 // advanceLiveLoopPhase) — lu une fois par rendu pour poser une petite
 // animation sur le numéro de tour, puis remis à zéro (voir renderLiveApp),

@@ -7,6 +7,37 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.10.0 - 2026-11-04
+=====================
+
+- **Gainage : un seul type, lancé directement.** Toucher « Gainage » en Séance en direct
+  prépare aussitôt une série « Gainage » au chrono, comme Rameur, Vélo ou Course — plus de
+  liste de gainages à déplier. Les gainages précis (Planche, Planche latérale…, ceux de
+  Réglages > Exercices > Gainage) s'enchaînent dans **« Lancer en boucle »**, toujours là.
+- **La boucle existe aussi en Course à pied, pour le fractionné** : bouton « Fractionné
+  (boucle) ». Même réglage — les allures d'un tour (« Course à pied », puis « Rapide »,
+  « Sprint », « Modéré », « Récup »…), chacune avec sa durée, la récupération entre les
+  tours, le nombre de tours — ; pendant la boucle, le chronomètre animé (pas la planche) ;
+  chaque allure s'enregistre en Course.
+- **Nouveau : un temps de repos entre deux étapes d'un même tour.**
+  - En gainage : **« Repos entre les gainages »**, le temps de changer de position — **5 s
+    par défaut**, réglable par pas de 5 s de « Aucun » (0) à 60 s. En course :
+    « Récup. entre les allures », « Aucun » par défaut.
+  - La ligne apparaît dès qu'il y a au moins deux étapes, au-dessus de « Repos entre les
+    tours ».
+  - Pendant la boucle : à la fin d'un gainage, bip « STOP », bandeau **« Changement »**
+    avec son décompte, « Ensuite : Planche latérale · 30 s », puis bip « GO » et le gainage
+    suivant. Avant : « Ensuite : 5 s pour changer, puis Planche latérale ». « Passer »
+    devient « Passer au changement », puis « Passer à Planche latérale ».
+  - À 0, les étapes s'enchaînent sans pause, comme avant.
+- Vérifié : ``tools/tests/loop_multi.js`` (31 contrôles, dont : « Repos entre les gainages »
+  à 5 s par défaut puis « Aucun » ; boucle avec 3 s de changement — bandeau « Changement »,
+  série enregistrée, gainage suivant lancé, bips STOP / GO, une série par gainage ; Gainage
+  lancé directement sans liste ; Course : « Fractionné (boucle) », allures proposées,
+  récupération à « Aucun », chronomètre animé, séries rangées en Course). Les batteries qui
+  choisissaient un gainage dans l'ancienne liste ont été adaptées. Les autres passent
+  toujours.
+
 3.9.0 - 2026-11-04
 ====================
 

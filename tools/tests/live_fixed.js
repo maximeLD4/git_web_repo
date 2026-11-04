@@ -19,7 +19,7 @@ const STATES = {
   'Muscu, repos (bandeau Repos + frise)': () => { finishLiveSet(); const v = document.querySelector('[data-live-validate]'); if (v) v.click(); if (!liveSession.restStartedAt) { liveSession.restStartedAt = Date.now(); } renderLiveStep(); },
   'Rameur, repos (bonhomme au centre)': () => { window.__fresh(); liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="rameur"]').click(); liveSession.restStartedAt = Date.now(); renderLiveStep(); },
   'Rameur, série en cours (rameur animé + distance)': () => { startLiveSet(); },
-  'Gainage, prêt (avec « Lancer en boucle »), repos': () => { window.__fresh(); liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="gainage"]').click(); const e = document.querySelector('[data-live-exercise="Planche"]'); if (e) e.click(); liveSession.restStartedAt = Date.now(); renderLiveStep(); },
+  'Gainage, prêt (avec « Lancer en boucle »), repos': () => { window.__fresh(); liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="gainage"]').click(); liveDraftName = 'Planche'; startOrResumeLiveExercise(); liveSession.restStartedAt = Date.now(); renderLiveStep(); },
   'Gainage, réglage de la boucle': () => { document.querySelector('[data-live-open-loop-form]').click(); },
   'Gainage, boucle : travail': () => { document.querySelector('[data-live-start-loop]').click(); },
   'Gainage, boucle : repos': () => { document.querySelector('[data-live-skip-loop-phase]').click(); },

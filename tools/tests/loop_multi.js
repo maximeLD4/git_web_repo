@@ -8,7 +8,7 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
   p.errs = []; p.on('pageerror', (e) => p.errs.push(e.message)); await p.goto(`http://localhost:${PORT}/${DIR}/index.html`, { waitUntil: 'load' }); await p.waitForFunction(() => { try { currentUser; return typeof render === 'function'; } catch (e) { return false; } });
   const open = () => p.evaluate(() => { currentUser = { uid: 'u' }; applyShowHints(false); gainageExerciseConfigs = [{ id: 'g1', name: 'Planche', rounds: 10, workSec: 30, restSec: 15 }, { id: 'g2', name: 'Planche latérale', rounds: 10, workSec: 30, restSec: 15 }, { id: 'g3', name: 'Superman', rounds: 10, workSec: 30, restSec: 15 }];
     window.__beeps = []; window.playLiveBeep = (f) => window.__beeps.push({ f, t: performance.now() });
-    liveSession = null; liveActiveExerciseId = null; liveStep = 'category'; currentApp = 'live'; liveLoopDraftSteps = []; render(); document.querySelector('[data-live-pick-plan=""]')?.click(); liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="gainage"]').click(); document.querySelector('[data-live-exercise="Planche"]').click(); document.querySelector('[data-live-open-loop-form]').click(); });
+    liveSession = null; liveActiveExerciseId = null; liveStep = 'category'; currentApp = 'live'; liveLoopDraftSteps = []; render(); document.querySelector('[data-live-pick-plan=""]')?.click(); liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="gainage"]').click(); (liveDraftName = 'Planche', startOrResumeLiveExercise()); document.querySelector('[data-live-open-loop-form]').click(); });
   await open(); await p.waitForTimeout(200);
   console.log('=== Réglage de la boucle ===');
   check('Le réglage montre « Un tour » avec le gainage affiché comme 1re étape', await p.evaluate(() => [...document.querySelectorAll('.loop-step-name')].map((e) => e.textContent).join(',') === 'Planche'));
@@ -17,6 +17,9 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
   for (let i = 0; i < 5; i++) await p.click('[data-live-loop-step-minus="0"]');
   for (let i = 0; i < 5; i++) await p.click('[data-live-loop-step-minus="1"]');
   check('Chaque étape a sa durée (− / + par 5 s) : 5 s et 5 s', await p.evaluate(() => [...document.querySelectorAll('.loop-step-sec')].map((e) => e.textContent).join(',') === '5 s,5 s'));
+  check('Deux gainages : « Repos entre les gainages » apparaît, 5 s par défaut', await p.evaluate(() => /Repos entre les gainages/.test(document.querySelector('[data-loop-transition-row]').textContent) && /5 s/.test(document.querySelector('[data-loop-transition-row]').textContent)));
+  await p.click('[data-live-loop-trans-minus]'); await p.waitForTimeout(100);
+  check('…réglable jusqu\'à 0 : « Aucun »', await p.evaluate(() => /Aucun/.test(document.querySelector('[data-loop-transition-row]').textContent) && liveLoopDraftTransition === 0));
   for (let i = 0; i < 6; i++) await p.click('[data-live-loop-rest-minus]');
   check('Repos entre les tours à 0 : « Aucun »', await p.evaluate(() => /Aucun/.test(document.querySelector('[data-live-loop-rest-minus]').closest('.field-list-row').textContent) && liveLoopDraftRest === 0));
   for (let i = 0; i < 8; i++) await p.click('[data-live-loop-rounds-minus]');
@@ -37,7 +40,7 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
   check('Boucle terminée', !r.loop);
   console.log('\n=== (Planche 5 s, Planche latérale 5 s, repos 5 s) × 1 ===');
   await open(); await p.waitForTimeout(150);
-  await p.evaluate(() => { liveLoopDraftSteps = [{ name: 'Planche', sec: 5 }, { name: 'Planche latérale', sec: 5 }]; liveLoopDraftRest = 5; liveLoopDraftRounds = 2; renderLiveApp(); });
+  await p.evaluate(() => { liveLoopDraftSteps = [{ name: 'Planche', sec: 5 }, { name: 'Planche latérale', sec: 5 }]; liveLoopDraftRest = 5; liveLoopDraftRounds = 2; liveLoopDraftTransition = 0; renderLiveApp(); });
   await p.click('[data-live-start-loop]'); await p.waitForTimeout(5600);
   check('Après la Planche : directement Planche latérale (pas de repos entre les étapes)', await p.evaluate(() => !!liveSession.setInProgressStartedAt && liveDraftName === 'Planche latérale'));
   check('…« Ensuite : repos · 5 s »', await p.evaluate(() => /Ensuite : repos · 5 s/.test(document.querySelector('.live-loop-next').textContent)));
@@ -47,6 +50,34 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
   check('Fin du repos : tour 2, de nouveau la Planche', await p.evaluate(() => liveSession.loop && liveSession.loop.currentRound === 2 && liveDraftName === 'Planche' && !!liveSession.setInProgressStartedAt));
   await p.click('[data-live-stop-loop]'); await p.waitForTimeout(300);
   check('« Arrêter la boucle » : arrêtée, la série en cours enregistrée', await p.evaluate(() => !liveSession.loop && liveSession.exercises.find((e) => e.name === 'Planche').sets.length === 2));
+  console.log('\n=== Repos entre les gainages (changement de position) : 3 s ===');
+  await open(); await p.waitForTimeout(150);
+  await p.evaluate(() => { window.__beeps = []; liveLoopDraftSteps = [{ name: 'Planche', sec: 4 }, { name: 'Planche latérale', sec: 4 }]; liveLoopDraftRest = 0; liveLoopDraftRounds = 1; liveLoopDraftTransition = 3; liveLoopDraftTransitionFor = 'gainage'; renderLiveApp(); });
+  await p.click('[data-live-start-loop]'); await p.waitForTimeout(600);
+  check('Pendant la Planche : « Ensuite : 3 s pour changer, puis Planche latérale », « Passer au changement »', await p.evaluate(() => /3 s pour changer, puis Planche latérale/.test(document.querySelector('.live-loop-next').textContent) && /Passer au changement/.test(document.querySelector('[data-live-skip-loop-phase]').textContent)));
+  await p.waitForTimeout(4000);
+  check('Fin de la Planche : « Changement » (court repos), série de la Planche enregistrée', await p.evaluate(() => !!liveSession.restStartedAt && liveSession.loop.inTransition && /Changement/.test(document.querySelector('.live-rest-hero-label').textContent) && liveSession.exercises.find((e) => e.name === 'Planche').sets.length === 1 && /Ensuite : Planche latérale · 4 s/.test(document.querySelector('.live-loop-next').textContent)));
+  await p.waitForTimeout(3300);
+  check('Après 3 s : Planche latérale lancée', await p.evaluate(() => liveDraftName === 'Planche latérale' && !!liveSession.setInProgressStartedAt && !liveSession.loop.inTransition));
+  await p.waitForTimeout(4400);
+  const tb = await p.evaluate(() => window.__beeps.map((x) => (x.f === 660 ? 't' : x.f === 1046 ? 'GO' : x.f === 392 ? 'STOP' : 'f')).join(' '));
+  check('Bips : GO · 3 tics STOP (fin de la Planche) · tics GO (fin du changement) · tics puis fin', tb === 'GO t t t STOP t t GO t t t f f f', tb);
+  check('Boucle terminée, une série de 4 s par gainage', await p.evaluate(() => !liveSession.loop && liveSession.exercises.filter((e) => /Planche/.test(e.name)).map((e) => e.name + ':' + e.sets.map((x) => Math.round(parseFloat(x.weight) * 60)).join('/')).sort().join(',') === 'Planche latérale:4,Planche:4'));
+
+  console.log('\n=== Gainage se lance directement ; la boucle existe aussi en Course (fractionné) ===');
+  await p.evaluate(() => { liveSession = null; liveActiveExerciseId = null; liveStep = 'category'; currentApp = 'live'; render(); document.querySelector('[data-live-pick-plan=""]')?.click(); liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="gainage"]').click(); }); await p.waitForTimeout(200);
+  check('Toucher « Gainage » : prêt à lancer « Gainage » directement (plus de liste), « Lancer en boucle » proposé', await p.evaluate(() => liveDraftName === 'Gainage' && /Lancer Gainage/.test(document.querySelector('[data-live-start-set]').textContent) && !!document.querySelector('[data-live-open-loop-form]') && !document.querySelector('[data-live-exercise]')));
+  await p.evaluate(() => { liveSession = null; liveActiveExerciseId = null; liveStep = 'category'; render(); document.querySelector('[data-live-pick-plan=""]')?.click(); liveDraftType = 'cardio'; renderLiveStep(); document.querySelector('[data-live-cardio-category="course"]').click(); }); await p.waitForTimeout(200);
+  check('Course à pied : bouton « Fractionné (boucle) »', await p.evaluate(() => /Fractionné/.test(document.querySelector('[data-live-open-loop-form]').textContent)));
+  await p.click('[data-live-open-loop-form]'); await p.waitForTimeout(150);
+  await p.selectOption('#live-loop-add-step', 'Récup'); await p.waitForTimeout(150);
+  check('Réglage du fractionné : « Un tour de fractionné », allures proposées, « Récup. entre les allures » à « Aucun » par défaut', await p.evaluate(() => /Un tour de fractionné/.test(document.querySelector('.live-set-form').textContent) && /Récup\. entre les allures/.test(document.querySelector('[data-loop-transition-row]').textContent) && /Aucun/.test(document.querySelector('[data-loop-transition-row]').textContent) && [...document.querySelectorAll('.loop-step-name')].map((e) => e.textContent).join(',') === 'Course à pied,Récup'));
+  await p.evaluate(() => { window.__beeps = []; liveLoopDraftSteps = [{ name: 'Course à pied', sec: 3 }, { name: 'Récup', sec: 3 }]; liveLoopDraftRounds = 1; liveLoopDraftRest = 0; renderLiveApp(); });
+  await p.click('[data-live-start-loop]'); await p.waitForTimeout(800);
+  check('Pendant le fractionné : le chronomètre animé (pas la planche)', await p.evaluate(() => !!document.querySelector('.live-activity-anim svg[data-anim-icon="stopwatch"]')));
+  await p.waitForTimeout(6000);
+  check('Fini : une série par allure, rangées en Course', await p.evaluate(() => !liveSession.loop && ['Course à pied', 'Récup'].every((n) => { const e = liveSession.exercises.find((x) => x.name === n); return e && e.sets.length === 1 && e.category === 'course'; })), await p.evaluate(() => JSON.stringify(liveSession.exercises.map((e) => e.name + ':' + e.category + ':' + e.sets.length))));
+
   console.log('\n=== Boucle à un seul gainage (comme avant) ===');
   await open(); await p.waitForTimeout(150);
   check('Un seul gainage : pas de « × » pour le retirer, pas d\'« Ensuite » pendant la boucle', await p.evaluate(() => !document.querySelector('[data-live-loop-step-remove]')));
