@@ -73,9 +73,9 @@ function renderSettingsContent() {
         <div class="home-list-chevron">${ICONS.chevronRight}</div>
       </div>
       <div class="home-list-row" data-open-settings="appearance">
-        <div class="home-list-icon home-list-icon-square" style="background: var(--yellow); color:#FFF8F0;">${ICONS.sun}</div>
+        <div class="home-list-icon home-list-icon-square" style="background: var(--yellow); color: var(--on-yellow);">${ICONS.sun}</div>
         <div class="home-list-label">Apparence</div>
-        <div class="home-list-value">${{ day: "Jour", night: "Nuit", anne: "Anne", mono: "Mono" }[colorMode] || "Jour"}</div>
+        <div class="home-list-value">${escapeHTML((THEMES[colorMode] || THEMES[THEME_DEFAULT]).label)}</div>
         <div class="home-list-chevron">${ICONS.chevronRight}</div>
       </div>
       <div class="home-list-row" data-open-settings="sound">
@@ -112,28 +112,19 @@ function renderSettingsAppearanceApp() {
     <div class="content" id="content">
       <div class="home-section-label" style="margin-top:0;">Mode</div>
       <div class="home-list">
-        <div class="home-list-row" data-color-mode="day">
-          <div class="home-list-icon home-list-icon-square" style="background: var(--yellow); color:#FFF8F0;">${ICONS.sun}</div>
-          <div class="home-list-label">Jour</div>
-          ${colorMode === "day" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
-        </div>
-        <div class="home-list-row" data-color-mode="night">
-          <div class="home-list-icon home-list-icon-square" style="background: #241E1A; color:#FFF8F0;">${ICONS.moon}</div>
-          <div class="home-list-label">Nuit</div>
-          ${colorMode === "night" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
-        </div>
-        <div class="home-list-row" data-color-mode="anne">
-          <div class="home-list-icon home-list-icon-square" style="background: #9E0B2E; color:#FFF8F0;">${ICONS.heart}</div>
-          <div class="home-list-label">Anne</div>
-          ${colorMode === "anne" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
-        </div>
-        <div class="home-list-row" data-color-mode="mono">
-          <div class="home-list-icon home-list-icon-square" style="background: #0A0A0A; color:#F4F4F4; border:1px solid rgba(255,255,255,0.2);">${ICONS.dumbbell}</div>
-          <div class="home-list-label">Mono</div>
-          ${colorMode === "mono" ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
-        </div>
+        ${THEME_ORDER.map((id) => {
+          // Liste construite d'après js/00-themes.js : une apparence ajoutée
+          // là-bas apparaît ici sans rien toucher.
+          const t = THEMES[id];
+          const sw = t.swatch;
+          return `<div class="home-list-row" data-color-mode="${id}">
+          <div class="home-list-icon home-list-icon-square" style="background: ${sw.bg}; color: ${sw.fg};${sw.border ? ` border: 1px solid ${sw.border};` : ""}">${ICONS[t.icon] || ""}</div>
+          <div class="home-list-label">${escapeHTML(t.label)}</div>
+          ${colorMode === id ? `<div style="color:var(--text); display:flex;">${ICONS.check}</div>` : ""}
+        </div>`;
+        }).join("")}
       </div>
-      <div class="field-hint">Nuit adoucit l'écran le soir. Anne passe l'app dans une palette rose. Mono : noir & blanc, esprit salle de sport.</div>
+      <div class="field-hint">${THEME_ORDER.map((id) => THEMES[id].hint).filter(Boolean).map(escapeHTML).join(" ")}</div>
       <div class="home-section-label" style="margin-top:22px;">Aide</div>
       <div class="field-list-card">
         <div class="field-list-row">
@@ -454,7 +445,7 @@ function gymSettingsFormHTML() {
         .sort((a, b) => a - b)
         .map((w) => `<span class="weight-chip removable">${w}kg <button type="button" data-remove-base-weight="${w}">${ICONS.x}</button></span>`)
         .join("")
-    : `<span style="color:var(--text-dim); font-size:13px;">Aucun palier ajouté</span>`;
+    : `<span class="weights-empty">Aucun poids pour l'instant — ajoute ceux de ta machine ci-dessous.</span>`;
   // On ne propose pas les suggestions déjà utilisées par un AUTRE exercice
   // configuré — inutile de suggérer un nom qui provoquerait immédiatement une
   // erreur de doublon à l'enregistrement. L'exercice en cours d'édition
@@ -492,17 +483,25 @@ function gymSettingsFormHTML() {
       <div class="field-hint" id="config-equipment-hint">${gymEquipmentHint(gymSettingsFormDraft)}</div>
 
       <div class="home-section-label">Poids possibles</div>
-      <div class="field-list-card">
-        <div class="field-list-row weight-chip-row" id="config-base-weights-row">${chips}</div>
-        <div class="field-list-row">
-          <input type="text" inputmode="decimal" id="config-new-base-weight" class="field-list-input-left" placeholder="Ajouter un poids (kg)">
-          <button type="button" class="secondary-btn secondary-btn-inline" id="config-add-base-weight-btn">${ICONS.plus} Ajouter</button>
+      <!-- Poids possibles (3.9.0) : trois niveaux bien distincts —
+           1. ce qui est déjà saisi (les poids, en pastilles) ;
+           2. LE champ où l'on tape (un vrai champ encadré, « kg » dedans,
+              avec son bouton « Ajouter » collé à droite) ;
+           3. l'autre façon de faire, en secondaire (« ou » puis « Scanner »). -->
+      <div class="weights-block">
+        <div class="weight-chip-row weights-list" id="config-base-weights-row">${chips}</div>
+        <div class="weights-add">
+          <label class="weights-add-label" for="config-new-base-weight">Ajouter un poids</label>
+          <div class="input-group">
+            <div class="input-group-field">
+              <input type="text" inputmode="decimal" id="config-new-base-weight" placeholder="ex. 40" autocomplete="off">
+              <span class="input-group-suffix">kg</span>
+            </div>
+            <button type="button" class="input-group-btn" id="config-add-base-weight-btn">${ICONS.plus} Ajouter</button>
+          </div>
         </div>
-        <div class="field-list-row" id="config-scan-weights-btn" style="cursor:pointer;">
-          <div class="home-list-icon home-list-icon-square" style="background:var(--ink); color:var(--on-ink); flex-shrink:0;">${ICONS.camera}</div>
-          <span style="flex:1;">Scanner depuis une photo</span>
-          <div class="home-list-chevron">${ICONS.chevronRight}</div>
-        </div>
+        <div class="weights-or"><span>ou</span></div>
+        <button type="button" class="secondary-btn weights-scan-btn" id="config-scan-weights-btn">${ICONS.camera} Scanner la pile en photo</button>
       </div>
       <div class="field-hint">Les paliers de poids de la machine.</div>
 
@@ -932,6 +931,12 @@ function attachGymSettingsListeners() {
     if (pending !== null && !isNaN(pending)) addWeightToDraft(pending);
     gymSettingsFocusTarget = "weight";
     renderGymSettingsContent();
+  });
+  // Entrée (ou « OK » du clavier du téléphone) dans le champ = « Ajouter ».
+  newWeightInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    document.getElementById("config-add-base-weight-btn").click();
   });
   document.getElementById("config-auto-increment-toggle").addEventListener("click", () => {
     syncFormFromInputs();

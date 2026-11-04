@@ -172,15 +172,15 @@ const EXERCISE_SUGGESTIONS = {
 };
 
 const ACTIVITY_META = [
-  { key: "gym", color: "#8FA06B", rgb: "143,160,107", label: "Muscu" },
-  { key: "run", color: "#D08A62", rgb: "208,138,98", label: "Course" },
-  { key: "swim", color: "#6FA3A0", rgb: "111,163,160", label: "Natation" },
-  { key: "bike", color: "#D9AD5D", rgb: "217,173,93", label: "Vélo" },
+  { key: "gym", color: THEMES[THEME_DEFAULT].activity.gym[0], rgb: THEMES[THEME_DEFAULT].activity.gym[1], label: "Muscu" },
+  { key: "run", color: THEMES[THEME_DEFAULT].activity.run[0], rgb: THEMES[THEME_DEFAULT].activity.run[1], label: "Course" },
+  { key: "swim", color: THEMES[THEME_DEFAULT].activity.swim[0], rgb: THEMES[THEME_DEFAULT].activity.swim[1], label: "Natation" },
+  { key: "bike", color: THEMES[THEME_DEFAULT].activity.bike[0], rgb: THEMES[THEME_DEFAULT].activity.bike[1], label: "Vélo" },
   // Gainage a sa propre entrée (couleur/légende) dans le calendrier partagé
   // plutôt que d'être noyé sous "Muscu" — voir isGainageOnlySession dans
   // 14-shared-calendar.js : une séance qui ne contient QUE du gainage est
   // désormais comptée/affichée à part, pas comme si c'était de la muscu.
-  { key: "gainage", color: "#A65C4B", rgb: "166,92,75", label: "Gainage" },
+  { key: "gainage", color: THEMES[THEME_DEFAULT].activity.gainage[0], rgb: THEMES[THEME_DEFAULT].activity.gainage[1], label: "Gainage" },
 ];
 
 // Ces couleurs sont posées en style inline (calendrier partagé) — elles ne
@@ -189,41 +189,9 @@ const ACTIVITY_META = [
 // applyColorMode dans 03-state.js) plutôt que de les figer une fois pour
 // toutes, pour qu'elles restent lisibles sur un fond sombre (Nuit) ou
 // s'accordent avec la teinte rose (Anne).
-const ACTIVITY_META_COLORS = {
-  // Mono (3.6.0) : des gris, du blanc au gris moyen, lisibles sur le noir.
-  mono: {
-    gym: ["#F4F4F4", "244,244,244"],
-    run: ["#BEBEBE", "190,190,190"],
-    swim: ["#919191", "145,145,145"],
-    bike: ["#D7D7D7", "215,215,215"],
-    gainage: ["#A5A5A5", "165,165,165"],
-  },
-  day: {
-    gym: ["#8FA06B", "143,160,107"],
-    run: ["#D08A62", "208,138,98"],
-    swim: ["#6FA3A0", "111,163,160"],
-    bike: ["#D9AD5D", "217,173,93"],
-    gainage: ["#A65C4B", "166,92,75"],
-  },
-  night: {
-    gym: ["#A9BC8B", "169,188,139"],
-    run: ["#E0A47F", "224,164,127"],
-    swim: ["#8BC0BC", "139,192,188"],
-    bike: ["#E8C077", "232,192,119"],
-    gainage: ["#C47C6C", "196,124,108"],
-  },
-  anne: {
-    // Foncés en 3.4.2 (mêmes valeurs que les accents du mode Anne en CSS) :
-    // lisibles sur le fond rose, au moins 4,5:1.
-    gym: ["#AC4166", "172,65,102"],
-    run: ["#C42845", "196,40,69"],
-    swim: ["#B03A5B", "176,58,91"],
-    bike: ["#C22A54", "194,42,84"],
-    gainage: ["#8C2F45", "140,47,69"],
-  },
-};
+// Couleurs des sports par apparence : THEMES[id].activity (js/00-themes.js).
 function applyActivityMetaColors(mode) {
-  const set = ACTIVITY_META_COLORS[mode] || ACTIVITY_META_COLORS.day;
+  const set = (THEMES[mode] || THEMES[THEME_DEFAULT]).activity;
   ACTIVITY_META.forEach((a) => {
     const c = set[a.key];
     if (c) {

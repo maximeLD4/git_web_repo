@@ -13,7 +13,7 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
   const cr = (sel, sub) => p.evaluate(([sel, sub]) => { const parse = (c) => c.match(/[\d.]+/g).map(Number); const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0); const el = document.querySelector(sel), t = sub ? el.querySelector(sub) : el; const bg = parse(getComputedStyle(el).backgroundColor), fg = parse(getComputedStyle(t).color); const a = lum(bg), b2 = lum(fg); return Math.round(((Math.max(a, b2) + 0.05) / (Math.min(a, b2) + 0.05)) * 10) / 10; }, [sel, sub]);
   await p.evaluate(() => { currentApp = 'home'; render(); }); await p.waitForTimeout(150);
   let r = await cr('.home-tile-wide', '.home-tile-title'); check(`Accueil : tuile « Séance en direct » blanche, titre noir (${r}:1)`, r >= 7, r);
-  check('Fond de page noir, cartes gris très foncé, aucune couleur', await p.evaluate(() => getComputedStyle(document.getElementById('app')).backgroundColor === 'rgb(10, 10, 10)' && /22, 22, 22/.test(getComputedStyle(document.querySelector('.home-tile:not(.home-tile-wide)')).backgroundColor)));
+  check('Fond de page noir, cartes gris très foncé, aucune couleur', await p.evaluate(() => getComputedStyle(document.getElementById('app')).backgroundColor === 'rgb(10, 10, 10)' && /28, 28, 28/.test(getComputedStyle(document.querySelector('.home-tile:not(.home-tile-wide)')).backgroundColor)));
   await p.evaluate(() => { liveSession = null; liveStep = 'category'; liveDraftType = 'muscu'; currentApp = 'live'; render(); document.querySelector('[data-live-pick-plan=""]')?.click(); document.querySelector('[data-live-category="jambes"]').click(); document.querySelector('[data-live-exercise="Squat"]').click(); startLiveSet(); }); await p.waitForTimeout(200);
   r = await cr('.live-rest-hero', '.live-rest-hero-value'); check(`Effort : bandeau noir, chrono blanc (${r}:1)`, r >= 7 && await p.evaluate(() => getComputedStyle(document.querySelector('.live-rest-hero')).backgroundColor === 'rgb(10, 10, 10)'), r);
   await p.evaluate(() => finishLiveSet()); await p.waitForTimeout(200);
@@ -40,6 +40,6 @@ const check = (l, c, d) => { console.log(`${c ? '✓' : '✗'} ${l}${d !== undef
   await p.evaluate(() => renderLoginScreen()); await p.waitForTimeout(250);
   r = await ink('.auth-mark'); check(`Connexion : logo lisible (${r}:1, était 1:1)`, r >= 4.5, r);
   await p.evaluate(() => { applyColorMode('day'); currentApp = 'settings'; render(); }); await p.waitForTimeout(250);
-  check('Hors Mono (Jour) : le garde-fou ne touche à rien', await p.evaluate(() => document.querySelectorAll('.mono-ink-fix').length === 0));
+  check('Aucun repeint après coup (le garde-fou de 3.7.1 a disparu : chaque fond a sa couleur de texte)', await p.evaluate(() => document.querySelectorAll('.mono-ink-fix').length === 0));
   check('    aucune erreur JS', p.errs.length === 0, p.errs.join(' | ') || 'aucune');
   console.log(`\n${ok} réussis, ${ko} échoués`); await b.close(); process.exit(ko ? 1 : 0); })();

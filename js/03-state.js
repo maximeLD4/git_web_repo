@@ -6,15 +6,12 @@
 // variables CSS) dès le tout premier rendu, avant même de dessiner quoi que
 // ce soit — pour ne jamais montrer le mode Jour une fraction de seconde
 // avant de basculer vers le mode choisi.
-let colorMode = loadJSON(KEYS.colorMode, "day");
+// Apparences : tout vient de js/00-themes.js (source unique) — classes sur
+// <html>, barre d'état, couleurs des sports.
+let colorMode = loadJSON(KEYS.colorMode, THEME_DEFAULT);
 function applyColorMode(mode) {
-  colorMode = mode;
-  document.documentElement.classList.remove("mode-day", "mode-night", "mode-anne", "mode-mono");
-  document.documentElement.classList.add("mode-" + mode);
-  applyActivityMetaColors(mode);
-  // Zone de la barre d'état (iOS, Android) : couleur du fond de page du thème.
-  const meta = document.getElementById("theme-color-meta");
-  if (meta) meta.setAttribute("content", { night: "#1E1A17", anne: "#FCE3EC", mono: "#0A0A0A" }[mode] || "#F3ECE4");
+  colorMode = applyThemeClasses(mode);
+  applyActivityMetaColors(colorMode);
 }
 applyColorMode(colorMode);
 

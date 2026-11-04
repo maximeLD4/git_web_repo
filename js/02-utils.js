@@ -232,6 +232,14 @@ function reserveSpaceForFixedBar(contentEl, actionsBarEl) {
     return;
   }
   requestAnimationFrame(() => {
+    // Revérifié au moment de mesurer (3.9.0) : si la barre a été masquée
+    // entre-temps (ex. on ouvre un formulaire juste après la liste), sa
+    // position vaut 0 et l'on réservait TOUTE la hauteur de l'écran — le
+    // formulaire se retrouvait écrasé dans une bande de quelques lignes.
+    if (!contentEl.isConnected || !actionsBarEl.isConnected || actionsBarEl.style.display === "none" || !actionsBarEl.getClientRects().length) {
+      contentEl.style.marginBottom = "";
+      return;
+    }
     const gap = document.getElementById("app").getBoundingClientRect().bottom - actionsBarEl.getBoundingClientRect().top;
     if (gap > 0) contentEl.style.marginBottom = gap + "px";
   });

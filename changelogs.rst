@@ -7,6 +7,93 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.9.0 - 2026-11-04
+====================
+
+- **Réglages > exercice : « Poids possibles » enfin clair.** Avant, tout avait le même
+  poids visuel : la ligne « Aucun palier ajouté », un texte gris « Ajouter un poids (kg) »
+  qui ne ressemblait pas à un champ, un bouton « Ajouter » à contour, et « Scanner depuis
+  une photo » en ligne de menu — on ne savait ni où taper, ni quoi toucher (et encore moins
+  en Mono). Désormais, trois niveaux bien distincts :
+  1. ce qui est déjà saisi : les poids en pastilles ; s'il n'y en a aucun, un encadré en
+     pointillé dit quoi faire (« Aucun poids pour l'instant — ajoute ceux de ta machine
+     ci-dessous ») ;
+  2. **le champ où l'on tape** : intitulé « Ajouter un poids », un vrai champ encadré,
+     « kg » dedans, le contour qui s'épaissit quand on le touche, et le bouton **« +
+     Ajouter » plein, collé à sa droite** ; la touche Entrée / « OK » du clavier ajoute
+     aussi ;
+  3. l'autre façon de faire, en secondaire : « ou », puis « Scanner la pile en photo » en
+     bouton à contour.
+  Le champ « groupé » (champ + unité + bouton) est un composant réutilisable
+  (``.input-group``), dont les couleurs viennent du registre des apparences (nouvelles
+  variables ``field-bg``, ``field-border``, ``field-border-focus``).
+- **Mono : la hiérarchie revient.** Le noir & blanc avait tout aplati.
+  - Les cartes se détachent du fond (gris plus clair, contour fin, liseré de lumière en
+    haut) au lieu d'un noir presque identique.
+  - Titres de section plus présents ; textes secondaires (valeurs, sous-titres) un vrai
+    cran en dessous du texte principal ; libellés des lignes en gras.
+  - **Un seul gros aplat blanc par écran : l'action principale.** Les menus déroulants
+    (poids, catégorie, type…) étaient eux aussi des aplats blancs — en Séance en direct,
+    le menu des poids rivalisait avec « Lancer » ; ils sont désormais sombres à contour
+    clair (nouvelles variables ``control-bg``, ``on-control``, ``control-border`` ; Jour,
+    Nuit et Anne inchangés).
+  - Pastilles des poids sur un fond distinct.
+- **Correctif** : en ouvrant un formulaire juste après une liste, la place réservée à la
+  barre « Enregistrer » du bas pouvait être calculée alors que la barre n'était pas
+  encore affichée — toute la hauteur de l'écran était réservée et le formulaire se
+  retrouvait écrasé dans une bande de quelques lignes. La mesure se fait maintenant
+  quand la barre est vraiment là.
+- Vérifié : nouvelle batterie ``tools/tests/weights_entry.js`` (27 contrôles : dans les 4
+  apparences, ordre des trois niveaux, message quand rien n'est saisi, champ encadré et
+  visible sur sa carte, « kg » dedans, « Ajouter » plein collé à droite et lisible,
+  « Scanner » en secondaire, ajout par Entrée et par le bouton ; en Mono, un seul grand
+  bouton blanc en Séance en direct et menus sombres) ; ``themes.js`` (2 nouvelles paires
+  vérifiées : texte des menus, texte des champs) ; Jour, Nuit et Anne identiques à 3.8.0
+  hors section « Poids possibles » (comparaison pixel par pixel). Les autres batteries
+  passent toujours.
+
+3.8.0 - 2026-10-21
+====================
+
+- **Apparences : une source unique.** Tout ce qui définit une apparence — nom, phrase et
+  aperçu dans Réglages, barre d'état, couleurs, paires fond / texte, couleurs des sports,
+  formes (arrondis, ombres), polices, matières, mouvement — vit désormais dans
+  ``js/00-themes.js``, et seulement là (voir ``docs/apparences.md``).
+  - Avant, chaque apparence était répartie sur cinq endroits (bloc de variables, règles
+    éparses dans la feuille de styles — 16 pour Nuit, 17 pour Anne, 89 pour Mono —,
+    couleurs des sports dans ``01-config.js``, barre d'état dans ``03-state.js``, liste
+    écrite à la main dans ``08-settings.js``), avec des couleurs écrites en dur qui ne
+    suivaient pas l'apparence.
+  - La feuille de styles ne nomme plus aucune apparence (plus un seul « html.mode-xxx ») et
+    n'écrit plus de couleur en dur (hormis les couleurs officielles des disques, une
+    donnée) : elle n'utilise que des **variables**, et des **préréglages** génériques que
+    chaque apparence choisit — ``type`` (classique / athletic : titres condensés,
+    capitales), ``texture`` (aucune / gym : grain, carbone, acier, moletage, caoutchouc),
+    ``motion`` (calme / rich : enfoncement, rebond, onde, cascade). Mono n'est plus une
+    pile d'exceptions : c'est un jeu de valeurs et trois préréglages.
+  - Le registre génère au chargement la feuille des apparences, dans ``<head>`` avant la
+    feuille de styles, et pose l'apparence enregistrée avant tout affichage.
+  - Réglages > Apparence se construit d'après le registre : **ajouter une apparence = une
+    entrée dans ``THEMES`` et son id dans ``THEME_ORDER``**.
+- **Chaque fond a sa couleur de texte attitrée** (paires ``on-ink``, ``on-yellow``,
+  ``ink-highlight``, ``on-destructive``, ``on-recording``, ``on-sport``…), vérifiées
+  lisibles pour chaque apparence. Le garde-fou « blanc sur blanc » de 3.7.1, qui repeignait
+  après coup, est retiré : il n'a plus rien à rattraper.
+  - Ce que ça a corrigé au passage, dans **Nuit** : « Finir la série », le bouton lecture
+    de l'accueil, le logo de connexion et les messages d'erreur étaient moutarde sur une
+    encre claire (1,5:1, quasi invisibles) — désormais foncés sur clair. Dans Jour et Anne :
+    les icônes posées sur la moutarde / le rose (avatar, Réglages > Apparence) sont à
+    l'encre au lieu de crème (2:1 → 5,8:1).
+- **Rien d'autre ne change à l'écran** : 68 captures (17 écrans × 4 apparences) comparées
+  pixel par pixel avant / après — identiques hormis les corrections ci-dessus.
+- Vérifié : nouvelle batterie ``tools/tests/themes.js`` (18 contrôles : aucune apparence
+  nommée ni couleur en dur hors du registre, aucune variable du contrat redéfinie
+  ailleurs, contrat complet pour chaque apparence, 9 paires lisibles par apparence,
+  feuille générée avant la feuille de styles, classes / préréglages / barre d'état
+  propres à chaque bascule, apparence enregistrée appliquée dès le chargement, apparence
+  ajoutée au registre visible et appliquée sans rien toucher d'autre). Toutes les autres
+  batteries passent.
+
 3.7.1 - 2026-10-21
 ====================
 

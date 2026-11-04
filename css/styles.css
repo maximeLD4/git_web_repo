@@ -15,20 +15,10 @@
 
 /* ========== VARIABLES & THÈMES (couleur d'accent par module) ========== */
 :root {
+  /* Couleurs, formes, polices, matières : voir js/00-themes.js (source unique
+     des apparences), qui écrit ces variables pour chaque apparence. */
   --safe-bottom: env(safe-area-inset-bottom);
   --bottom-nav-h: calc(50px + var(--safe-bottom));
-  --bg: #F3ECE4;
-  --surface: #FFFDF8;
-  --surface-2: rgba(var(--ink-rgb), 0.055);
-  --border: rgba(var(--ink-rgb), 0.16);
-  --rule: rgba(var(--ink-rgb), 0.16);
-  --text: #3D3230;
-  --text-dim: rgba(var(--ink-rgb), 0.62);
-  --ink: #3D3230;
-  --ink-rgb: 61,50,48;
-  --on-ink: #FFFDF8;
-  --on-ink-rgb: 255,253,248;
-  --surface-rgb: 255,253,248;
   /* --- Couleur = fonction, une seule fonction par couleur ---------------
      encre     l'action et la sélection : bouton principal, onglet actif, puce choisie
      moutarde  le temps qui court : chrono, repos, séance en cours, « Finir », « À venir »
@@ -38,15 +28,12 @@
                badges de provenance, filet d'identité de module. Jamais un bouton.
      Tout le reste est neutre (papier, filets, gris) — c'est ce qui rend les
      quatre rôles lisibles au premier coup d'œil. */
-  --action: #3D3230;
   --timer: var(--yellow);
   --timer-ink: var(--ink);
   --danger: var(--ink);
   --ok: var(--ink);
   /* Alias conservés pour compatibilité : toute réutilisation doit pointer sur
      un rôle, pas sur une teinte. Une seule valeur par rôle, pas de second rouge. */
-  --accent: #3D3230;
-  --accent-rgb: 61, 50, 48;
   --rust: var(--danger);
   --rust-strong: var(--danger);
   --green: var(--ok);
@@ -56,43 +43,17 @@
      de cette feuille (cartes, boutons) ; --radius-lg/xl s'ajoutent pour
      les gros conteneurs (listes, tuile héros) sans toucher aux endroits
      qui utilisaient déjà --radius-sm (puces, petits contrôles). */
-  --radius: 14px;
-  --radius-sm: 8px;
-  --radius-lg: 18px;
-  --radius-xl: 22px;
-  --shadow-card: none;
   /* Police par défaut : système (comme le corps du texte dans les
      maquettes) — Jost devient l'exception, réservée aux gros titres
      d'écran et aux grands chiffres (voir --font-display), plutôt que la
      police de tout, partout. */
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
-  --font-display: "Jost", -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   --shadow-sm: none;
   --shadow-md: none;
   /* Teintes "tuile pastel" de l'Accueil et de la carte Réglages — posées en
      rgba() directement dans le HTML (voir 07-home.js/08-settings.js), donc
      invisibles pour --accent : exposées ici en RGB pur pour pouvoir s'écrire
      rgba(var(--rgb-x), 0.14) et suivre le mode de couleur comme le reste. */
-  --yellow-rgb: 226,166,107;
-  --rgb-gym: 143,160,107;
-  --rgb-run: 208,138,98;
-  --rgb-swim: 111,163,160;
-  --rgb-bike: 217,173,93;
-  --rgb-performance: 201,122,108;
-  --rgb-weight: 160,138,158;
-  --rgb-calendar: 122,106,92;
 }
-#app.theme-gym { --accent: #6B7F45; --accent-rgb: 107, 127, 69; }
-#app.theme-run { --accent: #BF6A3D; --accent-rgb: 191, 106, 61; }
-#app.theme-weight { --accent: #7D6482; --accent-rgb: 125, 100, 130; }
-#app.theme-calendar { --accent: #3D3230; --accent-rgb: 61, 50, 48; }
-#app.theme-settings { --accent: #3D3230; --accent-rgb: 61, 50, 48; }
-#app.theme-swim { --accent: #4C8480; --accent-rgb: 76, 132, 128; }
-#app.theme-bike { --accent: #BD8A34; --accent-rgb: 189, 138, 52; }
-#app.theme-home { --accent: #3D3230; --accent-rgb: 61, 50, 48; }
-#app.theme-scanner { --accent: var(--yellow); --accent-rgb: 217, 138, 43; }
-#app.theme-performance { --accent: #A84B3D; --accent-rgb: 168, 75, 61; }
 /* Flèches de tendance : la hausse est un acquis (vert), la baisse et le
    plateau restent des informations neutres — le glyphe porte la direction, et
    le rouge reste réservé au destructif. */
@@ -293,7 +254,7 @@ input:focus { outline: none; border-bottom-color: var(--ink); background: transp
 .toggle-switch-label-text { font-size: 11.5px; color: var(--text-dim); line-height: 1.45; flex: 1; min-width: 0; font-weight: 500; }
 .toggle-switch { position: relative; flex-shrink: 0; width: 46px; height: 27px; padding: 0; border: none; border-radius: var(--radius); background: rgba(var(--ink-rgb), 0.12); cursor: pointer; transition: background 0.2s ease; }
 .toggle-switch.on { background: var(--ok); }
-.toggle-switch-knob { position: absolute; top: 2px; left: 2px; width: 23px; height: 23px; border-radius: var(--radius); background: #fff; box-shadow: var(--shadow-card); transition: transform 0.2s ease; }
+.toggle-switch-knob { position: absolute; top: 2px; left: 2px; width: 23px; height: 23px; border-radius: var(--radius); background: var(--knob); box-shadow: var(--shadow-card); transition: transform 0.2s ease; }
 .toggle-switch.on .toggle-switch-knob { transform: translateX(19px); }
 /* ---------- Aide repliable (le petit "?") : le texte d'explication n'est
    plus affiché par défaut, seulement au clic — pour ne pas noyer chaque
@@ -421,7 +382,7 @@ select.ex-name-pill:focus { outline: none; }
 .set-action-btn:hover { color: var(--text); }
 .set-action-btn:disabled { opacity: 0.3; cursor: default; }
 .set-action-btn.danger { color: var(--danger); }
-.set-action-btn.danger:hover, .set-action-btn.danger:active { background: var(--yellow); color: var(--ink); }
+.set-action-btn.danger:hover, .set-action-btn.danger:active { background: var(--yellow); color: var(--on-yellow); }
 
 /* ========== BOUTONS D'ACTION & BARRES FIXES (tabbar, barre d'actions) ========== */
 .add-set-btn {
@@ -453,7 +414,7 @@ select.ex-name-pill:focus { outline: none; }
 }
 .edit-banner {
   display: flex; align-items: center; justify-content: space-between; background: var(--yellow);
-  color: var(--timer-ink); border: none; border-radius: var(--radius); padding: 12px 15px;
+  color: var(--on-yellow); border: none; border-radius: var(--radius); padding: 12px 15px;
   font-family: var(--font); font-size: 13px; font-weight: 700; margin-bottom: 14px;
 }
 .edit-banner button { background: none; border: none; color: var(--timer-ink); text-decoration: underline; font-family: var(--font); font-size: 12.5px; font-weight: 700; cursor: pointer; padding: 0; }
@@ -620,7 +581,7 @@ select.ex-name-pill:focus { outline: none; }
   letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
-.backup-btn.armed-danger { background: var(--ink); border-color: var(--ink); color: var(--yellow); }
+.backup-btn.armed-danger { background: var(--ink); border-color: var(--ink); color: var(--ink-highlight); }
 .backup-btn:hover { color: var(--text); border-color: var(--ink); }
 .backup-btn.armed-danger:hover { color: var(--yellow); border-color: var(--ink); }
 .backup-note { font-size: 11.5px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.6; font-weight: 500; text-wrap: pretty; }
@@ -708,7 +669,7 @@ select.ex-name-pill:focus { outline: none; }
 }
 .swipe-delete-reveal {
   position: absolute; top: 0; right: 0; bottom: 0; width: 84px;
-  background: var(--danger); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: var(--danger); color: var(--on-ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer;
 }
 /* Disparition d'une carte supprimée — s'efface sur place (hauteur, opacité,
@@ -736,7 +697,7 @@ select.ex-name-pill:focus { outline: none; }
 .modal-btn { padding: 12px 18px; border-radius: var(--radius); border: none; font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; }
 .modal-cancel { background: rgba(var(--ink-rgb), 0.07); color: var(--text-dim); }
 .modal-confirm { background: var(--ink); color: var(--on-ink); }
-.modal-confirm.danger { background: var(--danger); color: #fff; }
+.modal-confirm.danger { background: var(--danger); color: var(--on-destructive); }
 
 /* ========== ACCUEIL & MODULE PERFORMANCE ========== */
 .back-btn { background: none; border: none; color: var(--text-dim); display: flex; align-items: center; padding: 2px 6px 2px 0; cursor: pointer; }
@@ -833,15 +794,15 @@ select.ex-name-pill:focus { outline: none; }
 .home-tile[data-open-app="weight"] .home-tile-icon { background: rgb(var(--rgb-weight)) !important; }
 .home-tile.live-recording[data-open-app="live"] .home-tile-icon { background: var(--timer) !important; }
 .home-tile.live-recording.home-tile-wide .home-tile-icon { background: var(--timer) !important; }
-.home-tile.live-recording { background: #241E1A; border-color: #241E1A; }
-.home-tile.live-recording .home-tile-title { color: #fff; }
+.home-tile.live-recording { background: var(--recording-bg); border-color: var(--recording-bg); }
+.home-tile.live-recording .home-tile-title { color: var(--on-recording); }
 .home-tile.live-recording .home-tile-sub { color: rgba(255, 255, 255, 0.7); }
 .home-hscroll { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; margin-bottom: 18px; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
 .home-tile.home-tile-hscroll { flex: 0 0 140px; width: 140px; scroll-snap-align: start; align-items: flex-start; }
 .home-tile-icon-wide { width: 3px; height: auto; }
 .home-tile-wide-text { display: flex; flex-direction: column; gap: 5px; }
 .home-tile-icon-live-badge { position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: var(--radius); border: 2px solid var(--ink); }
-.home-tile.live-recording.home-tile-wide .home-tile-icon-live-badge { border-color: #241E1A; }
+.home-tile.live-recording.home-tile-wide .home-tile-icon-live-badge { border-color: var(--recording-bg); }
 .live-rec-dot { position: absolute; top: 14px; right: 14px; width: 9px; height: 9px; border-radius: var(--radius); background: var(--timer); animation: live-rec-pulse 1.6s ease-in-out infinite; }
 @keyframes live-rec-pulse {
   0% { box-shadow: var(--shadow-card); }
@@ -904,7 +865,6 @@ select.ex-name-pill:focus { outline: none; }
 .history-run-stats { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
 
 /* ========== SÉANCE EN DIRECT (écran plein, sans scroll, uniquement des boutons) ========== */
-#app.theme-live { --accent: var(--yellow); --accent-rgb: 217, 138, 43; }
 .live-screen { position: absolute; inset: 0; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); padding: calc(16px + env(safe-area-inset-top)) 18px calc(16px + var(--safe-bottom)); box-sizing: border-box; }
 .live-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-shrink: 0; gap: 8px; }
 .live-header .back-btn { width: 34px; height: 34px; flex: none; border: 1px solid var(--rule); border-radius: var(--radius); justify-content: center; padding: 0; }
@@ -1030,7 +990,7 @@ select.ex-name-pill:focus { outline: none; }
 .live-post-btn { width: 100%; border: none; border-radius: var(--radius); padding: 16px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 /* « Finir la série » mène au repos, donc moutarde — et se distingue ainsi de
    « Débuter » qui reste encre, sans emprunter le rouge du destructif. */
-.live-validate-btn.live-finish-btn { background: var(--yellow); color: var(--ink); box-shadow: var(--shadow-card); }
+.live-validate-btn.live-finish-btn { background: var(--yellow); color: var(--on-yellow); box-shadow: var(--shadow-card); }
 /* Série de cardio en cours (Séance en direct) : l'activité s'anime en boucle
    tant que la série n'est pas finie — voir animIconHTML (09c-anim-icons.js). */
 .live-activity-anim { display: flex; justify-content: center; color: var(--text); margin: 4px 0 8px; }
@@ -1045,13 +1005,13 @@ select.ex-name-pill:focus { outline: none; }
 .live-timeline-chip .val { font-family: var(--font); font-size: 13px; color: var(--text); font-weight: 800; letter-spacing: -0.3px; transition: opacity 0.15s ease; }
 @keyframes live-chip-slide-in { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .live-timeline-chip-enter { animation: live-chip-slide-in 0.22s cubic-bezier(0.34, 1.3, 0.64, 1); }
-.live-timeline-delete-overlay { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; border-radius: var(--radius); color: #fff; }
+.live-timeline-delete-overlay { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; border-radius: var(--radius); color: var(--on-destructive); }
 .live-timeline-chip.confirm-delete { background: var(--yellow); }
 .live-timeline-chip.confirm-delete .ex, .live-timeline-chip.confirm-delete .val { opacity: 0.2; }
 .live-timeline-chip.confirm-delete .live-timeline-delete-overlay { display: flex; color: var(--danger); }
 .live-timeline-chip.deleting { background: var(--danger); }
 .live-timeline-chip.deleting .ex, .live-timeline-chip.deleting .val { opacity: 0; }
-.live-timeline-chip.deleting .live-timeline-delete-overlay { display: flex; color: #fff; }
+.live-timeline-chip.deleting .live-timeline-delete-overlay { display: flex; color: var(--on-destructive); }
 
 /* ========== ANIMATIONS DU MODULE PERFORMANCE ========== */
 @keyframes chart-draw-line { to { stroke-dashoffset: 0; } }
@@ -1061,7 +1021,6 @@ select.ex-name-pill:focus { outline: none; }
    Ces deux écrans étaient stylés en inline dans le JS, donc hors d'atteinte de
    la feuille. Le patch `patch-04-auth.js` remplace ces styles par les classes
    ci-dessous : même structure, mêmes ids, mêmes écouteurs. */
-#app.theme-auth { --accent: #3D3230; --accent-rgb: 61, 50, 48; }
 
 /* ========== MODES DE COULEUR (Jour / Nuit / Anne) ==========
    Un seul jeu de variables de base à redéfinir par mode (voir applyColorMode
@@ -1074,49 +1033,6 @@ select.ex-name-pill:focus { outline: none; }
    le rose en Anne) — sinon ils resteraient identiques au mode Jour. */
 
 /* ---------- Nuit : mêmes teintes, fond sombre, plus doux pour les yeux ---------- */
-html.mode-night { color-scheme: dark; }
-html.mode-night, html.mode-night #app {
-  --bg: #1E1A17;
-  --surface: #2A2420;
-  --surface-2: rgba(255, 255, 255, 0.07);
-  --border: rgba(255, 255, 255, 0.10);
-  --rule: rgba(255, 255, 255, 0.15);
-  --text: #EDE4DB;
-  --text-dim: rgba(237, 228, 219, 0.62);
-  --ink: #EDE4DB;
-  --ink-rgb: 237,228,219;
-  --on-ink: #211C19;
-  --on-ink-rgb: 33,28,25;
-  --surface-rgb: 42,36,32;
-  --action: #EDE4DB;
-  --yellow: #E8B77E;
-  --yellow-rgb: 232,183,126;
-  --rgb-gym: 157,176,126;
-  --rgb-run: 216,151,114;
-  --rgb-swim: 126,176,172;
-  --rgb-bike: 224,177,102;
-  --rgb-performance: 224,148,132;
-  --rgb-weight: 185,164,182;
-  --rgb-calendar: 168,151,138;
-}
-html.mode-night #app.theme-gym { --accent: #9DB07E; --accent-rgb: 157, 176, 126; }
-html.mode-night #app.theme-run { --accent: #D89772; --accent-rgb: 216, 151, 114; }
-html.mode-night #app.theme-weight { --accent: #9E85A5; --accent-rgb: 158, 133, 165; }
-html.mode-night #app.theme-calendar { --accent: #EDE4DB; --accent-rgb: 237, 228, 219; }
-html.mode-night #app.theme-settings { --accent: #EDE4DB; --accent-rgb: 237, 228, 219; }
-html.mode-night #app.theme-swim { --accent: #7EB0AC; --accent-rgb: 126, 176, 172; }
-html.mode-night #app.theme-bike { --accent: #E0B166; --accent-rgb: 224, 177, 102; }
-html.mode-night #app.theme-home { --accent: #EDE4DB; --accent-rgb: 237, 228, 219; }
-html.mode-night #app.theme-scanner { --accent: #E8B77E; --accent-rgb: 232, 183, 126; }
-html.mode-night #app.theme-performance { --accent: #C06858; --accent-rgb: 192, 104, 88; }
-html.mode-night #app.theme-live { --accent: #E8B77E; --accent-rgb: 232, 183, 126; }
-html.mode-night #app.theme-auth { --accent: #EDE4DB; --accent-rgb: 237, 228, 219; }
-/* Exception délibérée : --ink est inversé en Nuit (clair, pour que boutons
-   et sélections restent bien visibles sur fond sombre), MAIS l'en-tête,
-   lui, reste sombre — sinon on se retrouverait avec un large bandeau clair
-   et lumineux en haut de CHAQUE écran, ce qui va à l'encontre du "doux pour
-   les yeux" recherché par un mode nuit. */
-html.mode-night .header { background: #15110E; }
 
 /* ---------- Mono (3.6.0) : noir & blanc, esprit salle de sport ----------
    Pour un public « fitness » : noir profond, blanc pur, gris en dégradé —
@@ -1125,57 +1041,20 @@ html.mode-night .header { background: #15110E; }
    pas d'ombre. Les boutons principaux sont BLANCS sur noir ; le bandeau du
    repos est blanc, chiffres noirs. Les sports se distinguent par des gris
    (du blanc au gris moyen), lisibles sur le noir. */
-html.mode-mono { color-scheme: dark; }
-html.mode-mono, html.mode-mono #app {
-  --bg: #0A0A0A;
-  --surface: #161616;
-  --surface-2: rgba(255, 255, 255, 0.08);
-  --border: rgba(255, 255, 255, 0.12);
-  --rule: rgba(255, 255, 255, 0.16);
-  --text: #F4F4F4;
-  --text-dim: rgba(244, 244, 244, 0.66);
-  --ink: #F4F4F4;
-  --ink-rgb: 244,244,244;
-  --on-ink: #0A0A0A;
-  --on-ink-rgb: 10,10,10;
-  --surface-rgb: 22,22,22;
-  --action: #F4F4F4;
-  --yellow: #F4F4F4;
-  --yellow-rgb: 244,244,244;
-  --rgb-gym: 244,244,244;
-  --rgb-run: 190,190,190;
-  --rgb-swim: 145,145,145;
-  --rgb-bike: 215,215,215;
-  --rgb-performance: 244,244,244;
-  --rgb-weight: 200,200,200;
-  --rgb-calendar: 170,170,170;
-  --radius: 4px;
-  --radius-sm: 3px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
-  --shadow-card: none;
-  --font-display: "Barlow Condensed", "Arial Narrow", -apple-system, sans-serif;
-  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A0A0A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-}
-html.mode-mono #app[class*="theme-"] { --accent: #F4F4F4; --accent-rgb: 244, 244, 244; }
-html.mode-mono .header { background: #0A0A0A; }
 /* Typo « sport » : titres d'écran, noms d'exercice, grands chiffres. */
-html.mode-mono .screen-title,
-html.mode-mono .live-exercise-name,
-html.mode-mono .live-plan-next-name,
-html.mode-mono .home-tile-title,
-html.mode-mono .home-hero-title { font-family: var(--font-display); text-transform: uppercase; font-weight: 800; letter-spacing: 0.01em; }
-html.mode-mono .screen-title { font-size: 40px; line-height: 0.95; font-style: italic; }
-html.mode-mono .live-rest-hero-value,
-html.mode-mono .live-header-chrono,
-html.mode-mono .live-stepper-value { font-family: var(--font-display); font-weight: 800; letter-spacing: 0; font-variant-numeric: tabular-nums; }
-html.mode-mono .live-rest-hero-value { font-size: 72px; }
+html.type-athletic .screen-title,
+html.type-athletic .live-exercise-name,
+html.type-athletic .live-plan-next-name,
+html.type-athletic .home-tile-title,
+html.type-athletic .home-hero-title { font-family: var(--font-display); text-transform: uppercase; font-weight: 800; letter-spacing: 0.01em; }
+html.type-athletic .screen-title { font-size: 40px; line-height: 0.95; font-style: italic; }
+html.type-athletic .live-rest-hero-value,
+html.type-athletic .live-header-chrono,
+html.type-athletic .live-stepper-value { font-family: var(--font-display); font-weight: 800; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+html.type-athletic .live-rest-hero-value { font-size: 72px; }
 /* Puces et boutons : contour fin, la choisie pleine blanche. */
-html.mode-mono .ex-type-btn.active { background: #F4F4F4; color: #0A0A0A; border-color: #F4F4F4; }
-html.mode-mono .save-btn, html.mode-mono .live-validate-btn { text-transform: uppercase; letter-spacing: 0.06em; }
+html.type-athletic .save-btn, html.type-athletic .live-validate-btn { text-transform: uppercase; letter-spacing: 0.06em; }
 /* Le blanc des boutons « principaux » mérite un texte bien noir. */
-html.mode-mono .live-validate-btn:not(.live-finish-btn) { background: #F4F4F4; color: #0A0A0A; }
-html.mode-mono .live-finish-btn { background: transparent; color: #F4F4F4; border: 1.5px solid #F4F4F4; }
 
 /* ---------- Anne : palette "Barbra" (thème Slack), construite à partir de
    trois couleurs precises — #FFC4D9 (rose clair), #9E0B2E (bordeaux foncé,
@@ -1183,54 +1062,6 @@ html.mode-mono .live-finish-btn { background: transparent; color: #F4F4F4; borde
    rose pastel inventé. Les teintes par sport restent dans cette même
    famille bordeaux/cramoisi/rose pour que ça reste cohérent avec elle,
    sans piocher des teintes qui n'y figurent pas. ---------- */
-html.mode-anne, html.mode-anne #app {
-  --bg: #FCE3EC;
-  --surface: #FFF6F9;
-  --surface-2: rgba(158, 11, 46, 0.08);
-  --border: rgba(158, 11, 46, 0.16);
-  --rule: rgba(158, 11, 46, 0.20);
-  --text: #9E0B2E;
-  --text-dim: rgba(158, 11, 46, 0.8); /* 0.7 avant 3.4.2 : trop pâle sur le rose */
-  --ink: #9E0B2E;
-  --ink-rgb: 158,11,46;
-  --on-ink: #FFF2F6;
-  --on-ink-rgb: 255,242,246;
-  --surface-rgb: 255,246,249;
-  --action: #9E0B2E;
-  --yellow: #FFC4D9;
-  --yellow-rgb: 255,196,217;
-  --rgb-gym: 172,65,102; /* 224,110,150 avant 3.4.2 */
-  --rgb-run: 196,40,69;
-  --rgb-swim: 176,58,91;
-  --rgb-bike: 194,42,84; /* 224,140,170 avant 3.4.2 */
-  --rgb-performance: 192,19,67;
-  --rgb-weight: 158,11,46;
-  --rgb-calendar: 158,11,46;
-  /* Recolorer une app volontairement plate (pas d'arrondi, pas d'ombre —
-     voir le principe de design Bauhaus en tête de fichier) en rose donnait
-     l'impression d'un simple filtre posé par-dessus, pas d'un thème
-     vraiment pensé pour ça : on assouplit donc aussi la FORME ici, pas
-     seulement la couleur — coins nettement plus arrondis, légère ombre
-     douce à teinte rose au lieu du plat total. */
-  --radius: 14px;
-  --radius-sm: 10px;
-  --shadow-card: 0 3px 14px rgba(158, 11, 46, 0.14);
-}
-/* Accents du mode Anne foncés en 3.4.2 : ils servent aussi de couleur de TEXTE
-   (retour, « Modifier », « Ajouter un exercice », puce choisie…) — au moins
-   4,5:1 sur le fond rose et sous un texte clair (avant : 2,5 à 3,5:1). */
-html.mode-anne #app.theme-gym { --accent: #AC4166; --accent-rgb: 172, 65, 102; }
-html.mode-anne #app.theme-run { --accent: #C42845; --accent-rgb: 196, 40, 69; }
-html.mode-anne #app.theme-weight { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
-html.mode-anne #app.theme-calendar { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
-html.mode-anne #app.theme-settings { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
-html.mode-anne #app.theme-swim { --accent: #B03A5B; --accent-rgb: 176, 58, 91; }
-html.mode-anne #app.theme-bike { --accent: #C22A54; --accent-rgb: 194, 42, 84; }
-html.mode-anne #app.theme-home { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
-html.mode-anne #app.theme-scanner { --accent: #C01343; --accent-rgb: 192, 19, 67; }
-html.mode-anne #app.theme-performance { --accent: #C01343; --accent-rgb: 192, 19, 67; }
-html.mode-anne #app.theme-live { --accent: #C01343; --accent-rgb: 192, 19, 67; }
-html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 .auth-screen {
   position: absolute; inset: 0; max-width: 480px; margin: 0 auto;
   overflow: hidden; display: flex; flex-direction: column;
@@ -1239,7 +1070,7 @@ html.mode-anne #app.theme-auth { --accent: #9E0B2E; --accent-rgb: 158, 11, 46; }
 }
 .auth-brand { display: flex; flex-direction: column; gap: 14px; }
 .auth-mark {
-  width: 58px; height: 58px; border-radius: var(--radius); background: var(--ink); color: var(--timer);
+  width: 58px; height: 58px; border-radius: var(--radius); background: var(--ink); color: var(--ink-highlight);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .auth-mark svg { width: 28px; height: 28px; }
@@ -1457,7 +1288,6 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    ========================================================================== */
 
 :root {
-  --yellow: #E2A66B;
   --red: var(--ink);
   --blue: var(--ink);
   --danger: var(--red);
@@ -1519,7 +1349,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
   background-image: none; transition: none;
 }
 .save-btn:active, .live-validate-btn:active, .auth-submit:active, .modal-confirm:active {
-  background-color: var(--yellow); color: var(--ink); transform: none;
+  background-color: var(--yellow); color: var(--on-yellow); transform: none;
 }
 .add-exercise-btn:active { background-color: var(--ink); color: var(--on-ink); border-color: var(--ink); }
 .live-validate-btn.live-finish-btn:active { background-color: var(--ink); color: var(--on-ink); }
@@ -1587,7 +1417,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
    antérieure ne correspond plus à la direction visuelle actuelle, plus
    sobre ; elle a été retirée plutôt que fondue davantage. */
 .auth-wordmark { font-size: 52px; letter-spacing: -3px; }
-.auth-mark { background: var(--yellow); color: var(--ink); }
+.auth-mark { background: var(--yellow); color: var(--on-yellow); }
 
 /* ---------- Cohérence de la palette ---------- */
 .toggle-switch.on { background: var(--blue); }
@@ -1595,16 +1425,16 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .live-exercise-btn-badge::before { color: var(--blue); }
 .trend-up { color: var(--blue); }
 .flash { color: var(--blue); }
-.edit-banner { background: var(--yellow); color: var(--ink); }
+.edit-banner { background: var(--yellow); color: var(--on-yellow); }
 .edit-banner button { color: var(--ink); }
 .live-rest-hero { background: var(--yellow); }
 .live-rest-hero-label, .live-rest-hero-value { color: var(--ink); }
 .live-rest-hero-active { background: var(--ink); }
 .live-rest-hero-active .live-rest-hero-label { color: var(--yellow); }
 .live-rest-hero-active .live-rest-hero-value { color: var(--on-ink); }
-.error-msg { background: var(--red); color: #fff; }
+.error-msg { background: var(--red); color: var(--on-ink); }
 .delete-link, .set-action-btn.danger { color: var(--red); }
-.backup-btn.armed-danger { background: var(--red); border-color: var(--red); color: #fff; }
+.backup-btn.armed-danger { background: var(--red); border-color: var(--red); color: var(--on-ink); }
 
 
 /* ---------- Teintes de sport : jamais du petit corps ----------
@@ -1649,11 +1479,11 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .backup-btn.armed-danger:hover,
 .backup-btn.armed-danger:active {
   background: var(--ink) !important; border-color: var(--ink) !important;
-  color: var(--yellow) !important;
+  color: var(--ink-highlight) !important;
 }
-.modal-confirm.danger { background: var(--ink); color: var(--yellow); }
-.modal-confirm.danger:active { background: var(--yellow); color: var(--ink); }
-.error-msg { background: var(--ink); color: var(--yellow); }
+.modal-confirm.danger { background: var(--ink); color: var(--ink-highlight); }
+.modal-confirm.danger:active { background: var(--yellow); color: var(--on-yellow); }
+.error-msg { background: var(--ink); color: var(--ink-highlight); }
 .delete-link, .set-action-btn.danger, .live-timeline-chip.confirm-delete .live-timeline-delete-overlay { color: var(--text); }
 .live-timeline-chip.confirm-delete { background: var(--yellow); }
 .live-timeline-chip.deleting { background: var(--ink); }
@@ -1719,11 +1549,11 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 .home-tile-eyebrow { font-family: var(--font); font-size: 13px; font-weight: 600; color: rgba(var(--on-ink-rgb), 0.75); margin-bottom: 2px; }
 .home-tile.home-tile-wide .home-tile-title { font-family: var(--font-display); }
 .home-tile-play-btn {
-  width: 56px; height: 56px; border-radius: 50% !important; background: var(--ink); color: var(--yellow);
+  width: 56px; height: 56px; border-radius: 50% !important; background: var(--ink); color: var(--ink-highlight);
   display: flex !important; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto;
 }
 .home-tile-play-btn svg { display: block !important; width: 22px; height: 22px; }
-.home-tile.live-recording .home-tile-play-btn { background: #241E1A; color: var(--yellow); }
+.home-tile.live-recording .home-tile-play-btn { background: var(--recording-bg); color: var(--yellow); }
 .home-tile.home-tile-wide[data-open-app="live"]::after,
 .home-tile.home-tile-wide[data-open-app="live"]::before { display: none !important; }
 /* Neutralise l'ancienne réserve d'espace pensée pour le bouton en position
@@ -1927,7 +1757,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
   border-radius: var(--radius-lg); padding: 16px;
 }
 .settings-profile-avatar {
-  width: 56px; height: 56px; border-radius: 50%; background: var(--yellow); color: var(--ink);
+  width: 56px; height: 56px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   font-family: var(--font-display); font-size: 24px; font-weight: 800;
 }
@@ -2002,7 +1832,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
 }
 .modal-cancel { color: var(--text) !important; border-right: 0.5px solid var(--rule); }
 .modal-confirm { color: var(--accent) !important; font-weight: 600 !important; }
-.modal-confirm.danger { color: #A84B3D !important; }
+.modal-confirm.danger { color: var(--destructive) !important; }
 
 /* La variante empilée (3 boutons, fin de séance) garde son propre style
    en colonne à boutons pleins arrondis — ne doit pas hériter de la
@@ -2017,7 +1847,7 @@ select.ex-name-pill { margin-left: 16px; padding-right: 28px; }
   font-size: 13px !important; font-weight: 700 !important; background: rgba(var(--ink-rgb), 0.07) !important;
   color: var(--text-dim) !important; border-right: none !important;
 }
-.modal-actions-stack .modal-btn.danger { background: #A84B3D !important; color: #fff !important; }
+.modal-actions-stack .modal-btn.danger { background: var(--destructive) !important; color: var(--on-destructive) !important; }
 
 /* ==========================================================================
    IDENTITÉ iOS — CARTE DE CHAMPS EN LISTE, générique (Date/Nom en haut de
@@ -2108,7 +1938,7 @@ html.hide-hints .field-hint, html.hide-hints .block-mode-hint, html.hide-hints .
   font-family: var(--font); font-size: 16px; color: var(--text); cursor: pointer;
 }
 .sound-test-icon {
-  width: 36px; height: 36px; border-radius: var(--radius-sm); background: rgb(var(--rgb-swim)); color: #fff;
+  width: 36px; height: 36px; border-radius: var(--radius-sm); background: rgb(var(--rgb-swim)); color: var(--on-sport);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
@@ -2171,8 +2001,6 @@ input, textarea, [contenteditable="true"] {
    Le chevron suit le mode : il est clair sur l'encre foncée (Jour, Anne) et FONCÉ sur l'encre
    claire du mode Nuit — celui du modèle d'origine était blanc en dur, donc invisible en Nuit.
    Les variantes ne changent que la TAILLE, pour s'accorder à ce qui entoure le menu. */
-:root { --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
-html.mode-night { --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23211C19' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); }
 
 /* L'habillage est répété sur chaque variante (sélecteurs groupés) : certains menus avaient une règle
    d'origine plus spécifique (ex. « .set-main select.set-weight ») qui, sinon, l'aurait emporté. */
@@ -2181,7 +2009,10 @@ select.app-select.app-select-field,
 select.app-select.app-select-large,
 select.app-select.app-select-row {
   -webkit-appearance: none; appearance: none;
-  background-color: var(--ink); color: var(--on-ink); border: none; border-radius: var(--radius);
+  /* Contrôle secondaire (menu) : ses propres couleurs, distinctes du bouton
+     principal (voir --control-* dans js/00-themes.js) ; le contour est une
+     ombre interne pour ne rien décaler. */
+  background-color: var(--control-bg); color: var(--on-control); border: none; border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--control-border);
   font-family: var(--font); letter-spacing: normal; cursor: pointer;
   background-image: var(--select-chevron); background-repeat: no-repeat;
 }
@@ -2477,10 +2308,6 @@ input:focus, .set-main input:focus { box-shadow: none; }
    mode Anne une ombre plus serrée sur ces petits boutons. */
 .rep-stepper { gap: 6px; }
 .live-stepper { gap: 4px; }
-html.mode-anne .rep-step-btn,
-html.mode-anne .live-stepper-btn,
-html.mode-anne .live-stepper-tiny-btn,
-html.mode-anne .plan-gap-btn { box-shadow: 0 1px 3px rgba(158, 11, 46, 0.16); }
 
 /* − / + dessinés (3.3.7, voir drawStepGlyphs) : centrés géométriquement, plus
    de compensation de police. Taille proportionnelle au bouton. */
@@ -2513,21 +2340,9 @@ html.mode-anne .plan-gap-btn { box-shadow: 0 1px 3px rgba(158, 11, 46, 0.16); }
 .live-loop-next { margin-top: 6px; text-align: center; font-family: var(--font); font-size: 14px; font-weight: 700; color: var(--text-dim); }
 
 /* Mono (3.6.0), suite : grandes surfaces blanches → texte noir. */
-html.mode-mono .home-tile-wide { background: #F4F4F4; color: #0A0A0A; border-color: #F4F4F4; }
-html.mode-mono .home-tile-wide .home-tile-eyebrow { color: rgba(10, 10, 10, 0.62) !important; }
-html.mode-mono .home-tile-wide .home-tile-title { color: #0A0A0A !important; font-size: 34px; font-style: italic; }
-html.mode-mono .home-tile-wide .home-tile-play-btn { background: #0A0A0A; color: #F4F4F4; }
-/* Bandeau du chrono : REPOS = blanc, chiffres noirs ; EFFORT = noir, filet
-   blanc, chiffres blancs (les deux restent bien distincts). */
-html.mode-mono .live-rest-hero { background: #F4F4F4; border: 1.5px solid #F4F4F4; }
-html.mode-mono .live-rest-hero .live-rest-hero-label,
-html.mode-mono .live-rest-hero .live-rest-hero-value { color: #0A0A0A; }
-html.mode-mono .live-rest-hero.live-rest-hero-active { background: #0A0A0A; border-color: #F4F4F4; }
-html.mode-mono .live-rest-hero.live-rest-hero-active .live-rest-hero-label,
-html.mode-mono .live-rest-hero.live-rest-hero-active .live-rest-hero-value { color: #F4F4F4; }
 /* Détail d'une séance : disques, haltères… en niveaux de gris (le poids reste
    lisible par la taille et le chiffre). */
-html.mode-mono .gx-sets svg, html.mode-mono .gx-sets .gx-plate { filter: grayscale(1) contrast(1.1); }
+.gx-sets svg, .gx-sets .gx-plate { filter: var(--data-filter); }
 
 /* ==========================================================================
    MONO : TEXTURES (3.6.1) — le noir & blanc reste vivant grâce aux matières
@@ -2540,59 +2355,41 @@ html.mode-mono .gx-sets svg, html.mode-mono .gx-sets .gx-plate { filter: graysca
      - compteurs − / + : picots de sol caoutchouc ;
      - action destructrice : bandes de danger noires et blanches.
    ========================================================================== */
-html.mode-mono {
-  --mono-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  --mono-carbon: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.028) 0 2px, transparent 2px 5px), repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 5px);
-  --mono-steel: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.035) 0 1px, transparent 1px 3px), linear-gradient(180deg, #FFFFFF 0%, #EDEDED 48%, #D9D9D9 100%);
-  --mono-knurl: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 7px), repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 7px);
-  --mono-rubber: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1px, transparent 1.3px) 0 0 / 7px 7px;
-}
 /* Fond : grain + vignettage. */
-html.mode-mono #app { background-color: #0A0A0A; background-image: var(--mono-grain), radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 60%); }
+html.texture-gym #app { background-color: var(--bg); background-image: var(--tex-app); }
 /* Cartes, listes, barres : carbone. */
-html.mode-mono .home-tile:not(.home-tile-wide),
-html.mode-mono .home-list,
-html.mode-mono .history-card,
-html.mode-mono .exercise-card,
-html.mode-mono .field-list-card:not(.exercise-form .field-list-card),
-html.mode-mono .live-plan-list,
-html.mode-mono .home-bottom-nav,
-html.mode-mono .log-actions-bar { background-color: #161616 !important; background-image: var(--mono-carbon) !important; }
+html.texture-gym .home-tile:not(.home-tile-wide),
+html.texture-gym .home-list,
+html.texture-gym .history-card,
+html.texture-gym .exercise-card,
+html.texture-gym .field-list-card:not(.exercise-form .field-list-card),
+html.texture-gym .live-plan-list,
+html.texture-gym .home-bottom-nav,
+html.texture-gym .log-actions-bar { background-color: var(--surface) !important; background-image: var(--tex-surface) !important; }
 /* Surfaces et boutons blancs : acier brossé, avec un liseré de lumière. */
-html.mode-mono .home-tile-wide,
-html.mode-mono .home-tile.live-recording[data-open-app="live"],
-html.mode-mono .save-btn,
-html.mode-mono .live-validate-btn:not(.live-finish-btn),
-html.mode-mono .live-plan-next,
-html.mode-mono .live-rest-hero:not(.live-rest-hero-active),
-html.mode-mono .modal-confirm:not(.danger) {
-  background-color: #EDEDED !important; background-image: var(--mono-steel) !important;
+html.texture-gym .home-tile-wide,
+html.texture-gym .home-tile.live-recording[data-open-app="live"],
+html.texture-gym .save-btn,
+html.texture-gym .live-validate-btn:not(.live-finish-btn),
+html.texture-gym .live-plan-next,
+html.texture-gym .live-rest-hero:not(.live-rest-hero-active),
+html.texture-gym .modal-confirm:not(.danger) {
+  background-color: var(--tex-steel-base) !important; background-image: var(--tex-steel) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 2px 10px rgba(0, 0, 0, 0.55);
 }
-html.mode-mono .ex-type-btn.active { background-image: var(--mono-steel); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18); }
+html.texture-gym .ex-type-btn.active { background-image: var(--tex-steel); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18); }
 /* Effort et boutons à contour : moletage. */
-html.mode-mono .live-rest-hero.live-rest-hero-active,
-html.mode-mono .live-finish-btn { background-color: #0A0A0A !important; background-image: var(--mono-knurl) !important; }
+html.texture-gym .live-rest-hero.live-rest-hero-active,
+html.texture-gym .live-finish-btn { background-color: var(--bg) !important; background-image: var(--tex-work) !important; }
 /* Compteurs − / + : caoutchouc. */
-html.mode-mono .rep-stepper,
-html.mode-mono .live-stepper { background: var(--mono-rubber), rgba(255, 255, 255, 0.06); }
+html.texture-gym .rep-stepper,
+html.texture-gym .live-stepper { background: var(--tex-stepper), rgba(var(--ink-rgb), 0.06); }
 /* Interrupteur allumé : piste blanche (acier), boule NOIRE — avant, boule
    blanche sur piste blanche, invisible. */
-html.mode-mono .toggle-switch.on { background-color: #EDEDED; background-image: var(--mono-steel); }
-html.mode-mono .toggle-switch.on .toggle-switch-knob { background: #0A0A0A; box-shadow: none; }
+html.texture-gym .toggle-switch.on { background-color: var(--tex-steel-base); background-image: var(--tex-steel); }
 /* Action destructrice : bandes de danger (au lieu du seul rouge du mode). */
-html.mode-mono .modal-btn.danger,
-html.mode-mono .modal-actions-stack .modal-btn.danger,
-html.mode-mono .modal-confirm.danger {
-  /* Bandes de danger en CADRE (4 px), intérieur noir : le texte reste net. */
-  background: linear-gradient(#0A0A0A, #0A0A0A) padding-box, repeating-linear-gradient(-45deg, #F4F4F4 0 6px, #0A0A0A 6px 12px) border-box !important;
-  border: 4px solid transparent !important;
-  color: #F4F4F4 !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
-}
 /* Menus (poids…) : laissés blancs unis — leur chevron occupe déjà le fond. */
 /* Mono : séance en cours sur l'accueil — même acier, bouton et point noirs. */
-html.mode-mono .home-tile.live-recording .home-tile-play-btn { background: #0A0A0A; color: #F4F4F4; }
-html.mode-mono .home-tile.live-recording .live-rec-dot { background: #0A0A0A; }
 
 /* ==========================================================================
    MONO : MOUVEMENT (3.7.0, voir 21-motion.js) — on sent les boutons.
@@ -2603,64 +2400,107 @@ html.mode-mono .home-tile.live-recording .live-rec-dot { background: #0A0A0A; }
    moins d'animations.
    ========================================================================== */
 @media (prefers-reduced-motion: no-preference) {
-  html.mode-mono button,
-  html.mode-mono .home-tile,
-  html.mode-mono .home-list-row,
-  html.mode-mono .history-head,
-  html.mode-mono .live-plan-row,
-  html.mode-mono .gym-add-card,
-  html.mode-mono .live-exercise-btn {
+  html.motion-rich button,
+  html.motion-rich .home-tile,
+  html.motion-rich .home-list-row,
+  html.motion-rich .history-head,
+  html.motion-rich .live-plan-row,
+  html.motion-rich .gym-add-card,
+  html.motion-rich .live-exercise-btn {
     transition: transform 0.5s cubic-bezier(0.34, 1.7, 0.5, 1), box-shadow 0.25s ease, background-color 0.2s ease, color 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
-  html.mode-mono button:active:not(:disabled),
-  html.mode-mono .home-tile:active,
-  html.mode-mono .home-list-row:active,
-  html.mode-mono .history-head:active,
-  html.mode-mono .live-plan-row:active,
-  html.mode-mono .gym-add-card:active,
-  html.mode-mono .live-exercise-btn:active {
+  html.motion-rich button:active:not(:disabled),
+  html.motion-rich .home-tile:active,
+  html.motion-rich .home-list-row:active,
+  html.motion-rich .history-head:active,
+  html.motion-rich .live-plan-row:active,
+  html.motion-rich .gym-add-card:active,
+  html.motion-rich .live-exercise-btn:active {
     transform: scale(0.95);
     transition-duration: 0.07s;
   }
   /* Les gros boutons acier s'enfoncent vraiment : l'ombre passe à l'intérieur. */
-  html.mode-mono .save-btn:active,
-  html.mode-mono .live-validate-btn:active,
-  html.mode-mono .home-tile-wide:active,
-  html.mode-mono .live-plan-next:active {
+  html.motion-rich .save-btn:active,
+  html.motion-rich .live-validate-btn:active,
+  html.motion-rich .home-tile-wide:active,
+  html.motion-rich .live-plan-next:active {
     transform: scale(0.97) translateY(1px);
     box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 -1px 0 rgba(255, 255, 255, 0.6) !important;
   }
   /* Onde au toucher. */
-  html.mode-mono .motion-host { overflow: hidden; }
-  html.mode-mono .motion-host-static { position: relative; }
-  html.mode-mono .motion-ripple {
+  html.motion-rich .motion-host { overflow: hidden; }
+  html.motion-rich .motion-host-static { position: relative; }
+  html.motion-rich .motion-ripple {
     position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
     background: radial-gradient(circle, rgba(128, 128, 128, 0.35) 0%, rgba(128, 128, 128, 0.18) 40%, transparent 70%);
     transform: scale(0); animation: motionRipple 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
   }
   @keyframes motionRipple { to { transform: scale(1); opacity: 0; } }
   /* Arrivée sur un écran : cascade avec un léger dépassement. */
-  html.mode-mono .motion-enter { animation: motionEnter 0.55s cubic-bezier(0.34, 1.45, 0.55, 1) both; animation-delay: calc(var(--motion-i, 0) * 38ms); }
+  html.motion-rich .motion-enter { animation: motionEnter 0.55s cubic-bezier(0.34, 1.45, 0.55, 1) both; animation-delay: calc(var(--motion-i, 0) * 38ms); }
   @keyframes motionEnter { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
   /* Chiffre qui change. */
-  html.mode-mono .motion-pop { display: inline-block; animation: motionPop 0.38s cubic-bezier(0.34, 1.9, 0.5, 1); }
+  html.motion-rich .motion-pop { display: inline-block; animation: motionPop 0.38s cubic-bezier(0.34, 1.9, 0.5, 1); }
   @keyframes motionPop { 0% { transform: scale(1); } 35% { transform: scale(1.22); } 100% { transform: scale(1); } }
   /* Carte glissée : retour avec rebond. */
-  html.mode-mono .swipe-row > [data-swipe-id] { transition: transform 0.55s cubic-bezier(0.34, 1.6, 0.5, 1); }
+  html.motion-rich .swipe-row > [data-swipe-id] { transition: transform 0.55s cubic-bezier(0.34, 1.6, 0.5, 1); }
   /* Interrupteur : la boule claque avec un rebond. */
-  html.mode-mono .toggle-switch-knob { transition: transform 0.45s cubic-bezier(0.34, 1.9, 0.5, 1), background-color 0.2s ease; }
+  html.motion-rich .toggle-switch-knob { transition: transform 0.45s cubic-bezier(0.34, 1.9, 0.5, 1), background-color 0.2s ease; }
   /* Puce qu'on choisit : petit « clac ». */
-  html.mode-mono .ex-type-btn.active, html.mode-mono .live-subcat-btn.active { animation: motionPop 0.34s cubic-bezier(0.34, 1.9, 0.5, 1); }
+  html.motion-rich .ex-type-btn.active, html.motion-rich .live-subcat-btn.active { animation: motionPop 0.34s cubic-bezier(0.34, 1.9, 0.5, 1); }
   /* Icônes de la barre du bas : saut de l'onglet actif. */
-  html.mode-mono .home-bottom-nav .active svg { animation: motionPop 0.4s cubic-bezier(0.34, 1.9, 0.5, 1); }
+  html.motion-rich .home-bottom-nav .active svg { animation: motionPop 0.4s cubic-bezier(0.34, 1.9, 0.5, 1); }
 }
-/* Révélation « Supprimer » sous une carte glissée : plus de blanc sur blanc. */
-html.mode-mono .swipe-delete-reveal { background: linear-gradient(#0A0A0A, #0A0A0A) padding-box, repeating-linear-gradient(-45deg, #F4F4F4 0 6px, #0A0A0A 6px 12px) border-box; border: 3px solid transparent; color: #F4F4F4; }
-/* Mono : garde-fou blanc sur blanc (3.7.1, voir monoFixContrast) — texte et
-   icônes clairs posés sur un fond clair passent en noir. */
-html.mode-mono .mono-ink-fix { color: #0A0A0A !important; }
-html.mode-mono .mono-ink-fix svg:not([data-anim-icon]) { color: #0A0A0A; }
-/* Révélation « Supprimer » sous une carte : fond blanc, texte noir (la bande
-   à rayures faisait un pointillé parasite au bord des cartes). */
-html.mode-mono .swipe-delete-reveal { background: #F4F4F4 !important; border: none !important; color: #0A0A0A !important; }
+
+/* ==========================================================================
+   CHAMP DE SAISIE « GROUPÉ » (3.9.0) — là où l'on tape doit SE VOIR :
+   un vrai champ encadré (fond --field-bg, contour --field-border, qui
+   s'épaissit à --field-border-focus quand on le touche), l'unité dedans,
+   le bouton d'action collé à droite. Utilisé d'abord par « Poids possibles ».
+   ========================================================================== */
+.input-group { display: flex; align-items: stretch; gap: 8px; }
+.input-group-field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 0 14px; min-height: 48px; box-sizing: border-box; background: var(--field-bg); border: 1.5px solid var(--field-border); border-radius: var(--radius-sm); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.input-group-field:focus-within { border-color: var(--field-border-focus); box-shadow: 0 0 0 3px rgba(var(--ink-rgb), 0.12); }
+.input-group-field input { flex: 1; min-width: 0; border: none; background: transparent; outline: none; padding: 12px 0; font-family: var(--font); font-size: 17px; font-weight: 700; color: var(--text); text-align: left; }
+.input-group-field input::placeholder { color: var(--text-dim); font-weight: 500; }
+.input-group-suffix { flex: none; font-family: var(--font); font-size: 15px; font-weight: 700; color: var(--text-dim); }
+.input-group-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; min-height: 48px; border: none; border-radius: var(--radius-sm); background: var(--action); color: var(--on-ink); font-family: var(--font); font-size: 15px; font-weight: 800; cursor: pointer; }
+.input-group-btn svg { width: 15px; height: 15px; }
+
+/* Poids possibles : déjà saisi → champ → autre façon (secondaire). */
+.weights-block { display: flex; flex-direction: column; gap: 12px; padding: 4px 0 2px; }
+.weights-list { min-height: 34px; align-items: center; }
+.weights-empty { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); color: var(--text-dim); font-size: 13.5px; line-height: 1.4; }
+.weights-add { display: flex; flex-direction: column; gap: 6px; }
+.weights-add-label { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.weights-or { display: flex; align-items: center; gap: 10px; color: var(--text-dim); font-size: 12.5px; font-weight: 600; }
+.weights-or::before, .weights-or::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.weights-scan-btn { min-height: 44px; font-size: 14px; }
+.weights-scan-btn svg { width: 17px; height: 17px; }
+
+/* ==========================================================================
+   HIÉRARCHIE DANS LES PRÉRÉGLAGES « ATHLETIC » ET « GYM » (3.9.0)
+   Le noir & blanc avait tout aplati : fond et cartes presque du même noir,
+   titres de section aussi pâles que les aides, rien ne disait « ceci est
+   au-dessus de cela ». On rétablit les niveaux, avec les variables :
+     1. titres de section : plus clairs et plus espacés que les textes
+        secondaires (ce sont des titres, pas des notes) ;
+     2. cartes : un liseré de lumière en haut et un contour, au-dessus du fond ;
+     3. textes secondaires (valeurs, sous-titres) : un cran en dessous du texte
+        principal (--text-dim, revu dans le registre) ;
+     4. ce qui se touche se voit : champs encadrés (voir .input-group), puces
+        sur un fond distinct.
+   ========================================================================== */
+html.type-athletic .home-section-label { color: rgba(var(--ink-rgb), 0.86); letter-spacing: 0.16em; font-weight: 800; }
+html.type-athletic .field-list-row > span:first-child,
+html.type-athletic .home-list-label { font-weight: 700; color: var(--text); }
+html.type-athletic .home-list-value,
+html.type-athletic .history-label,
+html.type-athletic .header-sub { color: var(--text-dim); font-weight: 500; }
+html.texture-gym .home-tile:not(.home-tile-wide),
+html.texture-gym .home-list,
+html.texture-gym .history-card,
+html.texture-gym .exercise-card,
+html.texture-gym .live-plan-list { box-shadow: inset 0 1px 0 rgba(var(--ink-rgb), 0.08), 0 0 0 1px var(--border); }
+html.texture-gym .weight-chip.removable { background: rgba(var(--ink-rgb), 0.14); }
