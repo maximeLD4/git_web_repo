@@ -7,6 +7,25 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.12.0 - 2026-11-04
+=====================
+
+- **Nuit et Anne, comme Jour (3.11.0)** : leurs couleurs, à plat, avec la typo, les formes
+  et le mouvement de Mono — titres en Barlow Condensed (gras, capitales, italique pour les
+  titres d'écran), arrondis 4 / 3 / 6 / 8 px, enfoncement / rebond / onde / cascade. Trois
+  réglages par apparence dans ``js/00-themes.js``. Les quatre apparences partagent
+  désormais la même personnalité ; seules les couleurs (et les matières de Mono) les
+  distinguent.
+- **Correctif Nuit** : le titre de la tuile « Séance en direct » et le chrono du bandeau
+  du repos étaient à l'encre claire sur le moutarde clair (≈ 1,3:1, quasi illisibles).
+  Les textes posés sur cette couleur prennent désormais toujours ``--on-yellow`` (le
+  texte attitré de cette surface dans le registre) : foncés en Nuit ; inchangés en Jour,
+  Anne et Mono.
+- Vérifié : ``themes.js``, ``motion.js`` (le cas « mouvement calme » se vérifie sur une
+  apparence réglée en calme pour le test), ``anne_contrast.js`` (mesure faite animations
+  terminées : la cascade d'entrée faussait les contrastes pendant qu'elle se jouait),
+  ``mono_theme.js``.
+
 3.11.0 - 2026-11-04
 =====================
 

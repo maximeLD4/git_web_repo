@@ -2504,3 +2504,13 @@ html.texture-gym .history-card,
 html.texture-gym .exercise-card,
 html.texture-gym .live-plan-list { box-shadow: inset 0 1px 0 rgba(var(--ink-rgb), 0.08), 0 0 0 1px var(--border); }
 html.texture-gym .weight-chip.removable { background: rgba(var(--ink-rgb), 0.14); }
+
+/* Textes posés sur la couleur du temps qui court (--yellow) : tuile « Séance
+   en direct » de l'accueil et bandeau du repos — toujours --on-yellow
+   (3.12.0). En Nuit, ils restaient à l'encre claire sur le moutarde clair :
+   « Séance en direct » et le chrono du repos à peine lisibles (≈ 1,3:1). */
+html .home-tile.home-tile-wide[data-open-app="live"]:not(.live-recording) .home-tile-title,
+html .home-tile.home-tile-wide[data-open-app="live"]:not(.live-recording) .home-tile-eyebrow { color: var(--on-yellow); }
+html .home-tile.home-tile-wide[data-open-app="live"]:not(.live-recording) .home-tile-eyebrow { opacity: 0.72; }
+html .live-rest-hero:not(.live-rest-hero-active) .live-rest-hero-label,
+html .live-rest-hero:not(.live-rest-hero-active) .live-rest-hero-value { color: var(--on-yellow); }

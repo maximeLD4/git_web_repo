@@ -27,9 +27,9 @@ async function page(b, reduced) {
     check('« + » sur les répétitions : le chiffre saute, et l\'écran ne refait PAS sa cascade (même écran)', st.pop && st.cascade === 0, JSON.stringify(st));
     check('    aucune erreur JS', p.errs.length === 0, p.errs.join(' | ') || 'aucune'); await ctx.close(); }
   { const { ctx, p } = await page(b, false);
-    await p.evaluate(() => { currentUser = { uid: 'u' }; applyColorMode('night'); currentApp = 'home'; render(); }); await p.waitForTimeout(80);
+    await p.evaluate(() => { currentUser = { uid: 'u' }; THEMES.night.presets = { ...THEMES.night.presets, motion: 'calm' }; applyColorMode('night'); currentApp = 'home'; render(); }); await p.waitForTimeout(80);
     await p.click('[data-open-app="calendar"]', { noWaitAfter: true, trial: false }).catch(() => {});
-    check('Apparence au mouvement calme (Nuit) : ni cascade ni onde', await p.evaluate(() => !document.querySelector('.motion-enter, .motion-ripple')));
+    check('Apparence réglée sur un mouvement calme : ni cascade ni onde', await p.evaluate(() => !document.querySelector('.motion-enter, .motion-ripple')));
     await ctx.close(); }
   { const { ctx, p } = await page(b, true);
     await p.evaluate(() => { currentUser = { uid: 'u' }; applyColorMode('mono'); currentApp = 'home'; render(); }); await p.waitForTimeout(80);

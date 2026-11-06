@@ -228,7 +228,8 @@ const THEMES = {
     swatch: { bg: "#241E1A", fg: "#FFF8F0" },
     dark: true,
     statusBar: "#1E1A17",
-    presets: { type: "classic", texture: "none", motion: "calm" },
+    // 3.12.0 : comme Jour (3.11.0) — typo, formes et mouvement de Mono, à plat.
+    presets: { type: "athletic", texture: "none", motion: "rich" },
     tokens: {
       bg: "#1E1A17",
       surface: "#2A2420",
@@ -273,12 +274,13 @@ const THEMES = {
       "rgb-weight": "185,164,182",
       "rgb-calendar": "168,151,138",
       "data-filter": "none",
-      radius: "14px",
-      "radius-sm": "8px",
-      "radius-lg": "18px",
-      "radius-xl": "22px",
+      radius: "4px",
+      "radius-sm": "3px",
+      "radius-lg": "6px",
+      "radius-xl": "8px",
       "shadow-card": "none",
       ...FONTS_DEFAULT,
+      "font-display": '"Barlow Condensed", "Arial Narrow", -apple-system, sans-serif',
       ...NO_TEXTURE,
     },
     screens: {
@@ -313,7 +315,8 @@ const THEMES = {
     swatch: { bg: "#9E0B2E", fg: "#FFF8F0" },
     dark: false,
     statusBar: "#FCE3EC",
-    presets: { type: "classic", texture: "none", motion: "calm" },
+    // 3.12.0 : comme Jour (3.11.0) — typo, formes et mouvement de Mono, à plat.
+    presets: { type: "athletic", texture: "none", motion: "rich" },
     tokens: {
       bg: "#FCE3EC",
       surface: "#FFF6F9",
@@ -358,12 +361,13 @@ const THEMES = {
       "data-filter": "none",
       // Une app plate recolorée en rose faisait « filtre posé dessus » : on
       // assouplit aussi la FORME — coins plus ronds, ombre douce rosée.
-      radius: "14px",
-      "radius-sm": "10px",
-      "radius-lg": "18px",
-      "radius-xl": "22px",
+      radius: "4px",
+      "radius-sm": "3px",
+      "radius-lg": "6px",
+      "radius-xl": "8px",
       "shadow-card": "0 3px 14px rgba(158, 11, 46, 0.14)",
       ...FONTS_DEFAULT,
+      "font-display": '"Barlow Condensed", "Arial Narrow", -apple-system, sans-serif',
       ...NO_TEXTURE,
     },
     // Accents foncés (3.4.2) : ils servent aussi de couleur de texte — au moins
