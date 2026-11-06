@@ -7,6 +7,26 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.13.0 - 2026-11-04
+=====================
+
+- **Mouvement : seulement pour souligner ce qu'on touche, plus pour « faire joli »**
+  (toutes les apparences).
+  - **Plus de cascade à l'arrivée sur un écran** (accueil, Réglages, listes, Séance en
+    direct…) : le contenu est là tout de suite.
+  - Plus de « clac » automatique des puces actives ni de l'onglet actif de la barre du bas
+    à chaque affichage : seul **l'élément qu'on vient de toucher** (catégorie, puce, onglet,
+    apparence…) fait un petit « clac » en devenant actif — plus discret qu'avant, sans
+    toucher à la mise en page.
+  - Restent, parce qu'ils répondent à un geste : l'enfoncement / rebond et l'onde au
+    toucher (et la micro-vibration sur Android), le petit saut d'un chiffre qu'on vient de
+    changer, l'interrupteur qui claque, la carte glissée qui revient, et le halo du bouton
+    « Lancer » quand le repos prévu est fini.
+- Vérifié : ``motion.js`` (10 contrôles : pas de cascade sur l'accueil ni sur Réglages, pas
+  de « clac » à l'arrivée, onde / vibration / enfoncement au toucher, saut du chiffre
+  touché, « clac » de la seule catégorie touchée, rien en mouvement calme ni avec « réduire
+  les animations ») ; ``themes``, ``mono_theme``, ``anne_contrast``, ``onboarding``.
+
 3.12.0 - 2026-11-04
 =====================
 

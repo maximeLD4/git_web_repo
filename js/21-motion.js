@@ -3,7 +3,10 @@
      - chaque toucher laisse une onde qui part du doigt (ripple), le bouton
        s'enfonce puis rebondit en se relâchant (CSS, voir « MONO :
        MOUVEMENT ») ; sur Android, une micro-vibration ;
-     - en arrivant sur un écran, ses cartes et lignes montent en cascade ;
+     - (plus de cascade à l'arrivée sur un écran depuis 3.13.0 : le
+       mouvement ne sert qu'à souligner ce qu'on touche, pas à décorer) ;
+     - l'élément qu'on vient de CHOISIR (puce, onglet, catégorie…) fait un
+       petit « clac » — seulement lui, seulement juste après le toucher ;
      - un chiffre qui change (répétitions, poids, compteurs) fait un petit
        saut ;
      - un élément glissé (carte à supprimer) revient avec un rebond.
@@ -13,9 +16,13 @@
 
 const MOTION_TAP_SELECTOR =
   "button, .home-tile, .home-list-row, .history-head, .live-plan-row, .live-plan-next, .gym-add-card, .ex-type-btn, .toggle-switch, .live-subcat-btn, .live-exercise-btn, [data-open-app], [data-live-exercise]";
-const MOTION_ENTER_SELECTOR =
-  ".home-tile, .home-list-row, .home-section-label, .swipe-row, .gym-add-card, .live-plan-next, .live-plan-row, .exercise-card, .field-list-card, .live-exercise-btn, .live-stepper-group, .live-validate-btn";
-const MOTION_ENTER_MAX = 14;
+// Ce qui se CHOISIT (devient « actif ») : il fait un petit « clac » juste
+// après qu'on l'a touché.
+const MOTION_PICK_SELECTOR = ".ex-type-btn, .live-subcat-btn, .live-type-switch-btn, [data-open-app], [data-gym-top-mode], [data-category-btn], [data-color-mode]";
+let motionPicked = null; // { sig, at }
+function motionSignature(el) {
+  return [...el.attributes].filter((a) => a.name.startsWith("data-") && a.name !== "data-step-glyph").map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join("");
+}
 
 function motionOn() {
   if (!document.documentElement.classList.contains("motion-rich")) return false;
@@ -48,6 +55,11 @@ document.addEventListener(
       wave.remove();
       if (!el.querySelector(".motion-ripple")) el.classList.remove("motion-host", "motion-host-static");
     }, 650);
+    const pick = e.target.closest(MOTION_PICK_SELECTOR);
+    if (pick) {
+      const sig = motionSignature(pick);
+      if (sig) motionPicked = { sig, at: Date.now() };
+    }
     // Micro-vibration (Android ; iOS l'ignore).
     try {
       if (navigator.vibrate) navigator.vibrate(7);
@@ -58,9 +70,8 @@ document.addEventListener(
   { passive: true }
 );
 
-// Arrivée sur un écran : cascade. Seulement quand on CHANGE d'écran — pas à
-// chaque petit redessin du même écran (un + / −, une frappe…), qui ferait
-// clignoter le contenu.
+// Après chaque rendu : les chiffres qui ont changé, et l'élément qu'on vient de
+// choisir. (Plus de cascade à l'arrivée sur un écran : décoratif.)
 let motionLastScreen = "";
 let motionLastValues = [];
 function motionScreenKey() {
@@ -71,22 +82,26 @@ function motionScreenKey() {
   }
 }
 function motionAfterRender() {
+  const key = motionScreenKey();
   if (!motionOn()) {
-    motionLastScreen = motionScreenKey();
+    motionLastScreen = key;
     return;
   }
-  const key = motionScreenKey();
   if (key !== motionLastScreen) {
     motionLastScreen = key;
     motionLastValues = []; // nouvel écran : pas de « saut » des chiffres qui arrivent
-    const items = [...document.querySelectorAll("#app " + MOTION_ENTER_SELECTOR.split(", ").join(", #app "))].filter((el) => el.getClientRects().length).slice(0, MOTION_ENTER_MAX);
-    items.forEach((el, i) => {
-      el.style.setProperty("--motion-i", i);
-      el.classList.remove("motion-enter");
-      void el.offsetWidth; // relance l'animation
-      el.classList.add("motion-enter");
-      setTimeout(() => el.classList.remove("motion-enter"), 700 + i * 40);
-    });
+  }
+  // L'élément qu'on vient de choisir (s'il est bien devenu actif).
+  if (motionPicked && Date.now() - motionPicked.at < 700) {
+    const el = document.querySelector(motionPicked.sig);
+    if (el && el.classList.contains("active")) {
+      motionPicked = null;
+      const target = el.closest(".home-bottom-nav") ? el.querySelector("svg") || el : el;
+      target.classList.remove("motion-pick");
+      void target.offsetWidth;
+      target.classList.add("motion-pick");
+      setTimeout(() => target.classList.remove("motion-pick"), 400);
+    }
   }
   // Un chiffre qui change saute un peu.
   const vals = [...document.querySelectorAll("#app .live-stepper-value, #app .live-rest-hero-label span, #app .plan-rest-value, #app .loop-step-sec")];

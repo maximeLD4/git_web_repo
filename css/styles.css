@@ -2438,19 +2438,19 @@ html.texture-gym .toggle-switch.on { background-color: var(--tex-steel-base); ba
   }
   @keyframes motionRipple { to { transform: scale(1); opacity: 0; } }
   /* Arrivée sur un écran : cascade avec un léger dépassement. */
-  html.motion-rich .motion-enter { animation: motionEnter 0.55s cubic-bezier(0.34, 1.45, 0.55, 1) both; animation-delay: calc(var(--motion-i, 0) * 38ms); }
-  @keyframes motionEnter { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
   /* Chiffre qui change. */
   html.motion-rich .motion-pop { display: inline-block; animation: motionPop 0.38s cubic-bezier(0.34, 1.9, 0.5, 1); }
   @keyframes motionPop { 0% { transform: scale(1); } 35% { transform: scale(1.22); } 100% { transform: scale(1); } }
+  /* L'élément qu'on vient de choisir : un « clac » plus discret, sans
+     toucher à sa mise en page (3.13.0). */
+  html.motion-rich .motion-pick { animation: motionPick 0.34s cubic-bezier(0.34, 1.9, 0.5, 1); }
+  @keyframes motionPick { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
   /* Carte glissée : retour avec rebond. */
   html.motion-rich .swipe-row > [data-swipe-id] { transition: transform 0.55s cubic-bezier(0.34, 1.6, 0.5, 1); }
   /* Interrupteur : la boule claque avec un rebond. */
   html.motion-rich .toggle-switch-knob { transition: transform 0.45s cubic-bezier(0.34, 1.9, 0.5, 1), background-color 0.2s ease; }
   /* Puce qu'on choisit : petit « clac ». */
-  html.motion-rich .ex-type-btn.active, html.motion-rich .live-subcat-btn.active { animation: motionPop 0.34s cubic-bezier(0.34, 1.9, 0.5, 1); }
   /* Icônes de la barre du bas : saut de l'onglet actif. */
-  html.motion-rich .home-bottom-nav .active svg { animation: motionPop 0.4s cubic-bezier(0.34, 1.9, 0.5, 1); }
 }
 
 /* ==========================================================================

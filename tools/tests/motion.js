@@ -1,4 +1,4 @@
-// Mode Mono, mouvement (3.7.0) : onde au toucher + micro-vibration, cascade à l'arrivée sur un écran (pas à chaque
+// Mouvement (3.7.0, revu en 3.13.0) : onde au toucher + micro-vibration, « clac » de ce qu'on vient de choisir — plus de cascade à l'arrivée (pas à chaque
 // redessin), saut d'un chiffre qui change, rien hors Mono ni avec « réduire les animations ».
 // Usage : node tools/tests/motion.js <dossier> [port]
 const { chromium } = require('playwright');
@@ -14,7 +14,10 @@ async function page(b, reduced) {
 (async () => { const b = await chromium.launch();
   { const { ctx, p } = await page(b, false);
     await p.evaluate(() => { currentUser = { uid: 'u' }; applyColorMode('mono'); gymExerciseConfigs = [{ id: 'c', name: 'Squat', category: 'jambes', baseWeights: [60, 70] }]; currentApp = 'home'; render(); }); await p.waitForTimeout(80);
-    check('Arrivée sur l\'accueil : tuiles et lignes montent en cascade (décalage croissant)', await p.evaluate(() => { const els = [...document.querySelectorAll('.motion-enter')]; return els.length >= 6 && els.slice(0, 4).map((e) => +e.style.getPropertyValue('--motion-i')).join(',') === '0,1,2,3'; }));
+    check('Arrivée sur l\'accueil : PAS de cascade (le mouvement ne sert qu\'à ce qu\'on touche)', await p.evaluate(() => !document.querySelector('.motion-enter') && [...document.querySelectorAll('#app *')].every((e) => !/motionEnter/.test(getComputedStyle(e).animationName))));
+    await p.evaluate(() => { currentApp = 'settings'; render(); }); await p.waitForTimeout(80);
+    check('Réglages : pas de cascade non plus, ni de « clac » de l\'onglet actif à l\'arrivée', await p.evaluate(() => !document.querySelector('.motion-enter, .motion-pick, .motion-pop')));
+    await p.evaluate(() => { currentApp = 'home'; render(); }); await p.waitForTimeout(80);
     const box = await p.$('[data-open-app="gym"]'); const bb = await box.boundingBox();
     await p.mouse.move(bb.x + 30, bb.y + 20); await p.mouse.down(); await p.waitForTimeout(60);
     const tap = await p.evaluate(() => { const el = document.querySelector('[data-open-app="gym"]'); return { ripple: !!el.querySelector('.motion-ripple'), vib: window.__vib, scale: getComputedStyle(el).transform }; });
@@ -24,7 +27,11 @@ async function page(b, reduced) {
     await p.evaluate(() => { liveSession = null; liveStep = 'category'; liveDraftType = 'muscu'; currentApp = 'live'; render(); document.querySelector('[data-live-pick-plan=""]')?.click(); document.querySelector('[data-live-category="jambes"]').click(); document.querySelector('[data-live-exercise="Squat"]').click(); }); await p.waitForTimeout(800);
     await p.click('[data-live-reps-plus]'); await p.waitForTimeout(60);
     const st = await p.evaluate(() => ({ pop: !!document.querySelector('.live-stepper-value.motion-pop'), cascade: document.querySelectorAll('.motion-enter').length }));
-    check('« + » sur les répétitions : le chiffre saute, et l\'écran ne refait PAS sa cascade (même écran)', st.pop && st.cascade === 0, JSON.stringify(st));
+    check('« + » sur les répétitions : le chiffre saute (retour sur l\'action), rien d\'autre ne bouge', st.pop && st.cascade === 0, JSON.stringify(st));
+    await p.evaluate(() => { liveSession = null; liveActiveExerciseId = null; liveStep = 'category'; liveDraftType = 'muscu'; liveDraftCategory = 'jambes'; currentApp = 'live'; render(); document.querySelector('[data-live-pick-plan=""]')?.click(); }); await p.waitForTimeout(150);
+    check('Écran avec une catégorie déjà choisie : pas de « clac » tant qu\'on n\'a rien touché', await p.evaluate(() => !document.querySelector('.motion-pick')));
+    await p.click('[data-live-category="pecs"]'); await p.waitForTimeout(80);
+    check('Toucher une catégorie : elle (et seulement elle) fait un « clac » en devenant active', await p.evaluate(() => { const picked = [...document.querySelectorAll('.motion-pick')]; return picked.length === 1 && picked[0].matches('[data-live-category="pecs"].active'); }));
     check('    aucune erreur JS', p.errs.length === 0, p.errs.join(' | ') || 'aucune'); await ctx.close(); }
   { const { ctx, p } = await page(b, false);
     await p.evaluate(() => { currentUser = { uid: 'u' }; THEMES.night.presets = { ...THEMES.night.presets, motion: 'calm' }; applyColorMode('night'); currentApp = 'home'; render(); }); await p.waitForTimeout(80);
