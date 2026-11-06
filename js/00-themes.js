@@ -140,7 +140,9 @@ const THEMES = {
     swatch: { bg: "#E2A66B", fg: "#3D3230" },
     dark: false,
     statusBar: "#F3ECE4",
-    presets: { type: "classic", texture: "none", motion: "calm" },
+    // 3.11.0 : les couleurs de Jour, avec la typo, les formes et le mouvement
+    // de Mono — mais à plat (pas de matières).
+    presets: { type: "athletic", texture: "none", motion: "rich" },
     tokens: {
       bg: "#F3ECE4",
       surface: "#FFFDF8",
@@ -183,12 +185,13 @@ const THEMES = {
       "rgb-weight": "160,138,158",
       "rgb-calendar": "122,106,92",
       "data-filter": "none",
-      radius: "14px",
-      "radius-sm": "8px",
-      "radius-lg": "18px",
-      "radius-xl": "22px",
+      radius: "4px",
+      "radius-sm": "3px",
+      "radius-lg": "6px",
+      "radius-xl": "8px",
       "shadow-card": "none",
       ...FONTS_DEFAULT,
+      "font-display": '"Barlow Condensed", "Arial Narrow", -apple-system, sans-serif',
       ...NO_TEXTURE,
     },
     // Accent de chaque écran (--accent / --accent-rgb, posés sur #app.theme-xxx).

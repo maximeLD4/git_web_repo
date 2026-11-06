@@ -7,6 +7,22 @@ antichronologique (la plus récente en haut). Le format suit le versionnage
 sémantique (MAJOR.MINOR.PATCH) : MAJOR pour un changement d'architecture
 important, MINOR pour une nouvelle fonctionnalité, PATCH pour un correctif.
 
+3.11.0 - 2026-11-04
+=====================
+
+- **Jour emprunte à Mono sa typo, ses formes et son mouvement — en gardant ses couleurs et
+  sa surface plate.** Trois réglages dans le registre des apparences
+  (``js/00-themes.js``), rien d'autre :
+  - typo « athletic » : titres d'écran, noms d'exercice, tuiles et grands chiffres en
+    Barlow Condensed, gras, capitales, titres en italique ;
+  - formes plus carrées : arrondis 4 / 3 / 6 / 8 px (au lieu de 14 / 8 / 18 / 22) ;
+  - mouvement « rich » : enfoncement et rebond au toucher, onde, cascade à l'arrivée sur un
+    écran, petits sauts des chiffres ;
+  - matières : aucune (Jour reste à plat).
+  Nuit et Anne ne changent pas.
+- Vérifié : ``themes.js`` et ``motion.js`` mis à jour (Jour fait désormais partie des
+  apparences « athletic / rich » ; l'absence de mouvement est vérifiée sur Nuit).
+
 3.10.0 - 2026-11-04
 =====================
 
